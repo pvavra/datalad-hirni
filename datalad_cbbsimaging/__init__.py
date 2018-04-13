@@ -1,4 +1,4 @@
-"""DataLad demo extension"""
+"""DataLad extension for CBBS imaging platform workflows"""
 
 __docformat__ = 'restructuredtext'
 
@@ -19,12 +19,12 @@ from datalad.interface.results import get_status_dict
 # to be found by datalad
 command_suite = (
     # description of the command suite, displayed in cmdline help
-    "Demo DataLad command suite",
+    "CBBS imaging platform",
     [
         # specification of a command, any number of commands can be defined
         (
             # importable module that contains the command implementation
-            'datalad_helloworld',
+            'datalad_cbbsimaging',
             # name of the command class implementation in above module
             'HelloWorld',
             # optional name of the command in the cmdline API
