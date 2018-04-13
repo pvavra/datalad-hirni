@@ -1,1 +1,2 @@
 git+https://github.com/datalad/datalad.git
+git+https://github.com/datalad/datalad-neuroimaging.git
