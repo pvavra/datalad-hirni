@@ -32,6 +32,30 @@ command_suite = (
             # optional name of the command in the Python API
             'hello_py'
         ),
+        (
+            'datalad_cbbsimaging.commands.create_study',
+            'CreateStudy',
+            'cbbs-create-study',
+            'cbbs_create_study',
+        ),
+        (
+            'datalad_cbbsimaging.commands.import_dicoms',
+            'ImportDicoms',
+            'cbbs-import-dcm',
+            'cbbs_import_dcm',
+        ),
+        (
+            'datalad_cbbsimaging.commands.dicom2spec',
+            'Dicom2Spec',
+            'cbbs-dicom2spec',
+            'cbbs_dicom2spec',
+        ),
+        (
+            'datalad_cbbsimaging.commands.spec2bids',
+            'Spec2Bids',
+            'cbbs-spec2bids',
+            'cbbs_spec2bids',
+        ),
     ]
 )
 
