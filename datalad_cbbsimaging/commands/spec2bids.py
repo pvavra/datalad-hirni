@@ -57,6 +57,8 @@ class Spec2Bids(Interface):
                     constraints=EnsureStr() | EnsureNone()),
     )
 
+    # TODO: Optional uninstall dicom ds afterwards?
+
     @staticmethod
     @datasetmethod(name='cbbs_spec2bids')
     @eval_results
@@ -104,7 +106,7 @@ class Spec2Bids(Interface):
             with patch.dict('os.environ',
                             {'CBBS_STUDY_SPEC': opj(dataset.path, spec_path)}):
 
-                for r in dataset.run([
+                r = dataset.run([
                     'heudiconv',
                     '-f', 'cbbs',
                     '-s', subject,
@@ -120,11 +122,26 @@ class Spec2Bids(Interface):
                     # the aggregated DICOM metadata already
                     '--minmeta',
                     '--files', opj(ses, 'dicoms')],
-                        message="DICOM conversion of session {}.".format(ses)):
+                        message="DICOM conversion of session {}.".format(ses))
 
-                    # TODO: This has to be more accurate:
-                    yield r.update({'action': 'spec2bids',
-                                    'path': ses})
+                # TODO: This isn't nice yet:
+                if all(d['status'] in ['ok', 'notneeded'] for d in r):
+                    yield {'action': 'spec2bids',
+                           'path': ses,
+                           'status': 'ok'}
+
+                else:
+                    for run_result in r:
+                        if run_result['status'] not in ['ok', 'notneeded']:
+                            yield run_result
+                    yield {'action': 'spec2bids',
+                           'path': ses,
+                           'status': 'error',
+                           'message': "see above"}
+
+                # aggregate bids and nifti metadata:
+                dataset.aggregate_metadata(recursive=False,
+                                           incremental=True)
 
             # remove
             rmtree(opj(dataset.path, '.git', 'stupid'))
