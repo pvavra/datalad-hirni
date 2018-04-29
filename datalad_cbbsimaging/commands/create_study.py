@@ -1,3 +1,4 @@
+from os.path import join as opj
 from datalad.interface.base import build_doc, Interface
 from datalad.distribution.create import Create
 
@@ -127,6 +128,23 @@ class CreateStudy(Create):
                 for sib in add_sibling_dicts:
                     # TODO: result config
                     subds.siblings(**sib)
+
+                with open(opj(study_ds.path, '.gitattributes'), 'a') as ga:
+                    # except for hand-picked global metadata, we want anything
+                    # to go into the annex to be able to retract files after
+                    # publication
+                    ga.write('** annex.largefiles=anything\n')
+                    for fn in ('CHANGES', 'README', 'dataset_description.json'):
+                        # but not these
+                        ga.write('{} annex.largefiles=nothing\n'.format(fn))
+                study_ds.add('.gitattributes', to_git=True,
+                             message='Initial annex entry configuration')
+
+                study_ds.config.add('datalad.metadata.nativetype', 'bids',
+                                    where='dataset', reload=False)
+                study_ds.config.add('datalad.metadata.nativetype', 'nifti1',
+                                    where='dataset', reload=True)
+                study_ds.save(message='Metadata type config')
 
                 yield {
                     'status': 'ok',

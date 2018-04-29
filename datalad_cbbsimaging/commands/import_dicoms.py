@@ -97,13 +97,10 @@ def _guess_session_and_move(ds, target_ds):
     ses = res['metadata']['dicom']['Series'][0]['PatientID']
 
     from os import rename
-    rename(opj(target_ds.path, 'datalad_ni_import'), opj(target_ds.path, ses))
-
-#    from datalad.utils import rmtree
-#    rmtree(ses_dir)
+    rename(opj(target_ds.path, 'datalad_cbbs_import'), opj(target_ds.path, ses))
 
     from datalad.coreapi import Dataset
-    return Dataset(opj(target_ds.path, ses, 'dicoms'))
+    return Dataset(opj(target_ds.path, "sourcedata", ses, 'dicoms'))
 
 
 @build_doc
@@ -148,7 +145,7 @@ class ImportDicoms(Interface):
 
         if session:
             # session was specified => we know where to create subds
-            ses_dir = opj(ds.path, session)
+            ses_dir = opj(ds.path, "sourcedata", session)
             if not exists(ses_dir):
                 makedirs(ses_dir)
             # TODO: if exists: needs to be empty?
@@ -158,7 +155,7 @@ class ImportDicoms(Interface):
         else:
             # we don't know the session yet => create in tmp
 
-            ses_dir = opj(ds.path, 'datalad_ni_import')
+            ses_dir = opj(ds.path, 'datalad_cbbs_import')
             assert not exists(ses_dir)
             # TODO: don't assert; check and adapt instead
 
@@ -182,7 +179,7 @@ class ImportDicoms(Interface):
         from datalad.api import Dataset
         from datalad.api import cbbs_dicom2spec
 
-        ds.ni_dicom2spec(path=dicom_ds.path, spec=opj(dicom_ds.path, pardir,
+        ds.cbbs_dicom2spec(path=dicom_ds.path, spec=opj(dicom_ds.path, pardir,
                                                       "studyspec.json"))
 
         # TODO: yield error results etc.
