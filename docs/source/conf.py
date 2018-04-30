@@ -31,17 +31,17 @@ def setup(sphinx):
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-# generate missing pieces
+## generate missing pieces
 for setup_py_path in (opj(pardir, 'setup.py'),  # travis
                       opj(pardir, pardir, 'setup.py')):  # RTD
     if exists(setup_py_path):
         sys.path.insert(0, os.path.abspath(dirname(setup_py_path)))
-        try:
-            for cmd in 'manpage', 'examples':
-                os.system('{} build_{}'.format(setup_py_path, cmd))
-        except:
-            # shut up and do your best
-            pass
+#        try:
+#            for cmd in ('manpage',):
+#                os.system('{} build_{}'.format(setup_py_path, cmd))
+#        except:
+#            # shut up and do your best
+#            pass
 
 # -- General configuration ------------------------------------------------
 

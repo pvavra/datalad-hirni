@@ -11,9 +11,11 @@ This module reference extends the manual with a comprehensive overview of the
 available functionality.  Each module in the package is documented by a general
 summary of its purpose and the list of classes and functions it provides.
 
-
-.. currentmodule:: datalad_neuroimaging
+.. currentmodule:: datalad_cbbsimaging.commands
 .. autosummary::
    :toctree: generated
 
-   bids2scidata
+   create_study
+   import_dicoms
+   dicom2spec
+   spec2bids
