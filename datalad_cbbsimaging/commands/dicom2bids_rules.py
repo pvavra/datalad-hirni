@@ -81,10 +81,42 @@ class DefaultRules(object):
         else:
             self.runs[protocol_name] = 1
 
+        # TODO: Decide how to RF to apply custom rules. To be done within
+        # datalad-neuroimaging, then just a custom one here.
+
+        # Subject identification depends on scanner site:
+        # Note: This possibly is overspecified ATM. Let's check out all
+        #       scanners before being clear about how to safely distinguish
+        #       them.
+        if record.get("StationName") == "3T-PHILIPSMR" and \
+                record.get("InstitutionName") == "Leibniz Institut Magdeburg" and \
+                record.get("Manufacturer") == "Philips Medical Systems" and \
+                record.get("ManufacturerModelName") == "Achieva dStream":
+
+            subject = record.get("PatientName", None)
+        elif record.get("StationName") == "AWP66017" and \
+                record.get("InstitutionName") == "Neurologie" and \
+                record.get("Manufacturer") == "SIEMENS" and \
+                record.get("ManufacturerModelName") == "Prisma":
+
+            subject = record.get("PatientID", None)
+            if subject:
+                subject = subject.split("_")[0]
+        elif record.get("StationName") == "PCR7T1-15" and \
+                record.get("InstitutionName") == "LIN" and \
+                record.get("Manufacturer") == "SIEMENS" and \
+                record.get("ManufacturerModelName") == "Investigational_Device_7T":
+
+            subject = record.get("PatientID", None)
+            if subject:
+                subject = subject.split("_")[0]
+        else:
+            subject = record.get("PatientID", None)
+
         return {
                 'description': record['SeriesDescription'],
                 'comment': '',
-                'subject': apply_bids_label_restrictions(record.get('PatientID', None)),
+                'subject': apply_bids_label_restrictions(subject),
                 'session': apply_bids_label_restrictions(protocol_name),
                 'task': apply_bids_label_restrictions(protocol_name),
                 'run': self.runs[protocol_name],
@@ -100,6 +132,11 @@ def apply_bids_label_restrictions(value):
     """
     # only alphanumeric allowed
     # => remove everthing else
+
+    if value is None:
+        # Rules didn't find anything to apply, so don't put anything into the
+        # spec.
+        return None
 
     from six import string_types
     if not isinstance(value, string_types):
