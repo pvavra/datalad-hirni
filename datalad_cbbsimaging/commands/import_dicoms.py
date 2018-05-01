@@ -97,11 +97,11 @@ def _guess_session_and_move(ds, target_ds):
     ses = res['metadata']['dicom']['Series'][0]['PatientID']
 
     from os import rename
-    rename(opj(target_ds.path, "sourcedata", 'datalad_cbbs_import'),
-           opj(target_ds.path, "sourcedata", ses))
+    rename(opj(target_ds.path, 'datalad_cbbs_import'),
+           opj(target_ds.path, ses))
 
     from datalad.coreapi import Dataset
-    return Dataset(opj(target_ds.path, "sourcedata", ses, 'dicoms'))
+    return Dataset(opj(target_ds.path, ses, 'dicoms'))
 
 
 @build_doc
@@ -146,7 +146,7 @@ class ImportDicoms(Interface):
 
         if session:
             # session was specified => we know where to create subds
-            ses_dir = opj(ds.path, "sourcedata", session)
+            ses_dir = opj(ds.path, session)
             if not exists(ses_dir):
                 makedirs(ses_dir)
             # TODO: if exists: needs to be empty?
@@ -156,7 +156,7 @@ class ImportDicoms(Interface):
         else:
             # we don't know the session yet => create in tmp
 
-            ses_dir = opj(ds.path, 'sourcedata', 'datalad_cbbs_import')
+            ses_dir = opj(ds.path, 'datalad_cbbs_import')
             assert not exists(ses_dir)
             # TODO: don't assert; check and adapt instead
 
