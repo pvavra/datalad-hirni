@@ -4,6 +4,7 @@ from os.path import curdir
 from os.path import abspath
 from os.path import join as opj
 from os.path import basename
+from os.path import lexists
 
 from datalad.interface.base import Interface
 from datalad.interface.base import build_doc
@@ -101,28 +102,37 @@ class Spec2Bids(Interface):
 
             # # TODO: multi-session
 
+            # Note: Workaround for datalad-run, which doesn't provide an option
+            # to unlock existing output files:
+            if lexists(opj(target_dir, 'participants.tsv')):
+                unlock = ["datalad", "unlock", "participants.tsv", ";"]
+            else:
+                unlock = []
+
             # TODO: Workaround. Couldn't pass an env variable to datalad-run:
             from mock import patch
             with patch.dict('os.environ',
                             {'CBBS_STUDY_SPEC': opj(dataset.path, spec_path)}):
 
-                r = dataset.run([
-                    'heudiconv',
-                    '-f', 'cbbs',
-                    '-s', subject,
-                    '-c', 'dcm2niix',
-                    # TODO decide on the fate of .heudiconv/
-                    # but ATM we need to (re)move it:
-                    # https://github.com/nipy/heudiconv/issues/196
-                    '-o', opj(dataset.path, '.git', 'stupid', basename(ses)),
-                    '-b',
-                    '-a', target_dir,
-                    '-l', '',
-                    # avoid glory details provided by dcmstack, we have them in
-                    # the aggregated DICOM metadata already
-                    '--minmeta',
-                    '--files', opj(ses, 'dicoms')],
-                        message="DICOM conversion of session {}.".format(ses))
+                r = dataset.run(
+                    unlock +
+                    [
+                     'heudiconv',
+                     '-f', 'cbbs',
+                     '-s', subject,
+                     '-c', 'dcm2niix',
+                     # TODO decide on the fate of .heudiconv/
+                     # but ATM we need to (re)move it:
+                     # https://github.com/nipy/heudiconv/issues/196
+                     '-o', opj(dataset.path, '.git', 'stupid', basename(ses)),
+                     '-b',
+                     '-a', target_dir,
+                     '-l', '',
+                     # avoid glory details provided by dcmstack, we have them in
+                     # the aggregated DICOM metadata already
+                     '--minmeta',
+                     '--files', opj(ses, 'dicoms')
+                    ], message="DICOM conversion of session {}.".format(ses))
 
                 # TODO: This isn't nice yet:
                 if all(d['status'] in ['ok', 'notneeded'] for d in r):
