@@ -114,8 +114,7 @@ class Spec2Bids(Interface):
             with patch.dict('os.environ',
                             {'CBBS_STUDY_SPEC': opj(dataset.path, spec_path)}):
 
-                r = dataset.run(
-                    unlock +
+                cmd_str = unlock + \
                     [
                      'heudiconv',
                      '-f', 'cbbs',
@@ -127,12 +126,15 @@ class Spec2Bids(Interface):
                      '-o', opj(dataset.path, '.git', 'stupid', basename(ses)),
                      '-b',
                      '-a', target_dir,
-                     '-l', '',
+                     '-l', '\"\"',
                      # avoid glory details provided by dcmstack, we have them in
                      # the aggregated DICOM metadata already
                      '--minmeta',
                      '--files', opj(ses, 'dicoms')
-                    ], message="DICOM conversion of session {}.".format(ses))
+                    ]
+                r = dataset.run(" ".join(cmd_str),
+                                message="DICOM conversion of "
+                                        "session {}.".format(ses))
 
                 # TODO: This isn't nice yet:
                 if all(d['status'] in ['ok', 'notneeded'] for d in r):
