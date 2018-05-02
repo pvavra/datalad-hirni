@@ -140,11 +140,13 @@ class CreateStudy(Create):
                 study_ds.add('.gitattributes', to_git=True,
                              message='Initial annex entry configuration')
 
+                study_ds.config.add('datalad.cbbsimaging.import.session-format',
+                                    "ses-{PatientID}", where='dataset')
                 study_ds.config.add('datalad.metadata.nativetype', 'bids',
                                     where='dataset', reload=False)
                 study_ds.config.add('datalad.metadata.nativetype', 'nifti1',
                                     where='dataset', reload=True)
-                study_ds.save(message='Metadata type config')
+                study_ds.save(message='Initial datalad config')
 
                 yield {
                     'status': 'ok',

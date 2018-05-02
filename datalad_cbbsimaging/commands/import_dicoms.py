@@ -1,6 +1,6 @@
 from six import reraise
 from os import makedirs
-from os.path import join as opj
+from os.path import join as opj, normpath
 from datalad.consts import ARCHIVES_SPECIAL_REMOTE, DATALAD_SPECIAL_REMOTES_UUIDS
 from datalad.interface.base import build_doc, Interface
 from datalad.support.constraints import EnsureStr
@@ -79,7 +79,12 @@ def _create_subds_from_tarball(tarball, targetdir):
                         where="dataset")
     importds.add(opj(".datalad", "config"), save=True,
                  message="[DATALAD] initial config for DICOM metadata")
+
+    # TODO: ??? Need for session guessing
+
     importds.aggregate_metadata()
+
+
     importds.install(path=opj(".datalad", "environments", "import-container"),
                      source="http://psydata.ovgu.de/cbbs-imaging/conv-container/.git")
 
@@ -93,8 +98,16 @@ def _guess_session_and_move(ds, target_ds):
                       result_renderer='disabled')
     # there should be exactly one result and therefore a dict
     assert isinstance(res, dict)
-    # TODO: This should be part of the rule set
-    ses = res['metadata']['dicom']['Series'][0]['PatientID']
+
+    format_string = \
+        target_ds.config.get("datalad.cbbsimaging.import.session-format")
+    # Note: simply the metadata dict for first Series herein is passed into
+    # format ATM. TODO: Eventually make entire result from `metadata` available.
+    # (unify implementation with datalad's --output-format)
+    if '{' in format_string:
+        ses = format_string.format(**res['metadata']['dicom']['Series'][0])
+    else:
+        ses = format_string
 
     from os import rename
     rename(opj(target_ds.path, 'datalad_cbbs_import'),
@@ -173,15 +186,17 @@ class ImportDicoms(Interface):
                 raise
 
         ds.add(dicom_ds.path)
-        ds.aggregate_metadata(dicom_ds.path)
+        ds.aggregate_metadata(dicom_ds.path, incremental=True,
+                              update_mode='target')
 
         from os.path import pardir
 
         from datalad.api import Dataset
         from datalad.api import cbbs_dicom2spec
 
-        ds.cbbs_dicom2spec(path=dicom_ds.path, spec=opj(dicom_ds.path, pardir,
-                                                      "studyspec.json"))
+        ds.cbbs_dicom2spec(path=dicom_ds.path,
+                           spec=normpath(opj(dicom_ds.path, pardir,
+                                             "studyspec.json")))
 
         # TODO: yield error results etc.
         yield dict(status='ok',
