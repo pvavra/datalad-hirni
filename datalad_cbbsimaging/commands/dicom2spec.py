@@ -1,28 +1,24 @@
-from datalad.coreapi import metadata
-
-from datalad.support import json_py
-from os.path import join as opj, exists, pardir
-
-
-
-from datalad.interface.base import build_doc, Interface
-from datalad.support.constraints import EnsureStr
-from datalad.support.constraints import EnsureNone
-from datalad.support.param import Parameter
-from datalad.distribution.dataset import datasetmethod, EnsureDataset, \
-    require_dataset, resolve_path
-from datalad.support.exceptions import InsufficientArgumentsError
-from datalad.interface.utils import eval_results
-from datalad.interface.common_opts import recursion_flag
-from datalad.interface.common_opts import recursion_limit
-
 import logging
+from os.path import exists
+
+from datalad.coreapi import metadata
+from datalad.distribution.dataset import EnsureDataset, datasetmethod, \
+    require_dataset, resolve_path
+from datalad.interface.base import Interface, build_doc
+from datalad.interface.common_opts import recursion_flag
+from datalad.interface.utils import eval_results
+from datalad.support import json_py
+from datalad.support.constraints import EnsureNone
+from datalad.support.constraints import EnsureStr
+from datalad.support.exceptions import InsufficientArgumentsError
+from datalad.support.param import Parameter
+
 lgr = logging.getLogger('datalad.neuroimaging.dicom2spec')
 
 
 def add_to_spec(ds_metadata, spec_list):
 
-    from datalad_cbbsimaging.commands.dicom2bids_rules import \
+    from datalad_cbbsimaging.support.dicom2bids_rules import \
         get_rules_from_metadata, series_is_valid  # TODO: RF?
 
     lgr.debug("Discovered %s image series.",
