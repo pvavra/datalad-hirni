@@ -1,7 +1,7 @@
 __docformat__ = 'restructuredtext'
 
-from os.path import curdir
-from os.path import abspath
+import logging
+from os.path import isabs
 from os.path import join as opj
 from os.path import basename
 from os.path import lexists
@@ -18,6 +18,9 @@ from datalad.support.exceptions import InsufficientArgumentsError
 from datalad.coreapi import run
 
 from datalad.interface.results import get_status_dict
+
+
+lgr = logging.getLogger("datalad.cbbsimaging.spec2bids")
 
 
 def _get_subject_from_spec(file_):
@@ -40,30 +43,40 @@ class Spec2Bids(Interface):
     """
 
     _params_ = dict(
-            dataset=Parameter(
-                    args=("-d", "--dataset"),
-                    doc="""studydataset""",
-                    constraints=EnsureDataset() | EnsureNone()),
-            session=Parameter(
-                    args=("-s", "--session",),
-                    metavar="SESSION",
-                    nargs="+",
-                    doc="""name(s)/path(s) of the session(s) to convert.
-                        like 'sourcedata/ax20_435'""",
-                    constraints=EnsureStr() | EnsureNone()),
-            target_dir=Parameter(
-                    args=("-t", "--target-dir"),
-                    doc="""Root dir of the BIDS dataset. Defaults to the root 
-                    dir of the study dataset""",
-                    constraints=EnsureStr() | EnsureNone()),
-    )
+        dataset=Parameter(
+            args=("-d", "--dataset"),
+            doc="""studydataset""",
+            constraints=EnsureDataset() | EnsureNone()),
+        session=Parameter(
+            args=("-s", "--session",),
+            metavar="SESSION",
+            nargs="+",
+            doc="""name(s)/path(s) of the session(s) to convert.
+                like 'sourcedata/ax20_435'""",
+            constraints=EnsureStr() | EnsureNone()),
+        target_dir=Parameter(
+            args=("-t", "--target-dir"),
+            doc="""Root dir of the BIDS dataset. Defaults to the root 
+            dir of the study dataset""",
+            constraints=EnsureStr() | EnsureNone()),
+        spec_file=Parameter(
+            args=("--spec",),
+            metavar="SPEC_FILE",
+            doc="""path to the specification file to use for conversion.
+             By default this is a file named 'studyspec.json' in the 
+             session directory. NOTE: If a relative path is given, it is 
+             interpreted as a path relative to session's dir (evaluated per
+             session). If an absolute path is given, that file is used for all 
+             sessions to be converted!""",
+            constraints=EnsureStr() | EnsureNone()),
+        )
 
     # TODO: Optional uninstall dicom ds afterwards?
 
     @staticmethod
     @datasetmethod(name='cbbs_spec2bids')
     @eval_results
-    def __call__(session=None, dataset=None, target_dir=None):
+    def __call__(session=None, dataset=None, target_dir=None, spec_file=None):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="dicoms2bids")
@@ -83,12 +96,25 @@ class Spec2Bids(Interface):
         if target_dir is None:
             target_dir = dataset.path
 
-        # TODO spec_file: Parameter
-        spec_file = "studyspec.json"
+        if spec_file is None:
+            spec_file = "studyspec.json"
 
         for ses in session:
 
-            spec_path = opj(ses, spec_file)
+            if isabs(spec_file):
+                spec_path = spec_file
+            else:
+                spec_path = opj(ses, spec_file)
+
+            if not lexists(spec_path):
+                yield get_status_dict(
+                        action='spec2bids',
+                        path=ses,
+                        status='impossible',
+                        message="Found no spec for session {}".format(ses)
+                )
+                # TODO: onfailure ignore?
+                continue
             try:
                 subject = _get_subject_from_spec(spec_path)
             except ValueError as e:
@@ -99,8 +125,6 @@ class Spec2Bids(Interface):
                         message=str(e),
                 )
                 continue
-
-            # # TODO: multi-session
 
             # Note: Workaround for datalad-run, which doesn't provide an option
             # to unlock existing output files:
