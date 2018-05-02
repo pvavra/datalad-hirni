@@ -140,8 +140,18 @@ class CreateStudy(Create):
                 study_ds.add('.gitattributes', to_git=True,
                              message='Initial annex entry configuration')
 
+                # TODO:
+                # Note: This default is quite a hack. It's using the first four
+                # characters in DICOM's PatientID as subject and the entire
+                # PatientID as session. What's actually needed, is either a
+                # String Formatter providing more sophisticated operations like
+                # slicing (prob. to be shared with datalad's --output-format
+                # logic) or to apply specification rules prior to determining
+                # final location of the imported subdataset.
                 study_ds.config.add('datalad.cbbsimaging.import.session-format',
-                                    "ses-{PatientID}", where='dataset')
+                                    "sub-{PatientID:.4}%sses-{PatientID}" %
+                                    os.path.sep,
+                                    where='dataset')
                 study_ds.config.add('datalad.metadata.nativetype', 'bids',
                                     where='dataset', reload=False)
                 study_ds.config.add('datalad.metadata.nativetype', 'nifti1',

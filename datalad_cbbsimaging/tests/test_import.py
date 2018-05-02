@@ -25,6 +25,11 @@ def test_import_tarball(filename, ds_path):
     create_dicom_tarball('structural', filename)
     ds = cbbs_create_study(ds_path)
 
+    # adapt import layout rules for example ds, since cbbs default
+    # doesn't apply:
+    ds.config.set("datalad.cbbsimaging.import.session-format",
+                  "sub-{PatientID}", where='dataset')
+
     # import into a session defined by the user
     ds.cbbs_import_dcm(path=filename, session='user_defined_session')
 
@@ -42,7 +47,7 @@ def test_import_tarball(filename, ds_path):
     subs = ds.subdatasets(fulfilled=True, recursive=True, recursion_limit=None,
                           result_xfm='datasets')
 
-    assert opj(ds.path, '02', 'dicoms') in [s.path for s in subs]
-    ok_exists(opj(ds.path, '02', 'studyspec.json'))
-    ok_exists(opj(ds.path, '02', 'dicoms', 'structural'))
+    assert opj(ds.path, 'sub-02', 'dicoms') in [s.path for s in subs]
+    ok_exists(opj(ds.path, 'sub-02', 'studyspec.json'))
+    ok_exists(opj(ds.path, 'sub-02', 'dicoms', 'structural'))
 
