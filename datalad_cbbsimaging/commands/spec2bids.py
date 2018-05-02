@@ -60,7 +60,7 @@ class Spec2Bids(Interface):
             dir of the study dataset""",
             constraints=EnsureStr() | EnsureNone()),
         spec_file=Parameter(
-            args=("--spec",),
+            args=("--spec-file",),
             metavar="SPEC_FILE",
             doc="""path to the specification file to use for conversion.
              By default this is a file named 'studyspec.json' in the 
@@ -126,6 +126,8 @@ class Spec2Bids(Interface):
                 )
                 continue
 
+            import datalad_cbbsimaging.support.cbbs as cbbs_heuristic
+
             # Note: Workaround for datalad-run, which doesn't provide an option
             # to unlock existing output files:
             if lexists(opj(target_dir, 'participants.tsv')):
@@ -141,7 +143,7 @@ class Spec2Bids(Interface):
                 cmd_str = unlock + \
                     [
                      'heudiconv',
-                     '-f', 'cbbs',
+                     '-f', cbbs_heuristic.__file__,
                      '-s', subject,
                      '-c', 'dcm2niix',
                      # TODO decide on the fate of .heudiconv/
