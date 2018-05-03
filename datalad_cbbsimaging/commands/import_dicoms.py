@@ -84,7 +84,6 @@ def _create_subds_from_tarball(tarball, targetdir):
 
     importds.aggregate_metadata()
 
-
     importds.install(path=opj(".datalad", "environments", "import-container"),
                      source="http://psydata.ovgu.de/cbbs-imaging/conv-container/.git")
 
@@ -109,12 +108,24 @@ def _guess_session_and_move(ds, target_ds):
     else:
         ses = format_string
 
-    from os import rename
+    from os import rename, makedirs
+    from os.path import dirname, lexists
+    # `ses` might consistent of several levels, so `rename` doesn't always
+    # automatically create the target dir:
+    if not lexists(dirname(ses)):
+        makedirs(opj(target_ds.path, ses))
+
     rename(opj(target_ds.path, 'datalad_cbbs_import'),
            opj(target_ds.path, ses))
 
     from datalad.coreapi import Dataset
     return Dataset(opj(target_ds.path, ses, 'dicoms'))
+
+# TODOs:
+#
+# subject layer anon
+# dl issue metadata => refcommit
+# bids-session/task guessing
 
 
 @build_doc
