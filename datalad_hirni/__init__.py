@@ -19,42 +19,32 @@ from datalad.interface.results import get_status_dict
 # to be found by datalad
 command_suite = (
     # description of the command suite, displayed in cmdline help
-    "CBBS imaging platform",
+    "HIRNI workflows",
     [
         # specification of a command, any number of commands can be defined
         (
-            # importable module that contains the command implementation
-            'datalad_cbbsimaging',
-            # name of the command class implementation in above module
-            'HelloWorld',
-            # optional name of the command in the cmdline API
-            'hello-cmd',
-            # optional name of the command in the Python API
-            'hello_py'
-        ),
-        (
-            'datalad_cbbsimaging.commands.create_study',
+            'datalad_hirni.commands.create_study',
             'CreateStudy',
-            'cbbs-create-study',
-            'cbbs_create_study',
+            'hirni-create-study',
+            'hirni_create_study',
         ),
         (
-            'datalad_cbbsimaging.commands.import_dicoms',
+            'datalad_hirni.commands.import_dicoms',
             'ImportDicoms',
-            'cbbs-import-dcm',
-            'cbbs_import_dcm',
+            'hirni-import-dcm',
+            'hirni_import_dcm',
         ),
         (
-            'datalad_cbbsimaging.commands.dicom2spec',
+            'datalad_hirni.commands.dicom2spec',
             'Dicom2Spec',
-            'cbbs-dicom2spec',
-            'cbbs_dicom2spec',
+            'hirni-dicom2spec',
+            'hirni_dicom2spec',
         ),
         (
-            'datalad_cbbsimaging.commands.spec2bids',
+            'datalad_hirni.commands.spec2bids',
             'Spec2Bids',
-            'cbbs-spec2bids',
-            'cbbs_spec2bids',
+            'hirni-spec2bids',
+            'hirni_spec2bids',
         ),
     ]
 )

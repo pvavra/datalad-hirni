@@ -104,7 +104,7 @@ def _guess_session_and_move(ds, target_ds):
     assert isinstance(res, dict)
 
     format_string = \
-        target_ds.config.get("datalad.cbbsimaging.import.session-format")
+        target_ds.config.get("datalad.hirni.import.session-format")
     # Note: simply the metadata dict for first Series herein is passed into
     # format ATM. TODO: Eventually make entire result from `metadata` available.
     # (unify implementation with datalad's --output-format)
@@ -120,7 +120,7 @@ def _guess_session_and_move(ds, target_ds):
     if not lexists(dirname(ses)):
         makedirs(opj(target_ds.path, ses))
 
-    rename(opj(target_ds.path, 'datalad_cbbs_import'),
+    rename(opj(target_ds.path, 'datalad_hirni_import'),
            opj(target_ds.path, ses))
 
     from datalad.coreapi import Dataset
@@ -165,7 +165,7 @@ class ImportDicoms(Interface):
     )
 
     @staticmethod
-    @datasetmethod(name='cbbs_import_dcm')
+    @datasetmethod(name='hirni_import_dcm')
     @eval_results
     def __call__(path, session=None, dataset=None):
 
@@ -185,7 +185,7 @@ class ImportDicoms(Interface):
         else:
             # we don't know the session yet => create in tmp
 
-            ses_dir = opj(ds.path, 'datalad_cbbs_import')
+            ses_dir = opj(ds.path, 'datalad_hirni_import')
             assert not exists(ses_dir)
             # TODO: don't assert; check and adapt instead
 
@@ -208,9 +208,9 @@ class ImportDicoms(Interface):
         from os.path import pardir
 
         from datalad.api import Dataset
-        from datalad.api import cbbs_dicom2spec
+        from datalad.api import hirni_dicom2spec
 
-        ds.cbbs_dicom2spec(path=dicom_ds.path,
+        ds.hirni_dicom2spec(path=dicom_ds.path,
                            spec=normpath(opj(dicom_ds.path, pardir,
                                              "studyspec.json")))
 

@@ -5,7 +5,7 @@ from datalad.interface.base import build_doc, Interface
 from datalad.distribution.create import Create
 
 
-lgr = logging.getLogger('datalad.cbbsimaging.create_study')
+lgr = logging.getLogger('datalad.hirni.create_study')
 
 
 @build_doc
@@ -18,7 +18,7 @@ class CreateStudy(Create):
     # Note: _params_ inherited from create!
 
     @staticmethod
-    @datasetmethod(name='cbbs_create_study')
+    @datasetmethod(name='hirni_create_study')
     @eval_results
     def __call__(
             path=None,
@@ -84,7 +84,7 @@ class CreateStudy(Create):
                 # slicing (prob. to be shared with datalad's --output-format
                 # logic) or to apply specification rules prior to determining
                 # final location of the imported subdataset.
-                study_ds.config.add('datalad.cbbsimaging.import.session-format',
+                study_ds.config.add('datalad.hirni.import.session-format',
                                     "{PatientID}",
                                     where='dataset')
                 study_ds.config.add('datalad.metadata.nativetype', 'bids',

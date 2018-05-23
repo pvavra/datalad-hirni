@@ -1,8 +1,8 @@
 from os.path import join as opj, exists
 
-import datalad_cbbsimaging
+import datalad_hirni
 from datalad.api import Dataset
-from datalad.api import cbbs_create_study
+from datalad.api import hirni_create_study
 
 from datalad.tests.utils import assert_result_count
 from datalad.tests.utils import ok_clean_git, ok_exists, ok_file_under_git
@@ -23,15 +23,15 @@ from datalad_neuroimaging.tests.utils import get_dicom_dataset, create_dicom_tar
 def test_import_tarball(filename, ds_path):
 
     create_dicom_tarball('structural', filename)
-    ds = cbbs_create_study(ds_path)
+    ds = hirni_create_study(ds_path)
 
-    # adapt import layout rules for example ds, since cbbs default
+    # adapt import layout rules for example ds, since hirni default
     # doesn't apply:
-    ds.config.set("datalad.cbbsimaging.import.session-format",
+    ds.config.set("datalad.hirni.import.session-format",
                   "sub-{PatientID}", where='dataset')
 
     # import into a session defined by the user
-    ds.cbbs_import_dcm(path=filename, session='user_defined_session')
+    ds.hirni_import_dcm(path=filename, session='user_defined_session')
 
     subs = ds.subdatasets(fulfilled=True, recursive=True, recursion_limit=None,
                           result_xfm='datasets')
@@ -49,7 +49,7 @@ def test_import_tarball(filename, ds_path):
 
     # now import again, but let the import routine figure out a session name
     # based on DICOM metadata (ATM just the first occurring PatientID, I think)
-    ds.cbbs_import_dcm(path=filename, session=None)
+    ds.hirni_import_dcm(path=filename, session=None)
 
     subs = ds.subdatasets(fulfilled=True, recursive=True, recursion_limit=None,
                           result_xfm='datasets')

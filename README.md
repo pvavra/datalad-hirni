@@ -1,6 +1,6 @@
 # DataLad extension for CBBS imaging platform workflows
 
-[![Travis tests status](https://secure.travis-ci.org/psychoinformatics-de/datalad-cbbsimaging.png?branch=master)](https://travis-ci.org/psychoinformatics-de/datalad-cbbsimaging) [![codecov.io](https://codecov.io/github/psychoinformatics-de/datalad-cbbsimaging/coverage.svg?branch=master)](https://codecov.io/github/psychoinformatics-de/datalad-cbbsimaging?branch=master)
+[![Travis tests status](https://secure.travis-ci.org/psychoinformatics-de/datalad-hirni.png?branch=master)](https://travis-ci.org/psychoinformatics-de/datalad-hirni) [![codecov.io](https://codecov.io/github/psychoinformatics-de/datalad-hirni/coverage.svg?branch=master)](https://codecov.io/github/psychoinformatics-de/datalad-hirni?branch=master)
 
 This is extension is still in an early development stage.
 

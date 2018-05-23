@@ -13,7 +13,7 @@ from datalad.support.constraints import EnsureStr
 from datalad.support.exceptions import InsufficientArgumentsError
 from datalad.support.param import Parameter
 
-lgr = logging.getLogger('datalad.cbbsimaging.dicom2spec')
+lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
 
 ############################## Build plugin mechanism for Rules finally!
@@ -27,7 +27,7 @@ lgr = logging.getLogger('datalad.cbbsimaging.dicom2spec')
 
 def add_to_spec(ds_metadata, spec_list):
 
-    from datalad_cbbsimaging.support.dicom2bids_rules import \
+    from datalad_hirni.support.dicom2bids_rules import \
         get_rules_from_metadata, series_is_valid  # TODO: RF?
 
     lgr.debug("Discovered %s image series.",
@@ -108,7 +108,7 @@ class Dicom2Spec(Interface):
     )
 
     @staticmethod
-    @datasetmethod(name='cbbs_dicom2spec')
+    @datasetmethod(name='hirni_dicom2spec')
     @eval_results
     def __call__(path=None, spec=None, dataset=None, recursive=False):
 

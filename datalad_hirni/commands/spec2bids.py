@@ -21,7 +21,7 @@ from datalad_container import containers_run
 from datalad.interface.results import get_status_dict
 
 
-lgr = logging.getLogger("datalad.cbbsimaging.spec2bids")
+lgr = logging.getLogger("datalad.hirni.spec2bids")
 
 
 def _get_subject_from_spec(file_):
@@ -75,7 +75,7 @@ class Spec2Bids(Interface):
     # TODO: Optional uninstall dicom ds afterwards?
 
     @staticmethod
-    @datasetmethod(name='cbbs_spec2bids')
+    @datasetmethod(name='hirni_spec2bids')
     @eval_results
     def __call__(session=None, dataset=None, target_dir=None, spec_file=None):
 
@@ -129,7 +129,7 @@ class Spec2Bids(Interface):
                 )
                 continue
 
-            import datalad_cbbsimaging.support.cbbs as cbbs_heuristic
+            import datalad_hirni.support.cbbs as cbbs_heuristic
             from mock import patch
             with patch.dict('os.environ',
                             {'CBBS_STUDY_SPEC': opj(dataset.path, spec_path)}):

@@ -18,7 +18,7 @@ from datalad.tests.utils import ok_clean_git
 from datalad.tests.utils import with_tempfile
 from datalad.tests.utils import eq_
 
-import datalad_cbbsimaging
+import datalad_hirni
 from datalad_neuroimaging.tests.utils import get_dicom_dataset
 from datalad_neuroimaging.tests.utils import get_bids_dataset
 
@@ -46,7 +46,7 @@ def test_dicom2spec(path):
     ds.aggregate_metadata(recursive=True, update_mode='all')
     # ### END SETUP ###
 
-    res = ds.cbbs_dicom2spec(path='acq100', spec='spec_structural.json')
+    res = ds.hirni_dicom2spec(path='acq100', spec='spec_structural.json')
     assert_result_count(res, 1)
     assert_result_count(res, 1, path=opj(ds.path, 'spec_structural.json'))
     if ds.repo.is_direct_mode():
@@ -75,8 +75,8 @@ def _single_session_dicom2bids(label, path):
     ds.aggregate_metadata(recursive=True, update_mode='all')
 
     spec_file = opj(session, 'spec_{label}.json'.format(label=label))
-    ds.cbbs_dicom2spec(path=opj(session, 'dicoms'),
-                     spec=spec_file)
+    ds.hirni_dicom2spec(path=opj(session, 'dicoms'),
+                        spec=spec_file)
 
     from mock import patch
     with patch.dict('os.environ',

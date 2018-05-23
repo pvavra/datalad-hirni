@@ -5,7 +5,7 @@ from setuptools import find_packages
 
 setup(
     # basic project properties can be set arbitrarily
-    name="datalad_cbbsimaging",
+    name="datalad_hirni",
     author="CBBS imaging platform developers",
     author_email="michael.hanke@gmail.com",  # TODO establish project email
     version='0.0.1',
@@ -21,10 +21,10 @@ setup(
             # the label in front of '=' is the command suite label
             # the entrypoint can point to any symbol of any name, as long it is
             # valid datalad interface specification (see demo in this extensions
-            'cbbsimaging=datalad_cbbsimaging:command_suite',
+            'hirni=datalad_hirni:command_suite',
         ],
         'datalad.tests': [
-            'cbbsimaging=datalad_cbbsimaging',
+            'hirni=datalad_hirni',
         ],
     },
 )
