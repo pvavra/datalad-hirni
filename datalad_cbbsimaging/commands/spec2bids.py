@@ -16,6 +16,7 @@ from datalad.support.constraints import EnsureStr
 from datalad.support.constraints import EnsureNone
 from datalad.support.exceptions import InsufficientArgumentsError
 from datalad.coreapi import run
+from datalad_container import containers_run
 
 from datalad.interface.results import get_status_dict
 
@@ -116,6 +117,8 @@ class Spec2Bids(Interface):
                 # TODO: onfailure ignore?
                 continue
             try:
+                # TODO: AutomagicIO?
+                dataset.get(spec_path)
                 subject = _get_subject_from_spec(spec_path)
             except ValueError as e:
                 yield get_status_dict(
@@ -127,70 +130,57 @@ class Spec2Bids(Interface):
                 continue
 
             import datalad_cbbsimaging.support.cbbs as cbbs_heuristic
-
-
-
-
-            # container-run "conversion"
-
-
-
-
-
-
-
-
-
-
-
-            # Note: Workaround for datalad-run, which doesn't provide an option
-            # to unlock existing output files:
-            if lexists(opj(target_dir, 'participants.tsv')):
-                unlock = ["datalad", "unlock", "participants.tsv", ";"]
-            else:
-                unlock = []
-
-            # TODO: Workaround. Couldn't pass an env variable to datalad-run:
             from mock import patch
             with patch.dict('os.environ',
                             {'CBBS_STUDY_SPEC': opj(dataset.path, spec_path)}):
 
-                cmd_str = unlock + \
-                    [
-                     'heudiconv',
-                     '-f', cbbs_heuristic.__file__,
-                     '-s', subject,
-                     '-c', 'dcm2niix',
-                     # TODO decide on the fate of .heudiconv/
-                     # but ATM we need to (re)move it:
-                     # https://github.com/nipy/heudiconv/issues/196
-                     '-o', opj(dataset.path, '.git', 'stupid', basename(ses)),
-                     '-b',
-                     '-a', target_dir,
-                     '-l', '\"\"',
-                     # avoid glory details provided by dcmstack, we have them in
-                     # the aggregated DICOM metadata already
-                     '--minmeta',
-                     '--files', opj(ses, 'dicoms')
-                    ]
-                r = dataset.run(" ".join(cmd_str),
-                                message="DICOM conversion of "
-                                        "session {}.".format(ses))
+                # TODO: Still needed with current (container-)run?
+                # Note: Workaround for datalad-run, which doesn't provide an
+                # option to unlock existing output files:
+                # if lexists(opj(target_dir, 'participants.tsv')):
+                #     unlock = ["datalad", "unlock", "participants.tsv", ";"]
+                # else:
+                #     unlock = []
 
-                # TODO: This isn't nice yet:
-                if all(d['status'] in ['ok', 'notneeded'] for d in r):
-                    yield {'action': 'spec2bids',
-                           'path': ses,
-                           'status': 'ok'}
+                for r in dataset.containers_run(
+                        ['heudiconv',
+                         '-f', cbbs_heuristic.__file__,
+                         '-s', subject,
+                         '-c', 'dcm2niix',
+                         # TODO decide on the fate of .heudiconv/
+                         # but ATM we need to (re)move it:
+                         # https://github.com/nipy/heudiconv/issues/196
+                         '-o',
+                         opj(dataset.path, '.git', 'stupid',
+                             basename(ses)),
+                         '-b',
+                         '-a', target_dir,
+                         '-l', '',
+                         # avoid glory details provided by dcmstack, we have
+                         # them in the aggregated DICOM metadata already
+                         '--minmeta',
+                         '--files', opj(ses, 'dicoms')
+                         ],
+                        container_name="conversion",  # TODO: config
+                        inputs=[opj(ses, 'dicoms'), opj(dataset.path, spec_path)],
+                        outputs=[target_dir],
+                        message="DICOM conversion of "
+                                "session {}.".format(ses),
+                        return_type='generator',
+                ):
 
-                else:
-                    for run_result in r:
-                        if run_result['status'] not in ['ok', 'notneeded']:
-                            yield run_result
-                    yield {'action': 'spec2bids',
-                           'path': ses,
-                           'status': 'error',
-                           'message': "see above"}
+                    # TODO: This isn't nice yet:
+                    if r['status'] in ['ok', 'notneeded']:
+                        yield {'action': 'spec2bids',
+                               'path': ses,
+                               'status': 'ok'}
+
+                    else:
+                        yield r
+                        yield {'action': 'spec2bids',
+                               'path': ses,
+                               'status': 'error',
+                               'message': "see above"}
 
                 # aggregate bids and nifti metadata:
                 dataset.aggregate_metadata(recursive=False,
