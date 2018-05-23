@@ -93,7 +93,7 @@ class CreateStudy(Create):
                                     where='dataset', reload=True)
                 study_ds.save(message='Initial datalad config')
 
-########################## CONTAINER
+########################## CONTAINER TODO: Use datalad-container extension!
 
 
                 # TODO: get the actual container we are currently in
@@ -122,57 +122,56 @@ class CreateStudy(Create):
                 # passed by the caller (which could be datalad-run) via
                 # SINGULARITYENV_DATALAD_CONTAINER:
 
-                add_sibling_dicts = [{
-                    'action': 'add',
-                    'name': 'github-psyinf',
-                    'url': 'https://github.com/psychoinformatics-de/cbbs-imaging-container-import.git',
-                }]
-
-                # REMOVE
-                add_sibling_dicts = []
-
-
-
-                # TODO: Use datalad-containers-add
-
-                container_ds = os.environ.get('DATALAD_CONTAINER')
-                if container_ds:
-                    add_sibling_dicts += {
-                        'action': 'add',
-                        'name': 'psydata',
-                        'url': "http://psydata.ovgu.de/cbbs-imaging/conv-container/.git",
-                        'pushurl': ''
-                    }
-                else:
-                    container_ds = "https://github.com/psychoinformatics-de/cbbs-imaging-container-import.git" #http://psydata.ovgu.de/cbbs-imaging/conv-container/.git"
-
-                    # REMOVE!
-                    add_sibling_dicts.append({
-                        'action': 'add',
-                        'name': 'psydata',
-                        'url': "http://psydata.ovgu.de/cbbs-imaging/conv-container/.git",
-                        'pushurl': ''
-                    })
-
-
-
-                # What if install fails (no network or sth)?
-
-                for r_inst in study_ds.install(
-                        path=".datalad/environments/import-container",
-                        source=container_ds,
-                        # TODO: result config
-                        result_xfm=None,
-                        return_type='generator',
-                        result_filter=EnsureKeyChoice('action', ('install',)) & \
-                                    EnsureKeyChoice('status', ('ok', 'notneeded'))
-                        ):
-                    yield r_inst
-                    subds = Dataset(r_inst['path'])
-
-                for sib in add_sibling_dicts:
-                    # TODO: result config
-                    subds.siblings(**sib)
+                # add_sibling_dicts = [{
+                #     'action': 'add',
+                #     'name': 'github-psyinf',
+                #     'url': 'https://github.com/psychoinformatics-de/cbbs-imaging-container-import.git',
+                # }]
+                #
+                # # REMOVE
+                # add_sibling_dicts = []
+                #
+                #
+                #
+                #
+                # container_ds = os.environ.get('DATALAD_CONTAINER')
+                # if container_ds:
+                #     add_sibling_dicts += {
+                #         'action': 'add',
+                #         'name': 'psydata',
+                #         'url': "http://psydata.ovgu.de/cbbs-imaging/conv-container/.git",
+                #         'pushurl': ''
+                #     }
+                # else:
+                #     container_ds = "https://github.com/psychoinformatics-de/cbbs-imaging-container-import.git" #http://psydata.ovgu.de/cbbs-imaging/conv-container/.git"
+                #
+                #     # REMOVE!
+                #     add_sibling_dicts.append({
+                #         'action': 'add',
+                #         'name': 'psydata',
+                #         'url': "http://psydata.ovgu.de/cbbs-imaging/conv-container/.git",
+                #         'pushurl': ''
+                #     })
+                #
+                #
+                #
+                # # What if install fails (no network or sth)?
+                #
+                # for r_inst in study_ds.install(
+                #         path=".datalad/environments/import-container",
+                #         source=container_ds,
+                #         # TODO: result config
+                #         result_xfm=None,
+                #         return_type='generator',
+                #         result_filter=EnsureKeyChoice('action', ('install',)) & \
+                #                     EnsureKeyChoice('status', ('ok', 'notneeded'))
+                #         ):
+                #     yield r_inst
+                #     subds = Dataset(r_inst['path'])
+                #
+                # for sib in add_sibling_dicts:
+                #     # TODO: result config
+                #     subds.siblings(**sib)
 
 
 ###############################

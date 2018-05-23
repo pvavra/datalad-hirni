@@ -14,6 +14,7 @@ setup(
     # datalad command suite specs from here
     install_requires=[
         'datalad-neuroimaging',
+        'datalad-container',
     ],
     entry_points={
         'datalad.extensions': [

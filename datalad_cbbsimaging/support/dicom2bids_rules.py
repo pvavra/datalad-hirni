@@ -231,8 +231,13 @@ def _guess_run(record):
         prot_parts = re.split('_|-', protocol.lower())
         try:
             idx = prot_parts.index("run")
-            task = prot_parts[idx + 1]
-            return task
+            run = prot_parts[idx + 1]
+            # TODO: Actually check number of runs and do the zero padding
+            # accordingly (prob. still minimum 2 digits)
+            # Q&D:
+            if len(run) == 1:
+                run = "0" + run
+            return run
         except (ValueError, IndexError):
             # default to entire protocol name
             return protocol

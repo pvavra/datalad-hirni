@@ -7,8 +7,8 @@
 # 'comment'
 
 
-class StudySpecHandler(object):
-
-    def __init__(self):
-        pass
+# class StudySpecHandler(object):
+#
+#     def __init__(self):
+#         pass
 

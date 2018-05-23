@@ -69,7 +69,7 @@ class Spec2Bids(Interface):
              session). If an absolute path is given, that file is used for all 
              sessions to be converted!""",
             constraints=EnsureStr() | EnsureNone()),
-        )
+    )
 
     # TODO: Optional uninstall dicom ds afterwards?
 
@@ -127,6 +127,21 @@ class Spec2Bids(Interface):
                 continue
 
             import datalad_cbbsimaging.support.cbbs as cbbs_heuristic
+
+
+
+
+            # container-run "conversion"
+
+
+
+
+
+
+
+
+
+
 
             # Note: Workaround for datalad-run, which doesn't provide an option
             # to unlock existing output files:
