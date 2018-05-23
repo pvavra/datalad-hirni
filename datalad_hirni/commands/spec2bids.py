@@ -129,10 +129,10 @@ class Spec2Bids(Interface):
                 )
                 continue
 
-            import datalad_hirni.support.cbbs as cbbs_heuristic
+            import datalad_hirni.support.hirni_heuristic as heuristic
             from mock import patch
             with patch.dict('os.environ',
-                            {'CBBS_STUDY_SPEC': opj(dataset.path, spec_path)}):
+                            {'HIRNI_STUDY_SPEC': opj(dataset.path, spec_path)}):
 
                 # TODO: Still needed with current (container-)run?
                 # Note: Workaround for datalad-run, which doesn't provide an
@@ -144,7 +144,7 @@ class Spec2Bids(Interface):
 
                 for r in dataset.containers_run(
                         ['heudiconv',
-                         '-f', cbbs_heuristic.__file__,
+                         '-f', heuristic.__file__,
                          '-s', subject,
                          '-c', 'dcm2niix',
                          # TODO decide on the fate of .heudiconv/

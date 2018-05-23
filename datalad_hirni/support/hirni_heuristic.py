@@ -62,13 +62,13 @@ class SpecLoader(object):
     def get_study_spec(self):
         if self._spec is None:
             from os import environ
-            filename = environ.get('CBBS_STUDY_SPEC')
+            filename = environ.get('HIRNI_STUDY_SPEC')
             if filename:
                 self._spec = [d for d in load_stream(filename)]
             else:
                 # TODO: Just raise or try a default location first?
                 raise ValueError("No study specification provided. "
-                                 "Set environment variable CBBS_STUDY_SPEC "
+                                 "Set environment variable HIRNI_STUDY_SPEC "
                                  "to do so.")
         return self._spec
 
