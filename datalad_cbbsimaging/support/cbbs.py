@@ -1,6 +1,44 @@
 import logging
+import lzma
+from simplejson import loads as json_loads
 
 lgr = logging.getLogger(__name__)
+
+
+# Snippet from https://github.com/datalad/datalad to avoid depending on it for
+# just one function:
+def LZMAFile(*args, **kwargs):
+    """A little decorator to overcome a bug in lzma
+
+    A unique to yoh and some others bug with pyliblzma
+    calling dir() helps to avoid AttributeError __exit__
+    see https://bugs.launchpad.net/pyliblzma/+bug/1219296
+    """
+    lzmafile = lzma.LZMAFile(*args, **kwargs)
+    dir(lzmafile)
+    return lzmafile
+
+
+def loads(s, *args, **kwargs):
+    """Helper to log actual value which failed to be parsed"""
+    try:
+        return json_loads(s, *args, **kwargs)
+    except:
+        lgr.error(
+            "Failed to load content from %r with args=%r kwargs=%r"
+            % (s, args, kwargs)
+        )
+        raise
+
+
+def load_stream(fname, compressed=False):
+
+    _open = LZMAFile if compressed else open
+    with _open(fname, mode='r') as f:
+        for line in f:
+            yield loads(line)
+
+# END datalad Snippet
 
 
 def create_key(template, outtype=('nii.gz',), annotation_classes=None):
@@ -24,11 +62,9 @@ class SpecLoader(object):
     def get_study_spec(self):
         if self._spec is None:
             from os import environ
-            import datalad.support.json_py
             filename = environ.get('CBBS_STUDY_SPEC')
             if filename:
-                self._spec = [d for d in
-                              datalad.support.json_py.load_stream(filename)]
+                self._spec = [d for d in load_stream(filename)]
             else:
                 # TODO: Just raise or try a default location first?
                 raise ValueError("No study specification provided. "
