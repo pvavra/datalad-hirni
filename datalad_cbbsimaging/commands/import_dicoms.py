@@ -18,6 +18,10 @@ import logging
 lgr = logging.getLogger('datalad.neuroimaging.import_dicoms')
 
 
+
+# TODO: Commit-Message to contain hint on the imported tarball
+
+
 def _import_dicom_tarball(target_ds, tarball, filename):
 
     # # TODO: doesn't work for updates yet:
@@ -84,6 +88,7 @@ def _create_subds_from_tarball(tarball, targetdir):
 
     importds.aggregate_metadata()
 
+    # TODO: DON'T FAIL! MAY BE EVEN GET FROM SUPER?
     importds.install(path=opj(".datalad", "environments", "import-container"),
                      source="http://psydata.ovgu.de/cbbs-imaging/conv-container/.git")
 

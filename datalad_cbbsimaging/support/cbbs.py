@@ -109,7 +109,7 @@ def infotodict(seqinfo):
 
         # find in spec:
         candidates = [series for series in _spec.get_study_spec()
-                      if str(s.uid) == series['uid']]
+                      if str(s.series_uid) == series['uid']]
         if not candidates:
             raise ValueError("Found no match for seqinfo: %s" % str(s))
         if len(candidates) != 1:
@@ -118,7 +118,7 @@ def infotodict(seqinfo):
         series_spec = candidates[0]
 
         if not validate_spec(series_spec):
-            lgr.debug("Series invalid (%s). Skip.", str(s.uid))
+            lgr.debug("Series invalid (%s). Skip.", str(s.series_uid))
             continue
 
         dirname = filename = "sub-{}".format(series_spec['subject']['value'])

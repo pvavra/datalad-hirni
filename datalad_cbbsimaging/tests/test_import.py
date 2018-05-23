@@ -36,14 +36,15 @@ def test_import_tarball(filename, ds_path):
     subs = ds.subdatasets(fulfilled=True, recursive=True, recursion_limit=None,
                           result_xfm='datasets')
 
-    print(" ### ### ### ###")
-    print("DEBUG: Should contain 'user_defined_session/dicoms/structural':\n"
-          "%s" % [s for s in subs])
-    print(" ### ### ### ###")
-
-
     assert opj(ds.path, 'user_defined_session', 'dicoms') in [s.path for s in subs]
     ok_exists(opj(ds.path, 'user_defined_session', 'studyspec.json'))
+
+    import os
+    print(" ### ### ### ###")
+    print("DEBUG: Should contain leading dir 'structural':\n"
+          "%s" % os.listdir(opj(ds.path, 'user_defined_session', 'dicoms')))
+    print(" ### ### ### ###")
+
     ok_exists(opj(ds.path, 'user_defined_session', 'dicoms', 'structural'))
 
     # now import again, but let the import routine figure out a session name

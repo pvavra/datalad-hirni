@@ -59,6 +59,38 @@ class CreateStudy(Create):
             if r['type'] == 'dataset':
                 study_ds = Dataset(r['path'])
 
+                with open(opj(study_ds.path, '.gitattributes'), 'a') as ga:
+                    # except for hand-picked global metadata, we want anything
+                    # to go into the annex to be able to retract files after
+                    # publication
+                    ga.write('** annex.largefiles=anything\n')
+                    for fn in ('CHANGES', 'README', 'dataset_description.json'):
+                        # but not these
+                        ga.write('{} annex.largefiles=nothing\n'.format(fn))
+                study_ds.add('.gitattributes', to_git=True,
+                             message='Initial annex entry configuration')
+
+                # TODO:
+                # Note: This default is quite a hack. It's using the first four
+                # characters in DICOM's PatientID as subject and the entire
+                # PatientID as session. What's actually needed, is either a
+                # String Formatter providing more sophisticated operations like
+                # slicing (prob. to be shared with datalad's --output-format
+                # logic) or to apply specification rules prior to determining
+                # final location of the imported subdataset.
+                study_ds.config.add('datalad.cbbsimaging.import.session-format',
+                                    "sub-{PatientID:.4}%sses-{PatientID}" %
+                                    os.path.sep,
+                                    where='dataset')
+                study_ds.config.add('datalad.metadata.nativetype', 'bids',
+                                    where='dataset', reload=False)
+                study_ds.config.add('datalad.metadata.nativetype', 'nifti1',
+                                    where='dataset', reload=True)
+                study_ds.save(message='Initial datalad config')
+
+########################## CONTAINER
+
+
                 # TODO: get the actual container we are currently in
                 #       - requires to get info from outside (via ENV may be)
                 #       - but: we do we want to link to the _local_ container?
@@ -113,6 +145,10 @@ class CreateStudy(Create):
                         'pushurl': ''
                     })
 
+
+
+                # What if install fails (no network or sth)?
+
                 for r_inst in study_ds.install(
                         path=".datalad/environments/import-container",
                         source=container_ds,
@@ -129,34 +165,8 @@ class CreateStudy(Create):
                     # TODO: result config
                     subds.siblings(**sib)
 
-                with open(opj(study_ds.path, '.gitattributes'), 'a') as ga:
-                    # except for hand-picked global metadata, we want anything
-                    # to go into the annex to be able to retract files after
-                    # publication
-                    ga.write('** annex.largefiles=anything\n')
-                    for fn in ('CHANGES', 'README', 'dataset_description.json'):
-                        # but not these
-                        ga.write('{} annex.largefiles=nothing\n'.format(fn))
-                study_ds.add('.gitattributes', to_git=True,
-                             message='Initial annex entry configuration')
 
-                # TODO:
-                # Note: This default is quite a hack. It's using the first four
-                # characters in DICOM's PatientID as subject and the entire
-                # PatientID as session. What's actually needed, is either a
-                # String Formatter providing more sophisticated operations like
-                # slicing (prob. to be shared with datalad's --output-format
-                # logic) or to apply specification rules prior to determining
-                # final location of the imported subdataset.
-                study_ds.config.add('datalad.cbbsimaging.import.session-format',
-                                    "sub-{PatientID:.4}%sses-{PatientID}" %
-                                    os.path.sep,
-                                    where='dataset')
-                study_ds.config.add('datalad.metadata.nativetype', 'bids',
-                                    where='dataset', reload=False)
-                study_ds.config.add('datalad.metadata.nativetype', 'nifti1',
-                                    where='dataset', reload=True)
-                study_ds.save(message='Initial datalad config')
+###############################
 
                 yield {
                     'status': 'ok',

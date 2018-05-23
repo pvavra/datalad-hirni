@@ -16,6 +16,15 @@ from datalad.support.param import Parameter
 lgr = logging.getLogger('datalad.neuroimaging.dicom2spec')
 
 
+############################## Build plugin mechanism for Rules finally!
+
+
+
+
+#########################################
+
+
+
 def add_to_spec(ds_metadata, spec_list):
 
     from datalad_cbbsimaging.support.dicom2bids_rules import \
