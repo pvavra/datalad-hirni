@@ -14,13 +14,17 @@ setup(
     # datalad command suite specs from here
     install_requires=[
         'datalad-neuroimaging',
+        'datalad-container',
     ],
-    entry_points = {
+    entry_points={
         'datalad.extensions': [
             # the label in front of '=' is the command suite label
             # the entrypoint can point to any symbol of any name, as long it is
             # valid datalad interface specification (see demo in this extensions
             'cbbsimaging=datalad_cbbsimaging:command_suite',
-        ]
+        ],
+        'datalad.tests': [
+            'cbbsimaging=datalad_cbbsimaging',
+        ],
     },
 )
