@@ -13,7 +13,7 @@ from datalad.support.constraints import EnsureStr
 from datalad.support.exceptions import InsufficientArgumentsError
 from datalad.support.param import Parameter
 
-lgr = logging.getLogger('datalad.neuroimaging.dicom2spec')
+lgr = logging.getLogger('datalad.cbbsimaging.dicom2spec')
 
 
 def add_to_spec(ds_metadata, spec_list):
@@ -89,9 +89,14 @@ class Dicom2Spec(Interface):
                     doc="""path to DICOM files""",
                     constraints=EnsureStr() | EnsureNone()),
             spec=Parameter(
-                    args=("spec",),
+                    args=("-s", "spec",),
                     metavar="SPEC",
                     doc="""file to store the specification in""",
+                    constraints=EnsureStr() | EnsureNone()),
+            use_container=Parameter(
+                    args=("--use-container",),
+                    metavar="CONTAINER",
+                    doc="""name of the container to run the conversion in""",
                     constraints=EnsureStr() | EnsureNone()),
             recursive=recursion_flag,
             # TODO: invalid, since datalad-metadata doesn't support it:
@@ -101,7 +106,11 @@ class Dicom2Spec(Interface):
     @staticmethod
     @datasetmethod(name='cbbs_dicom2spec')
     @eval_results
-    def __call__(path=None, spec=None, dataset=None, recursive=False):
+    def __call__(path=None, spec=None, dataset=None,
+                 use_container=None, recursive=False):
+
+        if use_container:
+            raise NotImplementedError
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec from dicoms")

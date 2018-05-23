@@ -97,22 +97,29 @@ class DefaultRules(object):
     def _rules(self, record):
 
         protocol_name = record.get('ProtocolName', None)
-        if protocol_name in self.runs:
-            self.runs[protocol_name] += 1
-        else:
-            self.runs[protocol_name] = 1
+
+        run = _guess_run(record)
+        if run is None:
+            # count appearances of protocol as a guess:
+            if protocol_name in self.runs:
+                self.runs[protocol_name] += 1
+            else:
+                self.runs[protocol_name] = 1
 
         # TODO: Decide how to RF to apply custom rules. To be done within
         # datalad-neuroimaging, then just a custom one here.
 
         return {
+                # Additional (humanreadable) identification:
+                # SeriesNumber
+                # SeriesDate
+                # SeriesTime
                 'description': record['SeriesDescription'],
                 'comment': '',
                 'subject': apply_bids_label_restrictions(_guess_subject(record)),
-                'session': apply_bids_label_restrictions(protocol_name),
+                'session': apply_bids_label_restrictions(_guess_session(record)),
                 'task': apply_bids_label_restrictions(_guess_task(record)),
-                'run': self.runs[protocol_name],
-                # TODO: BIDS-conform modality; (func, anat, dwi, fmap):
+                'run': apply_bids_label_restrictions(run) if run else self.runs[protocol_name],
                 'modality': apply_bids_label_restrictions(_guess_modality(record)),
                 'data_type': apply_bids_label_restrictions(_guess_type(record)),
                 'id': record.get('SeriesNumber', None),
@@ -157,7 +164,8 @@ def _guess_task(record):
 
     protocol = record.get("ProtocolName", None)
     if protocol:
-        prot_parts = protocol.lower().split('-') + protocol.lower().split('_')
+        import re
+        prot_parts = re.split('_|-', protocol.lower())
         try:
             idx = prot_parts.index("task")
             task = prot_parts[idx + 1]
@@ -174,8 +182,8 @@ def _guess_modality(record):
 
     protocol = record.get("ProtocolName", None)
     if protocol:
-        prot_parts = protocol.lower().split('-') + protocol.lower().split('_')
-
+        import re
+        prot_parts = re.split('_|-', protocol.lower())
         # TODO: enhance (see BIDS spec)
         direct_search_terms = ["t1", "t1w", "t2", "t2w"]
 
@@ -203,7 +211,8 @@ def _guess_type(record):
 
     protocol = record.get("ProtocolName", None)
     if protocol:
-        prot_parts = protocol.lower().split('-') + protocol.lower().split('_')
+        import re
+        prot_parts = re.split('_|-', protocol.lower())
 
         direct_search_terms = ["func", "anat", "fmap", "dwi"]
 
@@ -215,4 +224,47 @@ def _guess_type(record):
     return "func"
 
 
+def _guess_run(record):
+    protocol = record.get("ProtocolName", None)
+    if protocol:
+        import re
+        prot_parts = re.split('_|-', protocol.lower())
+        try:
+            idx = prot_parts.index("run")
+            task = prot_parts[idx + 1]
+            return task
+        except (ValueError, IndexError):
+            # default to entire protocol name
+            return protocol
+    else:
+        # default to entire protocol name
+        return protocol
 
+
+def _guess_session(record):
+
+    protocol = record.get("ProtocolName", None)
+    if protocol:
+        import re
+        match = re.search(r"(?<=ses[_-])([a-zA-Z0-9]+).*", protocol)
+        if match:
+            return match.group(1)
+        else:
+            return None
+    else:
+        return None
+
+# MPRAGE => T1w
+
+
+
+# Philips 3T:
+# SeriesDescription
+#
+
+# SmartBrain_ AHAScout => localizer
+
+# field map/fieldmap  & _check   > fmap
+
+
+# Studydescription: TASK_skdjfdsnfs

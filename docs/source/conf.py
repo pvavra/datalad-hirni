@@ -238,7 +238,7 @@ html_show_sourcelink = False
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'datalad_neuroimagingdoc'
+htmlhelp_basename = 'datalad_cbbsimagingdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -260,7 +260,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'datalad_neuroimaging.tex', u'datalad_neuroimaging Documentation',
+  (master_doc, 'datalad_cbbsimaging.tex', u'datalad_cbbsimaging Documentation',
    u'DataLad team', 'manual'),
 ]
 
