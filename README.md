@@ -8,9 +8,9 @@
 [![Travis tests status](https://secure.travis-ci.org/datalad/datalad-hirni.png?branch=master)](https://travis-ci.org/datalad/datalad-hirni) [![codecov.io](https://codecov.io/github/datalad/datalad-hirni/coverage.svg?branch=master)](https://codecov.io/github/datalad/datalad-hirni?branch=master) [![Documentation](https://readthedocs.org/projects/datalad-hirni/badge/?version=latest)](http://datalad-hirni.rtfd.org) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![GitHub release](https://img.shields.io/github/release/datalad/datalad-hirni.svg)](https://GitHub.com/datalad/datalad-hirni/releases/) [![PyPI version fury.io](https://badge.fury.io/py/datalad-hirni.svg)](https://pypi.python.org/pypi/datalad-hirni/) [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/datalad/datalad-hirni.svg)](http://isitmaintained.com/project/datalad/datalad-hirni "Average time to resolve an issue") [![Percentage of issues still open](http://isitmaintained.com/badge/open/datalad/datalad-hirni.svg)](http://isitmaintained.com/project/datalad/datalad-hirni "Percentage of issues still open")
 
 This extension enhances DataLad (http://datalad.org) with support for
-data processing workflow for neuroimaging research. Please see the [extension
-documentation](http://datalad-hirni.rtfd.org)
-for a description on additional commands and functionality.
+(semi-)automated, reproducible processing of (medical/neuro)imaging data.
+Please see the [extension documentation](http://datalad-hirni.rtfd.org) for a
+description on additional commands and functionality.
 
 For general information on how to use or contribute to DataLad (and this
 extension), please see the [DataLad website](http://datalad.org) or the
