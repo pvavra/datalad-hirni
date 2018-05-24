@@ -43,7 +43,8 @@ def test_import_tarball(src, ds_path):
 
     assert opj(ds.path, 'user_defined_session', 'dicoms') in [s.path for s in subs]
     ok_exists(opj(ds.path, 'user_defined_session', 'studyspec.json'))
-
+    ok_file_under_git(opj(ds.path, 'user_defined_session', 'studyspec.json'),
+                      annexed=False)
     import os
     ok_exists(opj(ds.path, 'user_defined_session', 'dicoms', 'structural'))
 
@@ -56,5 +57,6 @@ def test_import_tarball(src, ds_path):
 
     assert opj(ds.path, 'sub-02', 'dicoms') in [s.path for s in subs]
     ok_exists(opj(ds.path, 'sub-02', 'studyspec.json'))
+    ok_file_under_git(opj(ds.path, 'sub-02', 'studyspec.json'), annexed=False)
     ok_exists(opj(ds.path, 'sub-02', 'dicoms', 'structural'))
 
