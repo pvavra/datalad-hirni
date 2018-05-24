@@ -74,34 +74,15 @@ def _single_session_dicom2bids(label, path):
     ds.install(source=dicoms, path=opj(session, 'dicoms'))
     ds.aggregate_metadata(recursive=True, update_mode='all')
 
-    spec_file = opj(session, 'spec_{label}.json'.format(label=label))
+    spec_file = 'spec_{label}.json'.format(label=label)
     ds.hirni_dicom2spec(path=opj(session, 'dicoms'),
                         spec=spec_file)
 
-    from mock import patch
-    with patch.dict('os.environ',
-                    {'CBBS_STUDY_SPEC': opj(ds.path, spec_file)}):
+    from datalad_container import containers_add
+    ds.containers_add(name="conversion",
+                      url="shub://mih/ohbm2018-training:heudiconv")
 
-        # TODO: datalad-run seems to have trouble in direct mode
-        # (unsaved modifications present).
-        # Probably diff/dirty related
-        ds.run([
-            'heudiconv',
-            '-f', 'cbbs',
-            '-s', subject,
-            '-c', 'dcm2niix',
-            # TODO decide on the fate of .heudiconv/
-            # but ATM we need to (re)move it:
-            # https://github.com/nipy/heudiconv/issues/196
-            '-o', opj(ds.path, '.git', 'stupid', label),
-            '-b',
-            '-a', ds.path,
-            '-l', '',
-            # avoid gory details provided by dcmstack, we have them in
-            # the aggregated DICOM metadata already
-            '--minmeta',
-            '--files', opj(ds.path, session, 'dicoms')],
-                message="DICOM conversion of {} scans".format(label))
+    ds.hirni_spec2bids(session=session, spec_file=spec_file)
 
 
 def test_dicom2bids():

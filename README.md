@@ -5,7 +5,7 @@
     |____/  \__,_| \__| \__,_||_____| \__,_| \__,_|
                                               Hirni
 
-[![Travis tests status](https://secure.travis-ci.org/datalad/datalad-hirni.png?branch=master)](https://travis-ci.org/datalad/datalad-hirni) [![codecov.io](https://codecov.io/github/datalad/datalad-hirni/coverage.svg?branch=master)](https://codecov.io/github/datalad/datalad-hirni?branch=master) [![Documentation](https://readthedocs.org/projects/datalad-hirni/badge/?version=latest)](http://datalad-hirni.rtfd.org) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![GitHub release](https://img.shields.io/github/release/datalad/datalad-hirni.svg)](https://GitHub.com/datalad/datalad-hirni/releases/) [![PyPI version fury.io](https://badge.fury.io/py/datalad-hirni.svg)](https://pypi.python.org/pypi/datalad-hirni/) [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/datalad/datalad-hirni.svg)](http://isitmaintained.com/project/datalad/datalad-hirni "Average time to resolve an issue") [![Percentage of issues still open](http://isitmaintained.com/badge/open/datalad/datalad-hirni.svg)](http://isitmaintained.com/project/datalad/datalad-hirni "Percentage of issues still open")
+[![Travis tests status](https://secure.travis-ci.org/psychoinformatics-de/datalad-hirni.png?branch=master)](https://travis-ci.org/psychoinformatics-de/datalad-hirni) [![codecov.io](https://codecov.io/github/psychoinformatics-de/datalad-hirni/coverage.svg?branch=master)](https://codecov.io/github/psychoinformatics-de/datalad-hirni?branch=master) [![Documentation](https://readthedocs.org/projects/datalad-hirni/badge/?version=latest)](http://datalad-hirni.rtfd.org) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![GitHub release](https://img.shields.io/github/release/psychoinformatics-de/datalad-hirni.svg)](https://GitHub.com/psychoinformatics-de/datalad-hirni/releases/) [![PyPI version fury.io](https://badge.fury.io/py/datalad-hirni.svg)](https://pypi.python.org/pypi/datalad-hirni/) [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/psychoinformatics-de/datalad-hirni.svg)](http://isitmaintained.com/project/psychoinformatics-de/datalad-hirni "Average time to resolve an issue") [![Percentage of issues still open](http://isitmaintained.com/badge/open/psychoinformatics-de/datalad-hirni.svg)](http://isitmaintained.com/project/psychoinformatics-de/datalad-hirni "Percentage of issues still open")
 
 This extension enhances DataLad (http://datalad.org) with support for
 (semi-)automated, reproducible processing of (medical/neuro)imaging data.
@@ -38,7 +38,7 @@ The documentation of this project is found here:
 http://docs.datalad.org/projects/hirni
 
 All bugs, concerns and enhancement requests for this software can be submitted here:
-https://github.com/datalad/datalad-hirni/issues
+https://github.com/psychoinformatics-de/datalad-hirni/issues
 
 If you have a problem or would like to ask a question about how to use DataLad,
 please [submit a question to

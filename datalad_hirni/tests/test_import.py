@@ -18,11 +18,16 @@ from datalad_neuroimaging.tests.utils import get_dicom_dataset, create_dicom_tar
 # May be have to somehow account for direct mode when switching branches.
 # TODO: Narrow down what's broken and make it an issue
 @known_failure_direct_mode
+@with_tempfile(mkdir=True)
 @with_tempfile
-@with_tempfile
-def test_import_tarball(filename, ds_path):
+def test_import_tarball(src, ds_path):
 
-    create_dicom_tarball('structural', filename)
+    filename = opj(src, "structural.tar.gz")
+    ds = get_dicom_dataset(flavor="structural")
+    from datalad.api import export_archive
+    ds.export_archive(filename, archivetype="tar", compression="gz",
+                      missing_content="ignore")
+
     ds = hirni_create_study(ds_path)
 
     # adapt import layout rules for example ds, since hirni default
@@ -40,11 +45,6 @@ def test_import_tarball(filename, ds_path):
     ok_exists(opj(ds.path, 'user_defined_session', 'studyspec.json'))
 
     import os
-    print(" ### ### ### ###")
-    print("DEBUG: Should contain leading dir 'structural':\n"
-          "%s" % os.listdir(opj(ds.path, 'user_defined_session', 'dicoms')))
-    print(" ### ### ### ###")
-
     ok_exists(opj(ds.path, 'user_defined_session', 'dicoms', 'structural'))
 
     # now import again, but let the import routine figure out a session name
