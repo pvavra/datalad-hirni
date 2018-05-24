@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# datalad_neuroimaging documentation build configuration file, created by
+# datalad_hirni documentation build configuration file, created by
 # sphinx-quickstart on Tue Oct 13 08:41:19 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -36,12 +36,12 @@ for setup_py_path in (opj(pardir, 'setup.py'),  # travis
                       opj(pardir, pardir, 'setup.py')):  # RTD
     if exists(setup_py_path):
         sys.path.insert(0, os.path.abspath(dirname(setup_py_path)))
-#        try:
-#            for cmd in ('manpage',):
-#                os.system('{} build_{}'.format(setup_py_path, cmd))
-#        except:
-#            # shut up and do your best
-#            pass
+        try:
+            for cmd in ('manpage',):
+                os.system('{} build_{}'.format(setup_py_path, cmd))
+        except:
+            # shut up and do your best
+            pass
 
 # -- General configuration ------------------------------------------------
 
@@ -83,7 +83,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Datalad for neuroimaging'
+project = u'Datalad for Hirnis'
 copyright = u'2016-2018, DataLad team'
 author = u'DataLad team'
 

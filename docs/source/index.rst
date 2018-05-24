@@ -7,15 +7,25 @@ DataLad extension module for the CBBS imaging platform
    changelog
    acknowledgements
 
+Command manuals
+===============
 
-API
-===
+.. toctree::
+   :maxdepth: 1
+
+   generated/man/datalad-hirni-create-study
+   generated/man/datalad-hirni-import-dcm
+   generated/man/datalad-hirni-dicom2spec
+   generated/man/datalad-hirni-spec2bids
+
+
+Python API
+==========
 
 .. toctree::
    :maxdepth: 1
 
    modref
-
 
 
 Indices and tables
