@@ -129,7 +129,7 @@ def infotoids(seqinfos, outdir):
             'subject': None}
 
 
-def infotodict(seqinfo):
+def infotodict(seqinfo):  # pragma: no cover
     """Heuristic evaluator for determining which runs belong where
 
     allowed template fields - follow python string module:
