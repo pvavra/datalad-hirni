@@ -1,4 +1,7 @@
+"Convert DICOM data to BIDS based on the respective study specification"
+
 __docformat__ = 'restructuredtext'
+
 
 import logging
 from os.path import isabs

@@ -1,3 +1,7 @@
+"""Derive a study specification snippet describing a DICOM series based on the
+DICOM metadata as provided by datalad.
+"""
+
 import logging
 from os.path import exists
 
@@ -22,7 +26,6 @@ lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
 
 #########################################
-
 
 
 def add_to_spec(ds_metadata, spec_list):
@@ -189,6 +192,7 @@ class Dicom2Spec(Interface):
         from datalad.distribution.add import Add
 
         for r in Add.__call__(spec,
+                              to_git=True,
                               save=True,
                               message="[DATALAD-NI] Added study specification "
                                       "snippet for %s" % dataset.path,
