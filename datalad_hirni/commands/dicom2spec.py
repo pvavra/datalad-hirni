@@ -1,3 +1,7 @@
+"""Derive a study specification snippet describing a DICOM series based on the
+DICOM metadata as provided by datalad.
+"""
+
 import logging
 from os.path import exists
 

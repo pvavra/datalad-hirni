@@ -1,3 +1,5 @@
+"""Import a DICOM tarball into a study dataset"""
+
 from six import reraise
 from os import makedirs
 from os.path import join as opj, normpath

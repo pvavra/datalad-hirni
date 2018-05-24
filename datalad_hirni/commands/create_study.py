@@ -1,3 +1,6 @@
+"""Create a study dataset, that a study's raw data will be imported to.
+"""
+
 import logging
 
 from os.path import join as opj
