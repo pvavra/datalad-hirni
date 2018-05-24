@@ -76,7 +76,7 @@ def _single_session_dicom2bids(label, path):
 
     spec_file = 'spec_{label}.json'.format(label=label)
     ds.hirni_dicom2spec(path=opj(session, 'dicoms'),
-                        spec=spec_file)
+                        spec=opj(session, spec_file))
 
     from datalad_container import containers_add
     ds.containers_add(name="conversion",
