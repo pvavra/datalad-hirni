@@ -85,14 +85,11 @@ def _create_subds_from_tarball(tarball, targetdir):
                         where="dataset")
     importds.add(opj(".datalad", "config"), save=True,
                  message="[DATALAD] initial config for DICOM metadata")
-
-    # TODO: ??? Need for session guessing
-
     importds.aggregate_metadata()
 
     # TODO: DON'T FAIL! MAY BE EVEN GET FROM SUPER?
-    importds.install(path=opj(".datalad", "environments", "import-container"),
-                     source="http://psydata.ovgu.de/cbbs-imaging/conv-container/.git")
+    # importds.install(path=opj(".datalad", "environments", "import-container"),
+    #                  source="http://psydata.ovgu.de/cbbs-imaging/conv-container/.git")
 
     return importds
 
@@ -117,7 +114,7 @@ def _guess_session_and_move(ds, target_ds):
 
     from os import rename, makedirs
     from os.path import dirname, lexists
-    # `ses` might consistent of several levels, so `rename` doesn't always
+    # `ses` might consist of several levels, so `rename` doesn't always
     # automatically create the target dir:
     if not lexists(dirname(ses)):
         makedirs(opj(target_ds.path, ses))
@@ -213,8 +210,8 @@ class ImportDicoms(Interface):
         from datalad.api import hirni_dicom2spec
 
         ds.hirni_dicom2spec(path=dicom_ds.path,
-                           spec=normpath(opj(dicom_ds.path, pardir,
-                                             "studyspec.json")))
+                            spec=normpath(opj(dicom_ds.path, pardir,
+                                              "studyspec.json")))
 
         # TODO: yield error results etc.
         yield dict(status='ok',
