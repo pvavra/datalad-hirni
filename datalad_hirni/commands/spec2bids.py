@@ -8,6 +8,7 @@ from os.path import isabs
 from os.path import join as opj
 from os.path import basename
 from os.path import lexists
+from os.path import relpath
 
 from datalad.interface.base import Interface
 from datalad.interface.base import build_doc
@@ -49,7 +50,7 @@ class Spec2Bids(Interface):
     _params_ = dict(
         dataset=Parameter(
             args=("-d", "--dataset"),
-            doc="""studydataset""",
+            doc="""bids dataset""",
             constraints=EnsureDataset() | EnsureNone()),
         session=Parameter(
             args=("-s", "--session",),
@@ -134,8 +135,21 @@ class Spec2Bids(Interface):
 
             import datalad_hirni.support.hirni_heuristic as heuristic
             from mock import patch
+
+            # relative path to spec to be recorded:
+            rel_spec_path = relpath(spec_path, dataset.path) \
+                if isabs(spec_path) else spec_path
+
+            # relative path to not-needed-heudiconv output:
+            from tempfile import mkdtemp
+            rel_trash_path = relpath(mkdtemp(prefix="hirni-tmp-",
+                                             dir=opj(dataset.path, ".git")),
+                                     dataset.path)
+
+            rel_dicom_path = relpath(opj(ses, 'dicoms'), dataset.path)
+
             with patch.dict('os.environ',
-                            {'HIRNI_STUDY_SPEC': opj(dataset.path, spec_path)}):
+                            {'HIRNI_STUDY_SPEC': rel_spec_path}):
 
                 # TODO: Still needed with current (container-)run?
                 # Note: Workaround for datalad-run, which doesn't provide an
@@ -153,22 +167,20 @@ class Spec2Bids(Interface):
                          # TODO decide on the fate of .heudiconv/
                          # but ATM we need to (re)move it:
                          # https://github.com/nipy/heudiconv/issues/196
-                         '-o',
-                         opj(dataset.path, '.git', 'stupid',
-                             basename(ses)),
+                         '-o', rel_trash_path,
                          '-b',
                          '-a', target_dir,
                          '-l', '',
                          # avoid glory details provided by dcmstack, we have
                          # them in the aggregated DICOM metadata already
                          '--minmeta',
-                         '--files', opj(ses, 'dicoms')
+                         '--files', rel_dicom_path
                          ],
                         container_name="conversion",  # TODO: config
-                        inputs=[opj(ses, 'dicoms'), opj(dataset.path, spec_path)],
+                        inputs=[rel_dicom_path, rel_spec_path],
                         outputs=[target_dir],
                         message="DICOM conversion of "
-                                "session {}.".format(ses),
+                                "session {}.".format(basename(ses)),
                         return_type='generator',
                 ):
 
@@ -190,4 +202,4 @@ class Spec2Bids(Interface):
                                            incremental=True)
 
             # remove
-            rmtree(opj(dataset.path, '.git', 'stupid'))
+            rmtree(opj(dataset.path, rel_trash_path))
