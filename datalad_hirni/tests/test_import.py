@@ -32,11 +32,11 @@ def test_import_tarball(src, ds_path):
 
     # adapt import layout rules for example ds, since hirni default
     # doesn't apply:
-    ds.config.set("datalad.hirni.import.session-format",
+    ds.config.set("datalad.hirni.import.acquisition-format",
                   "sub-{PatientID}", where='dataset')
 
     # import into a session defined by the user
-    ds.hirni_import_dcm(path=filename, session='user_defined_session')
+    ds.hirni_import_dcm(path=filename, acquisition_id='user_defined_session')
 
     subs = ds.subdatasets(fulfilled=True, recursive=True, recursion_limit=None,
                           result_xfm='datasets')
@@ -50,7 +50,7 @@ def test_import_tarball(src, ds_path):
 
     # now import again, but let the import routine figure out a session name
     # based on DICOM metadata (ATM just the first occurring PatientID, I think)
-    ds.hirni_import_dcm(path=filename, session=None)
+    ds.hirni_import_dcm(path=filename, acquisition_id=None)
 
     subs = ds.subdatasets(fulfilled=True, recursive=True, recursion_limit=None,
                           result_xfm='datasets')

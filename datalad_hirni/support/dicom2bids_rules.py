@@ -88,13 +88,14 @@ class DefaultRules(object):
         self._dicoms = dicommetadata
         self.runs = dict()
 
-    def __call__(self, subject=None, anon_subject=None):
+    def __call__(self, subject=None, anon_subject=None, session=None):
         spec_dicts = []
         for dicom_dict in self._dicoms:
             spec_dicts.append(self._rules(
                     dicom_dict,
                     subject=subject,
-                    anon_subject=anon_subject))
+                    anon_subject=anon_subject,
+                    session=session))
         return spec_dicts
 
     def _rules(self, record, subject=None, anon_subject=None, session=None):
@@ -188,8 +189,9 @@ def _guess_modality(record):
     if protocol:
         import re
         prot_parts = re.split('_|-', protocol.lower())
-        # TODO: enhance (see BIDS spec)
-        direct_search_terms = ["t1", "t1w", "t2", "t2w", "bold"]
+        # TODO: enhance (see BIDS spec p20)
+        direct_search_terms = ["t1", "t1w", "t2", "t2w",
+                               "t1rho", "t1map", "t2map"]
 
         for m in direct_search_terms:
             if m in prot_parts:

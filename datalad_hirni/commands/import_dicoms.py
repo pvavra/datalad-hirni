@@ -107,7 +107,7 @@ def _create_subds_from_tarball(tarball, targetdir):
     return importds
 
 
-def _guess_session_and_move(ds, target_ds):
+def _guess_acquisition_and_move(ds, target_ds):
     res = ds.metadata(
         reporton='datasets',
         return_type='item-or-list',
@@ -116,7 +116,7 @@ def _guess_session_and_move(ds, target_ds):
     assert isinstance(res, dict)
 
     format_string = \
-        target_ds.config.get("datalad.hirni.import.session-format")
+        target_ds.config.get("datalad.hirni.import.acquisition-format")
     # Note: simply the metadata dict for first Series herein is passed into
     # format ATM.
     # TODO: Eventually make entire result from `metadata` available.
@@ -158,11 +158,11 @@ class ImportDicoms(Interface):
             metavar='PATH',
             doc="""path of the dicom archive to be imported.""",
             constraints=EnsureStr()),
-        session=Parameter(
-            args=("session",),
-            metavar="SESSION",
+        acquisition_id=Parameter(
+            args=("acquisition-id",),
+            metavar="ACQUISITION_ID",
             doc="""session identifier for the imported DICOM files. If not
-            specified, an attempt will be made to derive SESSION from DICOM
+            specified, an attempt will be made to derive ACQUISITION_ID from DICOM
             headers.""",
             nargs="?",
             constraints=EnsureStr() | EnsureNone()),
@@ -177,18 +177,25 @@ class ImportDicoms(Interface):
             metavar="ANON_SUBJECT",
             doc="""TODO""",
             constraints=EnsureStr() | EnsureNone()),
+        session=Parameter(
+                args=("--session",),
+                metavar="SESSION",
+                doc="""session identifier. If not specified, an attempt will be made
+                to derive SESSION from DICOM headers""",
+                constraints=EnsureStr() | EnsureNone()),
+
     )
 
     @staticmethod
     @datasetmethod(name='hirni_import_dcm')
     @eval_results
-    def __call__(path, session=None, dataset=None,
-                 subject=None, anon_subject=None):
+    def __call__(path, acquisition_id=None, dataset=None,
+                 subject=None, anon_subject=None, session=None):
         ds = require_dataset(dataset, check_installed=True,
                              purpose="import DICOM session")
-        if session:
+        if acquisition_id:
             # session was specified => we know where to create subds
-            ses_dir = op.join(ds.path, session)
+            ses_dir = op.join(ds.path, acquisition_id)
             if not op.exists(ses_dir):
                 makedirs(ses_dir)
             # TODO: if exists: needs to be empty?
@@ -204,7 +211,7 @@ class ImportDicoms(Interface):
 
             try:
                 dicom_ds = _create_subds_from_tarball(path, ses_dir)
-                dicom_ds = _guess_session_and_move(dicom_ds, ds)
+                dicom_ds = _guess_acquisition_and_move(dicom_ds, ds)
             except FileExistsError as e:
                 yield dict(status='impossible',
                            path=e.filename,
@@ -228,7 +235,8 @@ class ImportDicoms(Interface):
             spec=op.normpath(op.join(
                 dicom_ds.path, op.pardir, "studyspec.json")),
             subject=subject,
-            anon_subject=anon_subject
+            anon_subject=anon_subject,
+            session=session
         )
 
         # TODO: yield error results etc.

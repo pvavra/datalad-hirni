@@ -59,11 +59,11 @@ class Spec2Bids(Interface):
             args=("-d", "--dataset"),
             doc="""bids dataset""",
             constraints=EnsureDataset() | EnsureNone()),
-        session=Parameter(
-            args=("-s", "--session",),
+        acquisition_id=Parameter(
+            args=("-a", "--acquisition-id",),
             metavar="SESSION",
             nargs="+",
-            doc="""name(s)/path(s) of the session(s) to convert.
+            doc="""name(s)/path(s) of the acquisition(s) to convert.
                 like 'sourcedata/ax20_435'""",
             constraints=EnsureStr() | EnsureNone()),
         target_dir=Parameter(
@@ -77,25 +77,25 @@ class Spec2Bids(Interface):
             doc="""path to the specification file to use for conversion.
              By default this is a file named 'studyspec.json' in the
              session directory. NOTE: If a relative path is given, it is
-             interpreted as a path relative to session's dir (evaluated per
-             session). If an absolute path is given, that file is used for all
-             sessions to be converted!""",
+             interpreted as a path relative to ACQUISITION_ID's dir (evaluated per
+             acquisition). If an absolute path is given, that file is used for all
+             acquisitions to be converted!""",
             constraints=EnsureStr() | EnsureNone()),
     )
 
     @staticmethod
     @datasetmethod(name='hirni_spec2bids')
     @eval_results
-    def __call__(session=None, dataset=None, target_dir=None, spec_file=None):
+    def __call__(acquisition_id=None, dataset=None, target_dir=None, spec_file=None):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="dicoms2bids")
 
         # TODO: Be more flexible in how to specify the session to be converted.
         #       Plus: Validate (subdataset with dicoms).
-        if session is not None:
-            session = assure_list(session)
-            session = [resolve_path(p, dataset) for p in session]
+        if acquisition_id is not None:
+            acquisition_id = assure_list(acquisition_id)
+            acquisition_id = [resolve_path(p, dataset) for p in acquisition_id]
         else:
             raise InsufficientArgumentsError(
                 "insufficient arguments for spec2bids: a session is required")
@@ -107,19 +107,19 @@ class Spec2Bids(Interface):
         if spec_file is None:
             spec_file = "studyspec.json"
 
-        for ses in session:
+        for acq in acquisition_id:
 
             if isabs(spec_file):
                 spec_path = spec_file
             else:
-                spec_path = opj(ses, spec_file)
+                spec_path = opj(acq, spec_file)
 
             if not lexists(spec_path):
                 yield get_status_dict(
                     action='spec2bids',
-                    path=ses,
+                    path=acq,
                     status='impossible',
-                    message="Found no spec for session {}".format(ses)
+                    message="Found no spec for session {}".format(acq)
                 )
                 # TODO: onfailure ignore?
                 continue
@@ -130,7 +130,7 @@ class Spec2Bids(Interface):
             except ValueError as e:
                 yield get_status_dict(
                     action='spec2bids',
-                    path=ses,
+                    path=acq,
                     status='error',
                     message=str(e),
                 )
@@ -147,7 +147,7 @@ class Spec2Bids(Interface):
                                              dir=opj(dataset.path, ".git")),
                                      dataset.path)
 
-            rel_dicom_path = relpath(opj(ses, 'dicoms'), dataset.path)
+            rel_dicom_path = relpath(opj(acq, 'dicoms'), dataset.path)
 
             with patch.dict('os.environ',
                             {'HIRNI_STUDY_SPEC': rel_spec_path}):
@@ -176,20 +176,20 @@ class Spec2Bids(Interface):
                         inputs=[rel_dicom_path, rel_spec_path],
                         outputs=[target_dir],
                         message="DICOM conversion of "
-                                "session {}.".format(basename(ses)),
+                                "session {}.".format(basename(acq)),
                         return_type='generator',
                 ):
 
                     # TODO: This isn't nice yet:
                     if r['status'] in ['ok', 'notneeded']:
                         yield {'action': 'spec2bids',
-                               'path': ses,
+                               'path': acq,
                                'status': 'ok'}
 
                     else:
                         yield r
                         yield {'action': 'spec2bids',
-                               'path': ses,
+                               'path': acq,
                                'status': 'error',
                                'message': "see above"}
 

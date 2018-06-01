@@ -28,7 +28,7 @@ lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
 
 def add_to_spec(ds_metadata, spec_list, basepath,
-                subject=None, anon_subject=None):
+                subject=None, anon_subject=None, session=None):
 
     from datalad_hirni.support.dicom2bids_rules import \
         get_rules_from_metadata, series_is_valid  # TODO: RF?
@@ -61,7 +61,8 @@ def add_to_spec(ds_metadata, spec_list, basepath,
         rule = rule_cls(ds_metadata['metadata']['dicom']['Series'])
         for idx, values in zip(range(len(base_list)),
                                rule(subject=subject,
-                                    anon_subject=anon_subject)
+                                    anon_subject=anon_subject,
+                                    session=session)
                                ):
             for k in values.keys():
                 base_list[idx][k] = {'value': values[k],
@@ -119,7 +120,12 @@ class Dicom2Spec(Interface):
                     metavar="ANON_SUBJECT",
                     doc="""TODO""",
                     constraints=EnsureStr() | EnsureNone()),
-
+            session=Parameter(
+                    args=("--session",),
+                    metavar="SESSION",
+                    doc="""session identifier. If not specified, an attempt will be made 
+                    to derive SESSION from DICOM headers""",
+                    constraints=EnsureStr() | EnsureNone()),
             recursive=recursion_flag,
             # TODO: invalid, since datalad-metadata doesn't support it:
             # recursion_limit=recursion_limit,
@@ -129,7 +135,7 @@ class Dicom2Spec(Interface):
     @datasetmethod(name='hirni_dicom2spec')
     @eval_results
     def __call__(path=None, spec=None, dataset=None, subject=None,
-                 anon_subject=None, recursive=False):
+                 anon_subject=None, session=None, recursive=False):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec from dicoms")
@@ -198,7 +204,8 @@ class Dicom2Spec(Interface):
                                            spec_series_list,
                                            dataset.path,
                                            subject=subject,
-                                           anon_subject=anon_subject)
+                                           anon_subject=anon_subject,
+                                           session=session)
 
         if not found_some:
             yield dict(status='impossible',

@@ -68,21 +68,21 @@ def _single_session_dicom2bids(label, path):
     ds = Dataset.create(path)
 
     subject = "02"
-    session = "{sub}_{label}".format(sub=subject, label=label)
+    acquisition = "{sub}_{label}".format(sub=subject, label=label)
 
     dicoms = get_dicom_dataset(label)
-    ds.install(source=dicoms, path=opj(session, 'dicoms'))
+    ds.install(source=dicoms, path=opj(acquisition, 'dicoms'))
     ds.aggregate_metadata(recursive=True, update_mode='all')
 
     spec_file = 'spec_{label}.json'.format(label=label)
-    ds.hirni_dicom2spec(path=opj(session, 'dicoms'),
-                        spec=opj(session, spec_file))
+    ds.hirni_dicom2spec(path=opj(acquisition, 'dicoms'),
+                        spec=opj(acquisition, spec_file))
 
     from datalad_container import containers_add
     ds.containers_add(name="conversion",
                       url="shub://mih/ohbm2018-training:heudiconv")
 
-    ds.hirni_spec2bids(session=session, spec_file=spec_file)
+    ds.hirni_spec2bids(acquisition_id=acquisition, spec_file=spec_file)
 
 
 def test_dicom2bids():

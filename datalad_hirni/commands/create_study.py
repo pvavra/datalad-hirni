@@ -87,7 +87,7 @@ class CreateStudy(Create):
                 # slicing (prob. to be shared with datalad's --output-format
                 # logic) or to apply specification rules prior to determining
                 # final location of the imported subdataset.
-                study_ds.config.add('datalad.hirni.import.session-format',
+                study_ds.config.add('datalad.hirni.import.acquisition-format',
                                     "{PatientID}",
                                     where='dataset')
                 study_ds.config.add('datalad.metadata.nativetype', 'bids',
