@@ -61,7 +61,7 @@ class Spec2Bids(Interface):
             constraints=EnsureDataset() | EnsureNone()),
         acquisition_id=Parameter(
             args=("-a", "--acquisition-id",),
-            metavar="SESSION",
+            metavar="ACQUISITION_ID",
             nargs="+",
             doc="""name(s)/path(s) of the acquisition(s) to convert.
                 like 'sourcedata/ax20_435'""",
