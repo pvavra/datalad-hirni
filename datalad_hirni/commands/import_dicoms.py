@@ -90,13 +90,13 @@ def _create_subds_from_tarball(tarball, targetdir):
     # (But vice versa while reading IIRC)
 
     importds.config.add(
-            var="datalad.metadata.maxfieldsize",
-            value='10000000',
-            where="dataset")
+        var="datalad.metadata.maxfieldsize",
+        value='10000000',
+        where="dataset")
     importds.add(
-            op.join(".datalad", "config"),
-            save=True,
-            message="[DATALAD] initial config for DICOM metadata")
+        op.join(".datalad", "config"),
+        save=True,
+        message="[HIRNI] initial config for DICOM metadata")
     importds.aggregate_metadata()
 
     # TODO: DON'T FAIL! MAY BE EVEN GET FROM SUPER?
@@ -136,12 +136,6 @@ def _guess_session_and_move(ds, target_ds):
 
     return Dataset(op.join(target_ds.path, ses, 'dicoms'))
 
-# TODOs:
-#
-# subject layer anon
-# dl issue metadata => refcommit
-# bids-session/task guessing
-
 
 @build_doc
 class ImportDicoms(Interface):
@@ -172,12 +166,24 @@ class ImportDicoms(Interface):
             headers.""",
             nargs="?",
             constraints=EnsureStr() | EnsureNone()),
+        subject=Parameter(
+            args=("--subject",),
+            metavar="SUBJECT",
+            doc="""subject identifier. If not specified, an attempt will be made 
+            to derive SUBJECT from DICOM headers""",
+            constraints=EnsureStr() | EnsureNone()),
+        anon_subject=Parameter(
+            args=("--anon-subject",),
+            metavar="ANON_SUBJECT",
+            doc="""TODO""",
+            constraints=EnsureStr() | EnsureNone()),
     )
 
     @staticmethod
     @datasetmethod(name='hirni_import_dcm')
     @eval_results
-    def __call__(path, session=None, dataset=None):
+    def __call__(path, session=None, dataset=None,
+                 subject=None, anon_subject=None):
         ds = require_dataset(dataset, check_installed=True,
                              purpose="import DICOM session")
         if session:
@@ -199,26 +205,36 @@ class ImportDicoms(Interface):
             try:
                 dicom_ds = _create_subds_from_tarball(path, ses_dir)
                 dicom_ds = _guess_session_and_move(dicom_ds, ds)
-            except Exception as e:
-                # remove tmp and reraise
-                lgr.debug("Exception branch: Killing temp dataset ...")
-
+            except FileExistsError as e:
+                yield dict(status='impossible',
+                           path=e.filename,
+                           type='file',
+                           action='import DICOM tarball',
+                           logger=lgr,
+                           message='%s already exists' % e.filename)
                 rmtree(ses_dir)
-                # TODO: reraise()
-                raise
+
+            finally:
+                if op.exists(ses_dir):
+                    lgr.debug("Killing temp dataset at %s ...", ses_dir)
+                    rmtree(ses_dir)
 
         ds.add(dicom_ds.path)
         ds.aggregate_metadata(dicom_ds.path, incremental=True,
                               update_mode='target')
 
         ds.hirni_dicom2spec(
-                path=dicom_ds.path,
-                spec=op.normpath(op.join(
-                    dicom_ds.path, op.pardir, "studyspec.json")))
+            path=dicom_ds.path,
+            spec=op.normpath(op.join(
+                dicom_ds.path, op.pardir, "studyspec.json")),
+            subject=subject,
+            anon_subject=anon_subject
+        )
 
         # TODO: yield error results etc.
-        yield dict(status='ok',
-                   path=dicom_ds.path,
-                   type='dataset',
-                   action='import DICOM tarball',
-                   logger=lgr)
+        yield dict(
+            status='ok',
+            path=dicom_ds.path,
+            type='dataset',
+            action='import DICOM tarball',
+            logger=lgr)

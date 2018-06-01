@@ -3,12 +3,15 @@ DICOM metadata as provided by datalad.
 """
 
 import logging
-from os.path import exists, relpath
+import os.path as op
 
 from datalad.coreapi import metadata
-from datalad.distribution.dataset import EnsureDataset, datasetmethod, \
-    require_dataset, resolve_path
-from datalad.interface.base import Interface, build_doc
+from datalad.distribution.dataset import EnsureDataset
+from datalad.distribution.dataset import datasetmethod
+from datalad.distribution.dataset import require_dataset
+from datalad.distribution.dataset import resolve_path
+from datalad.interface.base import Interface
+from datalad.interface.base import build_doc
 from datalad.interface.common_opts import recursion_flag
 from datalad.interface.utils import eval_results
 from datalad.support import json_py
@@ -21,14 +24,11 @@ lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
 
 ############################## Build plugin mechanism for Rules finally!
-
-
-
-
 #########################################
 
 
-def add_to_spec(ds_metadata, spec_list, basepath):
+def add_to_spec(ds_metadata, spec_list, basepath,
+                subject=None, anon_subject=None):
 
     from datalad_hirni.support.dicom2bids_rules import \
         get_rules_from_metadata, series_is_valid  # TODO: RF?
@@ -44,7 +44,7 @@ def add_to_spec(ds_metadata, spec_list, basepath):
             # "approved flag", since they are automatically managed
             'type': 'dicomseries',
             'status': None,  # TODO: process state convention; flags
-            'location': relpath(ds_metadata['path'], basepath),
+            'location': op.relpath(ds_metadata['path'], basepath),
             'uid': series['SeriesInstanceUID'],
             'dataset_id': ds_metadata['dsid'],
             'dataset_refcommit': ds_metadata['refcommit'],
@@ -59,7 +59,10 @@ def add_to_spec(ds_metadata, spec_list, basepath):
             ds_metadata['metadata']['dicom']['Series'])
     for rule_cls in rules:
         rule = rule_cls(ds_metadata['metadata']['dicom']['Series'])
-        for idx, values in zip(range(len(base_list)), rule()):
+        for idx, values in zip(range(len(base_list)),
+                               rule(subject=subject,
+                                    anon_subject=anon_subject)
+                               ):
             for k in values.keys():
                 base_list[idx][k] = {'value': values[k],
                                      'approved': False}
@@ -105,6 +108,18 @@ class Dicom2Spec(Interface):
                     metavar="SPEC",
                     doc="""file to store the specification in""",
                     constraints=EnsureStr() | EnsureNone()),
+            subject=Parameter(
+                    args=("--subject",),
+                    metavar="SUBJECT",
+                    doc="""subject identifier. If not specified, an attempt will be made 
+                        to derive SUBJECT from DICOM headers""",
+                    constraints=EnsureStr() | EnsureNone()),
+            anon_subject=Parameter(
+                    args=("--anon-subject",),
+                    metavar="ANON_SUBJECT",
+                    doc="""TODO""",
+                    constraints=EnsureStr() | EnsureNone()),
+
             recursive=recursion_flag,
             # TODO: invalid, since datalad-metadata doesn't support it:
             # recursion_limit=recursion_limit,
@@ -113,7 +128,8 @@ class Dicom2Spec(Interface):
     @staticmethod
     @datasetmethod(name='hirni_dicom2spec')
     @eval_results
-    def __call__(path=None, spec=None, dataset=None, recursive=False):
+    def __call__(path=None, spec=None, dataset=None, subject=None,
+                 anon_subject=None, recursive=False):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec from dicoms")
@@ -136,8 +152,8 @@ class Dicom2Spec(Interface):
         else:
             spec = resolve_path(spec, dataset)
 
-        spec_series_list = [r for r in json_py.load_stream(spec)] if exists(spec) \
-            else list()
+        spec_series_list = \
+            [r for r in json_py.load_stream(spec)] if op.exists(spec) else list()
 
         # get dataset level metadata:
         found_some = False
@@ -178,7 +194,11 @@ class Dicom2Spec(Interface):
                 continue
 
             found_some = True
-            spec_series_list = add_to_spec(meta, spec_series_list, dataset.path)
+            spec_series_list = add_to_spec(meta,
+                                           spec_series_list,
+                                           dataset.path,
+                                           subject=subject,
+                                           anon_subject=anon_subject)
 
         if not found_some:
             yield dict(status='impossible',
@@ -201,8 +221,9 @@ class Dicom2Spec(Interface):
         for r in Add.__call__(spec,
                               to_git=True,
                               save=True,
-                              message="[DATALAD-HIRNI] Added study specification "
-                                      "snippet for %s" % relpath(path[0], dataset.path),
+                              message="[HIRNI] Added study specification "
+                                      "snippet for %s" %
+                                      op.relpath(path[0], dataset.path),
                               return_type='generator',
                               result_renderer='disabled'):
             if r.get('status', None) not in ['ok', 'notneeded']:
@@ -223,8 +244,3 @@ class Dicom2Spec(Interface):
                            type='file',
                            action='dicom2spec',
                            logger=lgr)
-
-
-
-
-
