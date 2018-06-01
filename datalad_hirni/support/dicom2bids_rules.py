@@ -88,13 +88,16 @@ class DefaultRules(object):
         self._dicoms = dicommetadata
         self.runs = dict()
 
-    def __call__(self):
+    def __call__(self, subject=None, anon_subject=None):
         spec_dicts = []
         for dicom_dict in self._dicoms:
-            spec_dicts.append(self._rules(dicom_dict))
+            spec_dicts.append(self._rules(
+                    dicom_dict,
+                    subject=subject,
+                    anon_subject=anon_subject))
         return spec_dicts
 
-    def _rules(self, record):
+    def _rules(self, record, subject=None, anon_subject=None):
 
         protocol_name = record.get('ProtocolName', None)
 
@@ -116,7 +119,8 @@ class DefaultRules(object):
                 # SeriesTime
                 'description': record['SeriesDescription'],
                 'comment': '',
-                'subject': apply_bids_label_restrictions(_guess_subject(record)),
+                'subject': apply_bids_label_restrictions(_guess_subject(record) if not subject else subject),
+                'anon_subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
                 'session': apply_bids_label_restrictions(_guess_session(record)),
                 'task': apply_bids_label_restrictions(_guess_task(record)),
                 'run': apply_bids_label_restrictions(run) if run else self.runs[protocol_name],

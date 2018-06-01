@@ -133,12 +133,6 @@ def _guess_session_and_move(ds, target_ds):
 
     return Dataset(op.join(target_ds.path, ses, 'dicoms'))
 
-# TODOs:
-#
-# subject layer anon
-# dl issue metadata => refcommit
-# bids-session/task guessing
-
 
 @build_doc
 class ImportDicoms(Interface):
@@ -169,12 +163,24 @@ class ImportDicoms(Interface):
             headers.""",
             nargs="?",
             constraints=EnsureStr() | EnsureNone()),
+        subject=Parameter(
+            args=("--subject",),
+            metavar="SUBJECT",
+            doc="""subject identifier. If not specified, an attempt will be made 
+            to derive SUBJECT from DICOM headers""",
+            constraints=EnsureStr() | EnsureNone()),
+        anon_subject=Parameter(
+            args=("--anon-subject",),
+            metavar="ANON_SUBJECT",
+            doc="""TODO""",
+            constraints=EnsureStr() | EnsureNone()),
     )
 
     @staticmethod
     @datasetmethod(name='hirni_import_dcm')
     @eval_results
-    def __call__(path, session=None, dataset=None):
+    def __call__(path, session=None, dataset=None,
+                 subject=None, anon_subject=None):
         ds = require_dataset(dataset, check_installed=True,
                              purpose="import DICOM session")
         if session:
@@ -211,7 +217,10 @@ class ImportDicoms(Interface):
         ds.hirni_dicom2spec(
                 path=dicom_ds.path,
                 spec=op.normpath(op.join(
-                    dicom_ds.path, op.pardir, "studyspec.json")))
+                    dicom_ds.path, op.pardir, "studyspec.json")),
+                subject=subject,
+                anon_subject=anon_subject
+        )
 
         # TODO: yield error results etc.
         yield dict(status='ok',
