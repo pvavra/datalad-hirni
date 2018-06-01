@@ -90,10 +90,6 @@ class CreateStudy(Create):
                 study_ds.config.add('datalad.hirni.import.acquisition-format',
                                     "{PatientID}",
                                     where='dataset')
-                study_ds.config.add('datalad.metadata.nativetype', 'bids',
-                                    where='dataset', reload=False)
-                study_ds.config.add('datalad.metadata.nativetype', 'nifti1',
-                                    where='dataset', reload=True)
                 study_ds.save(message='Initial datalad config')
 
 ########################## CONTAINER TODO: Use datalad-container extension!
