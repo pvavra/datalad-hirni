@@ -203,7 +203,7 @@ def _guess_modality(record):
                                "flash", "pd", "pdmap", "pdt2", "inplanet1",
                                "inplanet2", "angio", "dwi", "phasediff",
                                "phase1", "phase2", "magnitude1", "magnitude2",
-                               "fieldmap", "epi", "meg"]
+                               "fieldmap", "epi", "meg", "bold"]
 
         for m in direct_search_terms:
             if m in prot_parts:
