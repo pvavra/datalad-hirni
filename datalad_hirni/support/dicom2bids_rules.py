@@ -213,44 +213,6 @@ def _guess_modality(record):
     return None
 
 
-# TODO kill this, if we have modality the type is determined via a fixed mapping
-def _guess_type(record):
-    # Note: Yarik uses such a mapping: should/could we too? (dbic_bids heuristic)
-    # image_data_type = s.image_type[2]
-    # image_type_seqtype = {
-    #     'P': 'fmap',   # phase
-    #     'FMRI': 'func',
-    #     'MPR': 'anat',
-    #     # 'M': 'func',  "magnitude"  -- can be for scout, anat, bold, fmap
-    #     'DIFFUSION': 'dwi',
-    #     'MIP_SAG': 'anat',  # angiography
-    #     'MIP_COR': 'anat',  # angiography
-    #     'MIP_TRA': 'anat',  # angiography
-    # }.get(image_data_type, None)
-
-    protocol = record.get("ProtocolName", None)
-    if protocol:
-        import re
-        prot_parts = re.split('_|-', protocol.lower())
-
-        direct_search_terms = ["func", "anat", "fmap", "dwi"]
-
-        for m in direct_search_terms:
-            if m in prot_parts:
-                return m
-
-        for m in ["bold"]:
-            if m in prot_parts:
-                return "func"
-
-        for m in ["t1", "t1w", "t2", "t2w", "t1rho", "t1map", "t2map"]:  # bids: p20
-            if m in prot_parts:
-                return "anat"
-
-    # no idea yet;
-    return None
-
-
 def _guess_run(record):
     protocol = record.get("ProtocolName", None)
     if protocol:
