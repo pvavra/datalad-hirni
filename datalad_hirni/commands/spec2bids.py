@@ -29,6 +29,9 @@ from datalad_container import containers_run
 
 import datalad_hirni.support.hirni_heuristic as heuristic
 
+# bound dataset method
+import datalad.metadata.aggregate
+
 import logging
 lgr = logging.getLogger("datalad.hirni.spec2bids")
 
