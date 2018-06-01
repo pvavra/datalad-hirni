@@ -103,11 +103,11 @@ def validate_spec(spec):
         raise ValueError("Image series specification is empty.")
 
     # check converter
-    if spec['converter']['value'] == 'ignore':
+    converter = get_specval(spec, 'converter')
+    if converter == 'ignore':
         lgr.debug("Skip series %s (marked 'ignore' in spec)", spec['uid'])
         return False
-
-    if spec['converter']['value'] != 'heudiconv':
+    if converter != 'heudiconv':
         lgr.debug("Skip series %s since it's not supposed to be converted by "
                   "heudiconv.", spec['uid'])
         return False
@@ -120,25 +120,23 @@ def validate_spec(spec):
         if k in ['type', 'status', 'location', 'uid', 'dataset_id',
                  'dataset_refcommit']:
             continue
-        if not spec[k]['value']:
+        if 'value' not in spec[k]:
             lgr.warning("DICOM series specification (UID: {uid}) has no value "
                         "for key '{key}'.".format(uid=spec['uid'], key=k))
+            return False
 
     if spec['type'] != 'dicomseries':
-        raise ValueError("Specification not of type 'dicomseries'.")
+        lgr.warning("Specification not of type 'dicomseries'.")
+        return False
 
     if 'uid' not in spec.keys() or not spec['uid']:
-        raise ValueError("Invalid image series UID.")
+        lgr.warning("Missing image series UID.")
+        return False
 
-    # subject
-    if 'subject' not in spec.keys() or not spec['subject']['value']:
-        raise ValueError("Found no subject in specification for series %s." %
-                         spec['subject'])
-
-    # data type
-    if 'bids_modality' not in spec.keys() or not spec['bids_modality']['value']:
-        raise ValueError("Found no data modality in specification for series %s." %
-                         spec['bids_modality'])
+    for var in ('subject', 'bids_modality'):
+        if not has_specval(spec, var):
+            lgr.warning("Missing specification value '%s'", var)
+            return False
 
     return True
 
