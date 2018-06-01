@@ -19,6 +19,9 @@ from datalad.interface.utils import eval_results
 from datalad.distribution.create import Create
 from datalad.utils import rmtree
 
+# bound dataset method
+import datalad_hirni.commands.dicom2spec
+
 import logging
 lgr = logging.getLogger('datalad.neuroimaging.import_dicoms')
 
