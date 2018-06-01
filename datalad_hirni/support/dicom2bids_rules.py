@@ -97,7 +97,7 @@ class DefaultRules(object):
                     anon_subject=anon_subject))
         return spec_dicts
 
-    def _rules(self, record, subject=None, anon_subject=None):
+    def _rules(self, record, subject=None, anon_subject=None, session=None):
 
         protocol_name = record.get('ProtocolName', None)
 
@@ -121,7 +121,7 @@ class DefaultRules(object):
                 'comment': '',
                 'subject': apply_bids_label_restrictions(_guess_subject(record) if not subject else subject),
                 'anon_subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
-                'session': apply_bids_label_restrictions(_guess_session(record)),
+                'session': apply_bids_label_restrictions(_guess_session(record) if not session else session),
                 'task': apply_bids_label_restrictions(_guess_task(record)),
                 'run': apply_bids_label_restrictions(run) if run else self.runs[protocol_name],
                 'modality': apply_bids_label_restrictions(_guess_modality(record)),
@@ -224,9 +224,13 @@ def _guess_type(record):
             if m in prot_parts:
                 return m
 
-        for m in ["t1", "t1w", "t2", "t2w", "bold"]:
+        for m in ["bold"]:
             if m in prot_parts:
                 return "func"
+
+        for m in ["t1", "t1w", "t2", "t2w", "t1rho", "t1map", "t2map"]:  # bids: p20
+            if m in prot_parts:
+                return "anat"
 
     # no idea yet;
     return None
