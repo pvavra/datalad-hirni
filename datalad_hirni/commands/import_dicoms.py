@@ -87,13 +87,13 @@ def _create_subds_from_tarball(tarball, targetdir):
     # (But vice versa while reading IIRC)
 
     importds.config.add(
-            var="datalad.metadata.maxfieldsize",
-            value='10000000',
-            where="dataset")
+        var="datalad.metadata.maxfieldsize",
+        value='10000000',
+        where="dataset")
     importds.add(
-            op.join(".datalad", "config"),
-            save=True,
-            message="[DATALAD] initial config for DICOM metadata")
+        op.join(".datalad", "config"),
+        save=True,
+        message="[HIRNI] initial config for DICOM metadata")
     importds.aggregate_metadata()
 
     # TODO: DON'T FAIL! MAY BE EVEN GET FROM SUPER?
@@ -215,16 +215,17 @@ class ImportDicoms(Interface):
                               update_mode='target')
 
         ds.hirni_dicom2spec(
-                path=dicom_ds.path,
-                spec=op.normpath(op.join(
-                    dicom_ds.path, op.pardir, "studyspec.json")),
-                subject=subject,
-                anon_subject=anon_subject
+            path=dicom_ds.path,
+            spec=op.normpath(op.join(
+                dicom_ds.path, op.pardir, "studyspec.json")),
+            subject=subject,
+            anon_subject=anon_subject
         )
 
         # TODO: yield error results etc.
-        yield dict(status='ok',
-                   path=dicom_ds.path,
-                   type='dataset',
-                   action='import DICOM tarball',
-                   logger=lgr)
+        yield dict(
+            status='ok',
+            path=dicom_ds.path,
+            type='dataset',
+            action='import DICOM tarball',
+            logger=lgr)
