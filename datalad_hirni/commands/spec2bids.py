@@ -3,7 +3,6 @@
 __docformat__ = 'restructuredtext'
 
 
-import logging
 from os.path import isabs
 from os.path import join as opj
 from os.path import basename
@@ -13,18 +12,24 @@ from os.path import relpath
 from datalad.interface.base import Interface
 from datalad.interface.base import build_doc
 from datalad.support.param import Parameter
-from datalad.distribution.dataset import datasetmethod, EnsureDataset, \
-    require_dataset, resolve_path
+from datalad.distribution.dataset import datasetmethod
+from datalad.distribution.dataset import EnsureDataset
+from datalad.distribution.dataset import require_dataset
+from datalad.distribution.dataset import resolve_path
+from datalad.interface.results import get_status_dict
 from datalad.interface.utils import eval_results
 from datalad.support.constraints import EnsureStr
 from datalad.support.constraints import EnsureNone
 from datalad.support.exceptions import InsufficientArgumentsError
-from datalad.coreapi import run
+from datalad.support.json_py import load_stream
+from datalad.utils import assure_list
+from datalad.utils import rmtree
+
 from datalad_container import containers_run
 
-from datalad.interface.results import get_status_dict
+import datalad_hirni.support.hirni_heuristic as heuristic
 
-
+import logging
 lgr = logging.getLogger("datalad.hirni.spec2bids")
 
 
@@ -33,7 +38,6 @@ def _get_subject_from_spec(file_):
     # TODO: this is assuming a session spec snippet.
     # Need to elaborate
 
-    from datalad.support.json_py import load_stream
     unique_subs = set([d['subject']['value']
                        for d in load_stream(file_)
                        if 'subject' in d.keys()])
@@ -61,22 +65,20 @@ class Spec2Bids(Interface):
             constraints=EnsureStr() | EnsureNone()),
         target_dir=Parameter(
             args=("-t", "--target-dir"),
-            doc="""Root dir of the BIDS dataset. Defaults to the root 
+            doc="""Root dir of the BIDS dataset. Defaults to the root
             dir of the study dataset""",
             constraints=EnsureStr() | EnsureNone()),
         spec_file=Parameter(
             args=("--spec-file",),
             metavar="SPEC_FILE",
             doc="""path to the specification file to use for conversion.
-             By default this is a file named 'studyspec.json' in the 
-             session directory. NOTE: If a relative path is given, it is 
+             By default this is a file named 'studyspec.json' in the
+             session directory. NOTE: If a relative path is given, it is
              interpreted as a path relative to session's dir (evaluated per
-             session). If an absolute path is given, that file is used for all 
+             session). If an absolute path is given, that file is used for all
              sessions to be converted!""",
             constraints=EnsureStr() | EnsureNone()),
     )
-
-    # TODO: Optional uninstall dicom ds afterwards?
 
     @staticmethod
     @datasetmethod(name='hirni_spec2bids')
@@ -85,8 +87,6 @@ class Spec2Bids(Interface):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="dicoms2bids")
-
-        from datalad.utils import assure_list, rmtree
 
         # TODO: Be more flexible in how to specify the session to be converted.
         #       Plus: Validate (subdataset with dicoms).
@@ -113,10 +113,10 @@ class Spec2Bids(Interface):
 
             if not lexists(spec_path):
                 yield get_status_dict(
-                        action='spec2bids',
-                        path=ses,
-                        status='impossible',
-                        message="Found no spec for session {}".format(ses)
+                    action='spec2bids',
+                    path=ses,
+                    status='impossible',
+                    message="Found no spec for session {}".format(ses)
                 )
                 # TODO: onfailure ignore?
                 continue
@@ -126,16 +126,14 @@ class Spec2Bids(Interface):
                 subject = _get_subject_from_spec(spec_path)
             except ValueError as e:
                 yield get_status_dict(
-                        action='spec2bids',
-                        path=ses,
-                        status='error',
-                        message=str(e),
+                    action='spec2bids',
+                    path=ses,
+                    status='error',
+                    message=str(e),
                 )
                 continue
 
-            import datalad_hirni.support.hirni_heuristic as heuristic
             from mock import patch
-
             # relative path to spec to be recorded:
             rel_spec_path = relpath(spec_path, dataset.path) \
                 if isabs(spec_path) else spec_path
@@ -151,17 +149,12 @@ class Spec2Bids(Interface):
             with patch.dict('os.environ',
                             {'HIRNI_STUDY_SPEC': rel_spec_path}):
 
-                # TODO: Still needed with current (container-)run?
-                # Note: Workaround for datalad-run, which doesn't provide an
-                # option to unlock existing output files:
-                # if lexists(opj(target_dir, 'participants.tsv')):
-                #     unlock = ["datalad", "unlock", "participants.tsv", ";"]
-                # else:
-                #     unlock = []
-
                 for r in dataset.containers_run(
                         ['heudiconv',
+                         # XXX absolute path will make rerun on other system
+                         # impossible -- hard to avoid
                          '-f', heuristic.__file__,
+                         # leaves identifying info in run record
                          '-s', subject,
                          '-c', 'dcm2niix',
                          # TODO decide on the fate of .heudiconv/

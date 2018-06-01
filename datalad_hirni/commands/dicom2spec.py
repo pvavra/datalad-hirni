@@ -191,6 +191,9 @@ class Dicom2Spec(Interface):
             return
 
         lgr.debug("Storing specification (%s)", spec)
+        # store as a stream (one record per file) to be able to
+        # easily concat files without having to parse them, or
+        # process them line by line without having to fully parse them
         json_py.dump2stream(spec_series_list, spec)
 
         from datalad.distribution.add import Add

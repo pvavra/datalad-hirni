@@ -1,43 +1,46 @@
 """Import a DICOM tarball into a study dataset"""
 
-from six import reraise
 from os import makedirs
-from os.path import join as opj, normpath
-from datalad.consts import ARCHIVES_SPECIAL_REMOTE, DATALAD_SPECIAL_REMOTES_UUIDS
+from os import rename
+import os.path as op
+from datalad.consts import ARCHIVES_SPECIAL_REMOTE
+from datalad.consts import DATALAD_SPECIAL_REMOTES_UUIDS
 from datalad.interface.base import build_doc, Interface
 from datalad.support.constraints import EnsureStr
 from datalad.support.constraints import EnsureNone
 from datalad.support.constraints import EnsureKeyChoice
 from datalad.support.param import Parameter
-from datalad.distribution.dataset import datasetmethod, EnsureDataset, \
-    require_dataset
+from datalad.support.network import get_local_file_url
+from datalad.distribution.dataset import Dataset
+from datalad.distribution.dataset import datasetmethod
+from datalad.distribution.dataset import EnsureDataset
+from datalad.distribution.dataset import require_dataset
 from datalad.interface.utils import eval_results
 from datalad.distribution.create import Create
-from datalad.dochelpers import exc_str
-from datalad.support.network import get_local_file_url
+from datalad.utils import rmtree
 
 import logging
 lgr = logging.getLogger('datalad.neuroimaging.import_dicoms')
 
 
-
 # TODO: Commit-Message to contain hint on the imported tarball
-
-
 def _import_dicom_tarball(target_ds, tarball, filename):
 
     # # TODO: doesn't work for updates yet:
     # # - branches are expected to not exist yet
     target_ds.repo.checkout('incoming', options=['-b'])
-    target_ds.repo.init_remote(ARCHIVES_SPECIAL_REMOTE,
-                            options=['encryption=none', 'type=external',
-                                     'externaltype=%s' % ARCHIVES_SPECIAL_REMOTE,
-                                     'autoenable=true',
-                                     'uuid=%s' % DATALAD_SPECIAL_REMOTES_UUIDS[ARCHIVES_SPECIAL_REMOTE]
-                                     ]
-                          )
+    target_ds.repo.init_remote(
+        ARCHIVES_SPECIAL_REMOTE,
+        options=['encryption=none', 'type=external',
+                 'externaltype=%s' % ARCHIVES_SPECIAL_REMOTE,
+                 'autoenable=true',
+                 'uuid={}'.format(
+                     DATALAD_SPECIAL_REMOTES_UUIDS[ARCHIVES_SPECIAL_REMOTE])
+                ])
 
-    target_ds.repo.add_url_to_file(file_=filename, url=get_local_file_url(tarball))
+    target_ds.repo.add_url_to_file(
+        file_=filename,
+        url=get_local_file_url(tarball))
     target_ds.repo.commit(msg="Retrieved %s" % tarball)
     target_ds.repo.checkout('incoming-processed', options=['--orphan'])
     if target_ds.repo.dirty:
@@ -63,31 +66,38 @@ def _import_dicom_tarball(target_ds, tarball, filename):
 
 def _create_subds_from_tarball(tarball, targetdir):
 
-    from os.path import basename
-    filename =basename(tarball)
+    filename = op.basename(tarball)
 
-    importds = Create.__call__(opj(targetdir, "dicoms"),
-                               native_metadata_type='dicom',
-                               return_type='item-or-list',
-                               result_xfm='datasets',
-                               result_filter=
-                               EnsureKeyChoice('action', ('create',)) &
-                               EnsureKeyChoice('status', ('ok', 'notneeded'))
-                               )
+    importds = Create.__call__(
+        op.join(targetdir, "dicoms"),
+        native_metadata_type='dicom',
+        return_type='item-or-list',
+        result_xfm='datasets',
+        result_filter=EnsureKeyChoice('action', ('create',)) \
+        & EnsureKeyChoice('status', ('ok', 'notneeded'))
+    )
 
     _import_dicom_tarball(importds, tarball, filename)
 
-    importds.config.add(var="datalad.metadata.aggregate-content-dicom",
-                        value='false', where="dataset")
+    importds.config.add(
+        var="datalad.metadata.aggregate-content-dicom",
+        value='false',
+        where="dataset")
     # TODO: file an issue: config.add can't convert False to 'false' on its own
     # (But vice versa while reading IIRC)
-    importds.config.add(var="datalad.metadata.maxfieldsize", value='10000000',
-                        where="dataset")
-    importds.add(opj(".datalad", "config"), save=True,
-                 message="[DATALAD] initial config for DICOM metadata")
+
+    importds.config.add(
+            var="datalad.metadata.maxfieldsize",
+            value='10000000',
+            where="dataset")
+    importds.add(
+            op.join(".datalad", "config"),
+            save=True,
+            message="[DATALAD] initial config for DICOM metadata")
     importds.aggregate_metadata()
 
     # TODO: DON'T FAIL! MAY BE EVEN GET FROM SUPER?
+    # XXX why is this done at all? if needed, why hard-coded URL?
     # importds.install(path=opj(".datalad", "environments", "import-container"),
     #                  source="http://psydata.ovgu.de/cbbs-imaging/conv-container/.git")
 
@@ -95,35 +105,33 @@ def _create_subds_from_tarball(tarball, targetdir):
 
 
 def _guess_session_and_move(ds, target_ds):
-    from datalad.coreapi import metadata
-
-    res = ds.metadata(reporton='datasets', return_type='item-or-list',
-                      result_renderer='disabled')
+    res = ds.metadata(
+        reporton='datasets',
+        return_type='item-or-list',
+        result_renderer='disabled')
     # there should be exactly one result and therefore a dict
     assert isinstance(res, dict)
 
     format_string = \
         target_ds.config.get("datalad.hirni.import.session-format")
     # Note: simply the metadata dict for first Series herein is passed into
-    # format ATM. TODO: Eventually make entire result from `metadata` available.
+    # format ATM.
+    # TODO: Eventually make entire result from `metadata` available.
     # (unify implementation with datalad's --output-format)
     if '{' in format_string:
         ses = format_string.format(**res['metadata']['dicom']['Series'][0])
     else:
         ses = format_string
 
-    from os import rename, makedirs
-    from os.path import dirname, lexists
     # `ses` might consist of several levels, so `rename` doesn't always
     # automatically create the target dir:
-    if not lexists(dirname(ses)):
-        makedirs(opj(target_ds.path, ses))
+    if not op.lexists(op.dirname(ses)):
+        makedirs(op.join(target_ds.path, ses))
 
-    rename(opj(target_ds.path, 'datalad_hirni_import'),
-           opj(target_ds.path, ses))
+    rename(op.join(target_ds.path, 'datalad_hirni_import'),
+           op.join(target_ds.path, ses))
 
-    from datalad.coreapi import Dataset
-    return Dataset(opj(target_ds.path, ses, 'dicoms'))
+    return Dataset(op.join(target_ds.path, ses, 'dicoms'))
 
 # TODOs:
 #
@@ -156,8 +164,8 @@ class ImportDicoms(Interface):
         session=Parameter(
             args=("session",),
             metavar="SESSION",
-            doc="""session identifier for the imported DICOM files. If not 
-            specified, an attempt will be made to derive SESSION from DICOM 
+            doc="""session identifier for the imported DICOM files. If not
+            specified, an attempt will be made to derive SESSION from DICOM
             headers.""",
             nargs="?",
             constraints=EnsureStr() | EnsureNone()),
@@ -167,15 +175,12 @@ class ImportDicoms(Interface):
     @datasetmethod(name='hirni_import_dcm')
     @eval_results
     def __call__(path, session=None, dataset=None):
-
-        from os.path import exists
         ds = require_dataset(dataset, check_installed=True,
                              purpose="import DICOM session")
-
         if session:
             # session was specified => we know where to create subds
-            ses_dir = opj(ds.path, session)
-            if not exists(ses_dir):
+            ses_dir = op.join(ds.path, session)
+            if not op.exists(ses_dir):
                 makedirs(ses_dir)
             # TODO: if exists: needs to be empty?
 
@@ -184,8 +189,8 @@ class ImportDicoms(Interface):
         else:
             # we don't know the session yet => create in tmp
 
-            ses_dir = opj(ds.path, 'datalad_hirni_import')
-            assert not exists(ses_dir)
+            ses_dir = op.join(ds.path, 'datalad_hirni_import')
+            assert not op.exists(ses_dir)
             # TODO: don't assert; check and adapt instead
 
             try:
@@ -195,7 +200,6 @@ class ImportDicoms(Interface):
                 # remove tmp and reraise
                 lgr.debug("Exception branch: Killing temp dataset ...")
 
-                from datalad.utils import rmtree
                 rmtree(ses_dir)
                 # TODO: reraise()
                 raise
@@ -204,14 +208,10 @@ class ImportDicoms(Interface):
         ds.aggregate_metadata(dicom_ds.path, incremental=True,
                               update_mode='target')
 
-        from os.path import pardir
-
-        from datalad.api import Dataset
-        from datalad.api import hirni_dicom2spec
-
-        ds.hirni_dicom2spec(path=dicom_ds.path,
-                            spec=normpath(opj(dicom_ds.path, pardir,
-                                              "studyspec.json")))
+        ds.hirni_dicom2spec(
+                path=dicom_ds.path,
+                spec=op.normpath(op.join(
+                    dicom_ds.path, op.pardir, "studyspec.json")))
 
         # TODO: yield error results etc.
         yield dict(status='ok',
@@ -219,6 +219,3 @@ class ImportDicoms(Interface):
                    type='dataset',
                    action='import DICOM tarball',
                    logger=lgr)
-
-
-
