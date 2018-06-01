@@ -1,5 +1,6 @@
 """Import a DICOM tarball into a study dataset"""
 
+from os import listdir
 from os import makedirs
 from os import rename
 import os.path as op
@@ -241,6 +242,10 @@ class ImportDicoms(Interface):
             anon_subject=anon_subject,
             session=session
         )
+
+        # We have the tarball and can drop extracted stuff:
+        dicom_ds.drop([f for f in listdir(dicom_ds.path)
+                       if f != ".datalad" and f != ".git"])
 
         # TODO: yield error results etc.
         yield dict(
