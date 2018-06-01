@@ -131,7 +131,7 @@ def _guess_acquisition_and_move(ds, target_ds):
     if not op.lexists(op.dirname(ses)):
         makedirs(op.join(target_ds.path, ses))
 
-    rename(op.join(target_ds.path, 'datalad_hirni_import'),
+    rename(op.join(target_ds.path, '.git', 'datalad', 'hirni_import'),
            op.join(target_ds.path, ses))
 
     return Dataset(op.join(target_ds.path, ses, 'dicoms'))
@@ -205,7 +205,7 @@ class ImportDicoms(Interface):
         else:
             # we don't know the session yet => create in tmp
 
-            ses_dir = op.join(ds.path, 'datalad_hirni_import')
+            ses_dir = op.join(ds.path, '.git', 'datalad', 'hirni_import')
             assert not op.exists(ses_dir)
             # TODO: don't assert; check and adapt instead
 
