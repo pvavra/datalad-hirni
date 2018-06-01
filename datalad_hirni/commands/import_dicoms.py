@@ -158,9 +158,9 @@ class ImportDicoms(Interface):
             metavar='PATH',
             doc="""path of the dicom archive to be imported.""",
             constraints=EnsureStr()),
-        acquisition_id=Parameter(
-            args=("acquisition-id",),
-            metavar="ACQUISITION_ID",
+        acqid=Parameter(
+            args=("acqid",),
+            metavar="ACQUISITION ID",
             doc="""session identifier for the imported DICOM files. If not
             specified, an attempt will be made to derive ACQUISITION_ID from DICOM
             headers.""",
@@ -189,13 +189,13 @@ class ImportDicoms(Interface):
     @staticmethod
     @datasetmethod(name='hirni_import_dcm')
     @eval_results
-    def __call__(path, acquisition_id=None, dataset=None,
+    def __call__(path, acqid=None, dataset=None,
                  subject=None, anon_subject=None, session=None):
         ds = require_dataset(dataset, check_installed=True,
                              purpose="import DICOM session")
-        if acquisition_id:
+        if acqid:
             # session was specified => we know where to create subds
-            ses_dir = op.join(ds.path, acquisition_id)
+            ses_dir = op.join(ds.path, acqid)
             if not op.exists(ses_dir):
                 makedirs(ses_dir)
             # TODO: if exists: needs to be empty?
