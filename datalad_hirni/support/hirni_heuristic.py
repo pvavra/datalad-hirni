@@ -1,6 +1,7 @@
 import logging
 import lzma
 from simplejson import loads as json_loads
+from os import environ
 
 lgr = logging.getLogger(__name__)
 
@@ -79,10 +80,11 @@ class SpecLoader(object):
 
     def __init__(self):
         self._spec = None
+        # determine spec key to use for subject ('subject' or 'anon_subject'):
+        self.subject_key = environ.get('HIRNI_SPEC2BIDS_SUBJECT', 'subject')
 
     def get_study_spec(self):
         if self._spec is None:
-            from os import environ
             filename = environ.get('HIRNI_STUDY_SPEC')
             if filename:
                 self._spec = [d for d in load_stream(filename)]
@@ -176,7 +178,7 @@ def infotodict(seqinfo):  # pragma: no cover
             lgr.debug("Series invalid (%s). Skip.", str(s.series_uid))
             continue
 
-        dirname = filename = "sub-{}".format(get_specval(series_spec, 'subject'))
+        dirname = filename = "sub-{}".format(get_specval(series_spec, _spec.subject_key))
         # session
         if has_specval(series_spec, 'bids_session'):
             ses = get_specval(series_spec, 'bids_session')
