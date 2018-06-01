@@ -198,9 +198,12 @@ def _guess_modality(record):
     if protocol:
         import re
         prot_parts = re.split('_|-', protocol.lower())
-        # TODO: enhance (see BIDS spec p20)
         direct_search_terms = ["t1", "t1w", "t2", "t2w",
-                               "t1rho", "t1map", "t2map"]
+                               "t1rho", "t1map", "t2map", "t2star", "flair",
+                               "flash", "pd", "pdmap", "pdt2", "inplanet1",
+                               "inplanet2", "angio", "dwi", "phasediff",
+                               "phase1", "phase2", "magnitude1", "magnitude2",
+                               "fieldmap", "epi", "meg"]
 
         for m in direct_search_terms:
             if m in prot_parts:
