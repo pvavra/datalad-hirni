@@ -36,14 +36,14 @@ import logging
 lgr = logging.getLogger("datalad.hirni.spec2bids")
 
 
-def _get_subject_from_spec(file_):
+def _get_subject_from_spec(file_, anon=False):
 
     # TODO: this is assuming a session spec snippet.
     # Need to elaborate
-
-    unique_subs = set([d['subject']['value']
+    subject_key = 'subject' if not anon else 'anon_subject'
+    unique_subs = set([d[subject_key]['value']
                        for d in load_stream(file_)
-                       if 'subject' in d.keys()])
+                       if subject_key in d.keys()])
     if not len(unique_subs) == 1:
         raise ValueError("subject ambiguous in %s" % file_)
     return unique_subs.pop()
@@ -81,12 +81,19 @@ class Spec2Bids(Interface):
              acquisition). If an absolute path is given, that file is used for all
              acquisitions to be converted!""",
             constraints=EnsureStr() | EnsureNone()),
+        anonymize=Parameter(
+            args=("--anonymize",),
+            action="store_true",
+            doc="""whether or not to anonymize for conversion. (Currently just 
+            using 'anon_subject' instead of 'subject' from spec)"""
+        )
     )
 
     @staticmethod
     @datasetmethod(name='hirni_spec2bids')
     @eval_results
-    def __call__(acquisition_id=None, dataset=None, target_dir=None, spec_file=None):
+    def __call__(acquisition_id=None, dataset=None, target_dir=None,
+                 spec_file=None, anonymize=False):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="dicoms2bids")
@@ -119,14 +126,14 @@ class Spec2Bids(Interface):
                     action='spec2bids',
                     path=acq,
                     status='impossible',
-                    message="Found no spec for session {}".format(acq)
+                    message="Found no spec for acquisition {}".format(acq)
                 )
                 # TODO: onfailure ignore?
                 continue
             try:
                 # TODO: AutomagicIO?
                 dataset.get(spec_path)
-                subject = _get_subject_from_spec(spec_path)
+                subject = _get_subject_from_spec(spec_path, anon=anonymize)
             except ValueError as e:
                 yield get_status_dict(
                     action='spec2bids',
@@ -150,7 +157,9 @@ class Spec2Bids(Interface):
             rel_dicom_path = relpath(opj(acq, 'dicoms'), dataset.path)
 
             with patch.dict('os.environ',
-                            {'HIRNI_STUDY_SPEC': rel_spec_path}):
+                            {'HIRNI_STUDY_SPEC': rel_spec_path,
+                             'HIRNI_SPEC2BIDS_SUBJECT': 'subject'
+                             if not anonymize else 'anon_subject'}):
 
                 for r in dataset.containers_run(
                         ['heudiconv',
