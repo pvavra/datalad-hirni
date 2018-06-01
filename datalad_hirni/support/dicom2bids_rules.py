@@ -189,7 +189,7 @@ def _guess_modality(record):
         import re
         prot_parts = re.split('_|-', protocol.lower())
         # TODO: enhance (see BIDS spec)
-        direct_search_terms = ["t1", "t1w", "t2", "t2w"]
+        direct_search_terms = ["t1", "t1w", "t2", "t2w", "bold"]
 
         for m in direct_search_terms:
             if m in prot_parts:
@@ -224,8 +224,12 @@ def _guess_type(record):
             if m in prot_parts:
                 return m
 
-    # no idea; default to 'func'
-    return "func"
+        for m in ["t1", "t1w", "t2", "t2w", "bold"]:
+            if m in prot_parts:
+                return "func"
+
+    # no idea yet;
+    return None
 
 
 def _guess_run(record):

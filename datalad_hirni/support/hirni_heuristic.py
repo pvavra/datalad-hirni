@@ -178,7 +178,8 @@ def infotodict(seqinfo):  # pragma: no cover
             if series_spec['run']['value']:
                 filename += "_run-{}".format(series_spec['run']['value'])
 
-            filename += "_bold"
+            if series_spec['modality'] and series_spec['modality']['value']:
+                filename += "_{}".format(series_spec['run']['value'])
 
         if data_type == 'anat':
             # anat/sub-<participant_label>[_ses-<session_label>]
