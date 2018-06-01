@@ -226,7 +226,10 @@ class ImportDicoms(Interface):
                     lgr.debug("Killing temp dataset at %s ...", ses_dir)
                     rmtree(ses_dir)
 
-        ds.add(dicom_ds.path)
+        acqid = op.basename(op.dirname(dicom_ds.path))
+        ds.add(
+            dicom_ds.path,
+            message="[HIRNI] Add aquisition {}".format(acqid))
         ds.aggregate_metadata(dicom_ds.path, incremental=True,
                               update_mode='target')
 
