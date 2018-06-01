@@ -202,13 +202,19 @@ class ImportDicoms(Interface):
             try:
                 dicom_ds = _create_subds_from_tarball(path, ses_dir)
                 dicom_ds = _guess_session_and_move(dicom_ds, ds)
-            except Exception as e:
-                # remove tmp and reraise
-                lgr.debug("Exception branch: Killing temp dataset ...")
-
+            except FileExistsError as e:
+                yield dict(status='impossible',
+                           path=e.filename,
+                           type='file',
+                           action='import DICOM tarball',
+                           logger=lgr,
+                           message='%s already exists' % e.filename)
                 rmtree(ses_dir)
-                # TODO: reraise()
-                raise
+
+            finally:
+                if op.exists(ses_dir):
+                    lgr.debug("Killing temp dataset at %s ...", ses_dir)
+                    rmtree(ses_dir)
 
         ds.add(dicom_ds.path)
         ds.aggregate_metadata(dicom_ds.path, incremental=True,
