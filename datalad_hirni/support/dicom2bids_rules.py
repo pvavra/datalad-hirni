@@ -3,10 +3,20 @@
 
 # TODO: should include series_is_valid()!
 
-# define specification keywords of specification type 'dicomseries', that are
+# define specification keys of specification type 'dicomseries', that are
 # subjects to the rule set
-keywords = ['description', 'comment', 'subject', 'session', 'task', 'run',
-            'modality', 'converter', 'id']
+# XXX this is not used at all
+spec_keys = [
+    'bids_session',
+    'bids_task',
+    'bids_run',
+    'bids_modality',
+    'comment',
+    'converter',
+    'description',
+    'id',
+    'subject',
+]
 
 
 def series_is_valid(series):
@@ -122,11 +132,10 @@ class DefaultRules(object):
                 'comment': '',
                 'subject': apply_bids_label_restrictions(_guess_subject(record) if not subject else subject),
                 'anon_subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
-                'session': apply_bids_label_restrictions(_guess_session(record) if not session else session),
-                'task': apply_bids_label_restrictions(_guess_task(record)),
-                'run': apply_bids_label_restrictions(run) if run else self.runs[protocol_name],
-                'modality': apply_bids_label_restrictions(_guess_modality(record)),
-                'data_type': apply_bids_label_restrictions(_guess_type(record)),
+                'bids_session': apply_bids_label_restrictions(_guess_session(record) if not session else session),
+                'bids_task': apply_bids_label_restrictions(_guess_task(record)),
+                'bids_run': apply_bids_label_restrictions(run) if run else self.runs[protocol_name],
+                'bids_modality': apply_bids_label_restrictions(_guess_modality(record)),
                 'id': record.get('SeriesNumber', None),
                 }
 
@@ -201,6 +210,7 @@ def _guess_modality(record):
     return None
 
 
+# TODO kill this, if we have modality the type is determined via a fixed mapping
 def _guess_type(record):
     # Note: Yarik uses such a mapping: should/could we too? (dbic_bids heuristic)
     # image_data_type = s.image_type[2]

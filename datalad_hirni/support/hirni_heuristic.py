@@ -5,6 +5,27 @@ from simplejson import loads as json_loads
 lgr = logging.getLogger(__name__)
 
 
+# map the various guesses to the cannonical labels
+modality_label_map = {
+    't1': 'T1w',
+    't1w': 'T1w',
+}
+
+# map the cannonical modality labels to data_type labels
+datatype_labels_map = {
+    'T1w': 'anat',
+    'bold': 'func',
+}
+
+
+def get_specval(spec, key):
+    return spec[key]['value']
+
+
+def has_specval(spec, key):
+    return key in spec and 'value' in spec[key] and spec[key]['value']
+
+
 # Snippet from https://github.com/datalad/datalad to avoid depending on it for
 # just one function:
 def LZMAFile(*args, **kwargs):
@@ -112,12 +133,12 @@ def validate_spec(spec):
     # subject
     if 'subject' not in spec.keys() or not spec['subject']['value']:
         raise ValueError("Found no subject in specification for series %s." %
-                         spec['uid'])
+                         spec['subject'])
 
     # data type
-    if 'data_type' not in spec.keys() or not spec['subject']['value']:
-        raise ValueError("Found no data type in specification for series %s." %
-                         spec['uid'])
+    if 'bids_modality' not in spec.keys() or not spec['bids_modality']['value']:
+        raise ValueError("Found no data modality in specification for series %s." %
+                         spec['bids_modality'])
 
     return True
 
@@ -157,29 +178,33 @@ def infotodict(seqinfo):  # pragma: no cover
             lgr.debug("Series invalid (%s). Skip.", str(s.series_uid))
             continue
 
-        dirname = filename = "sub-{}".format(series_spec['subject']['value'])
+        dirname = filename = "sub-{}".format(get_specval(series_spec, 'subject'))
         # session
-        if series_spec['session'] and series_spec['session']['value']:
-            dirname += "/ses-{}".format(series_spec['session']['value'])
-            filename += "_ses-{}".format(series_spec['session']['value'])
+        if has_specval(series_spec, 'bids_session'):
+            ses = get_specval(series_spec, 'bids_session')
+            dirname += "/ses-{}".format(ses)
+            filename += "_ses-{}".format(ses)
 
         # data type
-        data_type = series_spec['data_type']['value']
+        modality = get_specval(series_spec, 'bids_modality')
+        # make cannonical if possible
+        modality = modality_label_map.get(modality, modality)
+        # apply fixed mapping from modality -> data_type
+        data_type = datatype_labels_map[modality]
 
         dirname += "/{}".format(data_type)
         if data_type == 'func':
             # func/sub-<participant_label>[_ses-<session_label>]
             # _task-<task_label>[_acq-<label>][_rec-<label>][_run-<index>][_echo-<index>]_bold.nii[.gz]
-            if series_spec['task']['value']:
-                filename += "_task-{}".format(series_spec['task']['value'])
+            if has_specval(series_spec, 'bids_task'):
+                filename += "_task-{}".format(get_specval(series_spec, 'bids_task'))
 
             # TODO: [_acq-<label>][_rec-<label>]
 
-            if series_spec['run']['value']:
-                filename += "_run-{}".format(series_spec['run']['value'])
+            if has_specval(series_spec, 'bids_run'):
+                filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
 
-            if series_spec['modality'] and series_spec['modality']['value']:
-                filename += "_{}".format(series_spec['run']['value'])
+            filename += "_{}".format(modality)
 
         if data_type == 'anat':
             # anat/sub-<participant_label>[_ses-<session_label>]
@@ -187,13 +212,12 @@ def infotodict(seqinfo):  # pragma: no cover
 
             # TODO: [_acq-<label>][_ce-<label>][_rec-<label>]
 
-            if series_spec['run']['value']:
-                filename += "_run-{}".format(series_spec['run']['value'])
+            if has_specval(series_spec, 'bids_run'):
+                filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
 
             # TODO: [_mod-<label>]
 
-            if series_spec['modality'] and series_spec['modality']['value']:
-                filename += "_{}".format(series_spec['modality']['value'])
+            filename += "_{}".format(modality)
 
         # TODO: data_type: dwi, fmap
 
