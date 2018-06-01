@@ -247,6 +247,9 @@ class ImportDicoms(Interface):
         dicom_ds.drop([f for f in listdir(dicom_ds.path)
                        if f != ".datalad" and f != ".git"])
 
+        # finally clean up git objects:
+        dicom_ds.repo.cmd_call_wrapper.run(['git', 'gc'])
+
         # TODO: yield error results etc.
         yield dict(
             status='ok',
