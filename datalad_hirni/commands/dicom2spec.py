@@ -3,7 +3,7 @@ DICOM metadata as provided by datalad.
 """
 
 import logging
-from os.path import exists
+from os.path import exists, relpath
 
 from datalad.coreapi import metadata
 from datalad.distribution.dataset import EnsureDataset, datasetmethod, \
@@ -28,7 +28,7 @@ lgr = logging.getLogger('datalad.hirni.dicom2spec')
 #########################################
 
 
-def add_to_spec(ds_metadata, spec_list):
+def add_to_spec(ds_metadata, spec_list, basepath):
 
     from datalad_hirni.support.dicom2bids_rules import \
         get_rules_from_metadata, series_is_valid  # TODO: RF?
@@ -44,7 +44,7 @@ def add_to_spec(ds_metadata, spec_list):
             # "approved flag", since they are automatically managed
             'type': 'dicomseries',
             'status': None,  # TODO: process state convention; flags
-            'location': ds_metadata['path'],
+            'location': relpath(ds_metadata['path'], basepath),
             'uid': series['SeriesInstanceUID'],
             'dataset_id': ds_metadata['dsid'],
             'dataset_refcommit': ds_metadata['refcommit'],
@@ -126,6 +126,10 @@ class Dicom2Spec(Interface):
             raise InsufficientArgumentsError(
                 "insufficient arguments for dicom2spec: a path is required")
 
+        # TODO: We should be able to deal with several paths at once
+        #       ATM we aren't (see also commit + message of actual spec)
+        assert len(path) == 1
+
         if not spec:
             raise InsufficientArgumentsError(
                 "insufficient arguments for dicom2spec: a file is required")
@@ -174,7 +178,7 @@ class Dicom2Spec(Interface):
                 continue
 
             found_some = True
-            spec_series_list = add_to_spec(meta, spec_series_list)
+            spec_series_list = add_to_spec(meta, spec_series_list, dataset.path)
 
         if not found_some:
             yield dict(status='impossible',
@@ -197,8 +201,8 @@ class Dicom2Spec(Interface):
         for r in Add.__call__(spec,
                               to_git=True,
                               save=True,
-                              message="[DATALAD-NI] Added study specification "
-                                      "snippet for %s" % dataset.path,
+                              message="[DATALAD-HIRNI] Added study specification "
+                                      "snippet for %s" % relpath(path[0], dataset.path),
                               return_type='generator',
                               result_renderer='disabled'):
             if r.get('status', None) not in ['ok', 'notneeded']:

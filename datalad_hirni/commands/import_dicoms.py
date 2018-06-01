@@ -85,24 +85,21 @@ def _create_subds_from_tarball(tarball, targetdir):
         where="dataset")
     # TODO: file an issue: config.add can't convert False to 'false' on its own
     # (But vice versa while reading IIRC)
+
     importds.config.add(
-        var="datalad.metadata.maxfieldsize",
-        value='10000000',
-        where="dataset")
+            var="datalad.metadata.maxfieldsize",
+            value='10000000',
+            where="dataset")
     importds.add(
-        op.join(".datalad", "config"),
-        save=True,
-        message="[DATALAD] initial config for DICOM metadata")
-
-    # TODO: ??? Need for session guessing
-
+            op.join(".datalad", "config"),
+            save=True,
+            message="[DATALAD] initial config for DICOM metadata")
     importds.aggregate_metadata()
 
     # TODO: DON'T FAIL! MAY BE EVEN GET FROM SUPER?
     # XXX why is this done at all? if needed, why hard-coded URL?
-    importds.install(
-        path=op.join(".datalad", "environments", "import-container"),
-        source="http://psydata.ovgu.de/cbbs-imaging/conv-container/.git")
+    # importds.install(path=opj(".datalad", "environments", "import-container"),
+    #                  source="http://psydata.ovgu.de/cbbs-imaging/conv-container/.git")
 
     return importds
 
@@ -126,7 +123,7 @@ def _guess_session_and_move(ds, target_ds):
     else:
         ses = format_string
 
-    # `ses` might consistent of several levels, so `rename` doesn't always
+    # `ses` might consist of several levels, so `rename` doesn't always
     # automatically create the target dir:
     if not op.lexists(op.dirname(ses)):
         makedirs(op.join(target_ds.path, ses))
@@ -212,9 +209,9 @@ class ImportDicoms(Interface):
                               update_mode='target')
 
         ds.hirni_dicom2spec(
-            path=dicom_ds.path,
-            spec=op.normpath(op.join(
-                dicom_ds.path, op.pardir, "studyspec.json")))
+                path=dicom_ds.path,
+                spec=op.normpath(op.join(
+                    dicom_ds.path, op.pardir, "studyspec.json")))
 
         # TODO: yield error results etc.
         yield dict(status='ok',
