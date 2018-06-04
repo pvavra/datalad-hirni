@@ -10,12 +10,66 @@ lgr = logging.getLogger(__name__)
 modality_label_map = {
     't1': 'T1w',
     't1w': 'T1w',
+    't2': 'T2w',
+    't2w': 'T2w',
+    't1rho': 'T1rho',
+    't1map': 'T1map',
+    't2map': 'T2map',
+    't2star': 'T2star',
+    'flair': 'FLAIR',
+    'flash': 'FLASH',
+    'pd': 'PD',
+    'pdmap': 'PDmap',
+    'pdt2': 'PDT2',
+    'inplanet1': 'inplaneT1',
+    'inplanet2': 'inplaneT2',
 }
 
 # map the cannonical modality labels to data_type labels
 datatype_labels_map = {
-    'T1w': 'anat',
     'bold': 'func',
+
+    'T1w': 'anat',
+    'T2w': 'anat',
+    'T1rho': 'anat',
+    'T1map': 'anat',
+    'T2map': 'anat',
+    'T2star': 'anat',
+    'FLAIR': 'anat',
+    'FLASH': 'anat',
+    'PD': 'anat',
+    'PDmap': 'anat',
+    'PDT2': 'anat',
+    'inplaneT1': 'anat',
+    'inplaneT2': 'anat',
+    'angio': 'anat',
+
+    'dwi': 'dwi',
+
+    'phasediff': 'fmap',
+    'phase1': 'fmap',
+    'phase2': 'fmap',
+    'magnitude1': 'fmap',
+    'magnitude2': 'fmap',
+    'fieldmap': 'fmap',
+
+    'epi': 'fmap',  # TODO?
+}
+
+# map specification keys to BIDS abbreviation used in paths
+spec2bids_map = {
+    'subject': "sub",
+    'anon_subject': "sub",
+    'bids_session': "ses",
+    'bids_task': "task",
+    'bids_run': "run",
+    'bids_modality': "mod",
+    'bids_acquisition': "acq",
+    'bids_scan': "scan",
+    'bids_contrast_enhancement': "ce",
+    'bids_reconstruction_algorithm': "rec",
+    'bids_echo': "echo",
+    'bids_direction': "dir",
 }
 
 
@@ -135,7 +189,7 @@ def validate_spec(spec):
         lgr.warning("Missing image series UID.")
         return False
 
-    for var in ('subject', 'bids_modality'):
+    for var in (_spec.subject_key, 'bids_modality'):
         if not has_specval(spec, var):
             lgr.warning("Missing specification value '%s'", var)
             return False
@@ -193,23 +247,22 @@ def infotodict(seqinfo):  # pragma: no cover
         data_type = datatype_labels_map[modality]
 
         dirname += "/{}".format(data_type)
+
+        # TODO: Once special cases (like when to use '_mod-' prefix for modality
+        # are clear, integrate data type selection with spec_key list and
+        # thereby reduce code duplication further
+
         if data_type == 'func':
             # func/sub-<participant_label>[_ses-<session_label>]
             # _task-<task_label>[_acq-<label>][_rec-<label>][_run-<index>][_echo-<index>]_<modality_label>.nii[.gz]
-            if has_specval(series_spec, 'bids_task'):
-                filename += "_task-{}".format(get_specval(series_spec, 'bids_task'))
 
-            if has_specval(series_spec, 'bids_acquisition'):
-                filename += "_acq-{}".format(get_specval(series_spec, 'bids_acquisition'))
-
-            if has_specval(series_spec, 'bids_reconstruction_algorithm'):
-                filename += "_rec-{}".format(get_specval(series_spec, 'bids_reconstruction_algorithm'))
-
-            if has_specval(series_spec, 'bids_run'):
-                filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
-
-            if has_specval(series_spec, 'bids_echo'):
-                filename += "_echo-{}".format(get_specval(series_spec, 'bids_echo'))
+            for spec_key in ['bids_task', 'bids_acquisition',
+                             'bids_reconstruction_algorithm', 'bids_run',
+                             'bids_echo']:
+                if has_specval(series_spec, spec_key):
+                    filename += "_{}-{}".format(
+                            spec2bids_map[spec_key],
+                            get_specval(series_spec, spec_key))
 
             filename += "_{}".format(modality)
 
@@ -217,17 +270,14 @@ def infotodict(seqinfo):  # pragma: no cover
             # anat/sub-<participant_label>[_ses-<session_label>]
             # [_acq-<label>][_ce-<label>][_rec-<label>][_run-<index>][_mod-<label>]_<modality_label>.nii[.gz]
 
-            if has_specval(series_spec, 'bids_acquisition'):
-                filename += "_acq-{}".format(get_specval(series_spec, 'bids_acquisition'))
-
-            if has_specval(series_spec, 'bids_contrast_enhancement'):
-                filename += "_ce-{}".format(get_specval(series_spec, 'bids_contrast_enhancement'))
-
-            if has_specval(series_spec, 'bids_reconstruction_algorithm'):
-                filename += "_rec-{}".format(get_specval(series_spec, 'bids_reconstruction_algorithm'))
-
-            if has_specval(series_spec, 'bids_run'):
-                filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
+            for spec_key in ['bids_acquisition',
+                             'bids_contrast_enhancement',
+                             'bids_reconstruction_algorithm',
+                             'bids_run']:
+                if has_specval(series_spec, spec_key):
+                    filename += "_{}-{}".format(
+                            spec2bids_map[spec_key],
+                            get_specval(series_spec, spec_key))
 
             # TODO: [_mod-<label>]  (modality if defaced, right?)
             #       => simple bool 'defaced' in spec or is there more to it?
@@ -238,17 +288,18 @@ def infotodict(seqinfo):  # pragma: no cover
             # dwi/sub-<participant_label>[_ses-<session_label>]
             # [_acq-<label>][_run-<index>]_dwi.nii[.gz]
 
-            if has_specval(series_spec, 'bids_acquisition'):
-                filename += "_acq-{}".format(get_specval(series_spec, 'bids_acquisition'))
-
-            if has_specval(series_spec, 'bids_run'):
-                filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
+            for spec_key in ['bids_acquisition',
+                             'bids_run']:
+                if has_specval(series_spec, spec_key):
+                    filename += "_{}-{}".format(
+                            spec2bids_map[spec_key],
+                            get_specval(series_spec, spec_key))
 
             # TODO: Double check: Is this always correct?
             filename += "_dwi"
 
         if data_type == 'fmap':
-            #  Case 1: Phase difference image and at least one magnitude image 
+            # Case 1: Phase difference image and at least one magnitude image
             # sub-<participant_label>/[ses-<session_label>/]
             # [_acq-<label>][_dir-<dir_label>][_run-<run_index>]_<modality_label>.nii[.gz]
 
@@ -262,14 +313,13 @@ def infotodict(seqinfo):  # pragma: no cover
             # _fieldmap
             # _epi
 
-            if has_specval(series_spec, 'bids_acquisition'):
-                filename += "_acq-{}".format(get_specval(series_spec, 'bids_acquisition'))
-
-            if has_specval(series_spec, 'bids_direction'):
-                filename += "_dir-{}".format(get_specval(series_spec, 'bids_direction'))
-
-            if has_specval(series_spec, 'bids_run'):
-                filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
+            for spec_key in ['bids_acquisition',
+                             'bids_direction',
+                             'bids_run']:
+                if has_specval(series_spec, spec_key):
+                    filename += "_{}-{}".format(
+                            spec2bids_map[spec_key],
+                            get_specval(series_spec, spec_key))
 
             filename += "_{}".format(modality)
 
