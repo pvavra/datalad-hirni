@@ -195,14 +195,21 @@ def infotodict(seqinfo):  # pragma: no cover
         dirname += "/{}".format(data_type)
         if data_type == 'func':
             # func/sub-<participant_label>[_ses-<session_label>]
-            # _task-<task_label>[_acq-<label>][_rec-<label>][_run-<index>][_echo-<index>]_bold.nii[.gz]
+            # _task-<task_label>[_acq-<label>][_rec-<label>][_run-<index>][_echo-<index>]_<modality_label>.nii[.gz]
             if has_specval(series_spec, 'bids_task'):
                 filename += "_task-{}".format(get_specval(series_spec, 'bids_task'))
 
-            # TODO: [_acq-<label>][_rec-<label>]
+            if has_specval(series_spec, 'bids_acquisition'):
+                filename += "_acq-{}".format(get_specval(series_spec, 'bids_acquisition'))
+
+            if has_specval(series_spec, 'bids_reconstruction_algorithm'):
+                filename += "_rec-{}".format(get_specval(series_spec, 'bids_reconstruction_algorithm'))
 
             if has_specval(series_spec, 'bids_run'):
                 filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
+
+            if has_specval(series_spec, 'bids_echo'):
+                filename += "_echo-{}".format(get_specval(series_spec, 'bids_echo'))
 
             filename += "_{}".format(modality)
 
@@ -210,16 +217,61 @@ def infotodict(seqinfo):  # pragma: no cover
             # anat/sub-<participant_label>[_ses-<session_label>]
             # [_acq-<label>][_ce-<label>][_rec-<label>][_run-<index>][_mod-<label>]_<modality_label>.nii[.gz]
 
-            # TODO: [_acq-<label>][_ce-<label>][_rec-<label>]
+            if has_specval(series_spec, 'bids_acquisition'):
+                filename += "_acq-{}".format(get_specval(series_spec, 'bids_acquisition'))
+
+            if has_specval(series_spec, 'bids_contrast_enhancement'):
+                filename += "_ce-{}".format(get_specval(series_spec, 'bids_contrast_enhancement'))
+
+            if has_specval(series_spec, 'bids_reconstruction_algorithm'):
+                filename += "_rec-{}".format(get_specval(series_spec, 'bids_reconstruction_algorithm'))
 
             if has_specval(series_spec, 'bids_run'):
                 filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
 
-            # TODO: [_mod-<label>]
+            # TODO: [_mod-<label>]  (modality if defaced, right?)
+            #       => simple bool 'defaced' in spec or is there more to it?
 
             filename += "_{}".format(modality)
 
-        # TODO: data_type: dwi, fmap
+        if data_type == 'dwi':
+            # dwi/sub-<participant_label>[_ses-<session_label>]
+            # [_acq-<label>][_run-<index>]_dwi.nii[.gz]
+
+            if has_specval(series_spec, 'bids_acquisition'):
+                filename += "_acq-{}".format(get_specval(series_spec, 'bids_acquisition'))
+
+            if has_specval(series_spec, 'bids_run'):
+                filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
+
+            # TODO: Double check: Is this always correct?
+            filename += "_dwi"
+
+        if data_type == 'fmap':
+            #  Case 1: Phase difference image and at least one magnitude image 
+            # sub-<participant_label>/[ses-<session_label>/]
+            # [_acq-<label>][_dir-<dir_label>][_run-<run_index>]_<modality_label>.nii[.gz]
+
+            # Note/TODO: fmap modalities:
+            # _phasediff
+            # _magnitude1
+            # _magnitude2
+            # _phase1
+            # _phase2
+            # _magnitude
+            # _fieldmap
+            # _epi
+
+            if has_specval(series_spec, 'bids_acquisition'):
+                filename += "_acq-{}".format(get_specval(series_spec, 'bids_acquisition'))
+
+            if has_specval(series_spec, 'bids_direction'):
+                filename += "_dir-{}".format(get_specval(series_spec, 'bids_direction'))
+
+            if has_specval(series_spec, 'bids_run'):
+                filename += "_run-{}".format(get_specval(series_spec, 'bids_run'))
+
+            filename += "_{}".format(modality)
 
         key = create_key(dirname + '/' + filename)
         if key not in info:
