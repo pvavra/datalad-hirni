@@ -84,8 +84,10 @@ class Spec2Bids(Interface):
         anonymize=Parameter(
             args=("--anonymize",),
             action="store_true",
-            doc="""whether or not to anonymize for conversion. (Currently just 
-            using 'anon_subject' instead of 'subject' from spec)"""
+            doc="""whether or not to anonymize for conversion. By now this means
+            to use 'anon_subject' instead of 'subject' from spec and to use 
+            datalad-run with a sidecar file, to not leak potentially identifying 
+            information into its record."""
         )
     )
 
@@ -181,11 +183,12 @@ class Spec2Bids(Interface):
                          '--minmeta',
                          '--files', rel_dicom_path
                          ],
+                        sidecar=anonymize,
                         container_name="conversion",  # TODO: config
                         inputs=[rel_dicom_path, rel_spec_path],
                         outputs=[target_dir],
                         message="DICOM conversion of "
-                                "session {}.".format(basename(acq)),
+                                "acquisition {}.".format(basename(acq)),
                         return_type='generator',
                 ):
 
