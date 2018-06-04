@@ -43,9 +43,11 @@ def _get_subject_from_spec(file_, anon=False):
     subject_key = 'subject' if not anon else 'anon_subject'
     unique_subs = set([d[subject_key]['value']
                        for d in load_stream(file_)
-                       if subject_key in d.keys()])
-    if not len(unique_subs) == 1:
-        raise ValueError("subject ambiguous in %s" % file_)
+                       if subject_key in d.keys() and d[subject_key]['value']])
+    if not unique_subs:
+        raise ValueError("missing %s in %s" % (subject_key, file_))
+    if len(unique_subs) > 1:
+        raise ValueError("subject ambiguous in %s. candidates: %s" % (file_, unique_subs))
     return unique_subs.pop()
 
 
@@ -128,7 +130,7 @@ class Spec2Bids(Interface):
                     action='spec2bids',
                     path=acq,
                     status='impossible',
-                    message="Found no spec for acquisition {}".format(acq)
+                    message="Found no spec for acquisition {} at {}".format(acq, spec_path)
                 )
                 # TODO: onfailure ignore?
                 continue
@@ -158,6 +160,7 @@ class Spec2Bids(Interface):
 
             rel_dicom_path = relpath(opj(acq, 'dicoms'), dataset.path)
 
+            run_results = list()
             with patch.dict('os.environ',
                             {'HIRNI_STUDY_SPEC': rel_spec_path,
                              'HIRNI_SPEC2BIDS_SUBJECT': 'subject'
@@ -191,23 +194,35 @@ class Spec2Bids(Interface):
                                 "acquisition {}.".format(basename(acq)),
                         return_type='generator',
                 ):
-
-                    # TODO: This isn't nice yet:
-                    if r['status'] in ['ok', 'notneeded']:
-                        yield {'action': 'spec2bids',
-                               'path': acq,
-                               'status': 'ok'}
-
-                    else:
+                    # if there was an issue with containers-run, yield original
+                    # result, otherwise swallow:
+                    if r['status'] not in ['ok', 'notneeded']:
                         yield r
-                        yield {'action': 'spec2bids',
-                               'path': acq,
-                               'status': 'error',
-                               'message': "see above"}
 
-                # aggregate bids and nifti metadata:
-                dataset.aggregate_metadata(recursive=False,
-                                           incremental=True)
+                    run_results.append(r)
+
+            if not all(r['status'] in ['ok', 'notneeded'] for r in run_results):
+                yield {'action': 'heudiconv',
+                       'path': acq,
+                       'status': 'error',
+                       'message': "acquisition conversion failed. "
+                                  "See previous message(s)."}
+                return
+            else:
+                yield {'action': 'heudiconv',
+                       'path': acq,
+                       'status': 'ok',
+                       'message': "acquisition converted."}
+
+            # aggregate bids and nifti metadata:
+            for r in dataset.aggregate_metadata(recursive=False,
+                                                incremental=True):
+                yield r
 
             # remove
             rmtree(opj(dataset.path, rel_trash_path))
+            yield {'action': 'spec2bids',
+                   'path': acq,
+                   'status': 'ok'}
+
+
