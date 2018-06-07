@@ -3,9 +3,23 @@
 import os.path as op
 from setuptools import setup
 from setuptools import find_packages
+from setuptools import findall
 
 from setup_support import BuildManPage
 from setup_support import get_version
+
+
+def findsome(subdir, extensions):
+    """Find files under subdir having specified extensions
+
+    Leading directory (datalad) gets stripped
+    """
+    return [
+        f.split(op.sep, 1)[1]
+        for f in findall(op.join('datalad_hirni', subdir))
+        if op.splitext(f)[-1].lstrip('.') in extensions
+    ]
+
 
 # extension version
 version = get_version()
@@ -65,5 +79,9 @@ setup(
         'datalad.tests': [
             'hirni=datalad_hirni',
         ],
+    },
+    package_data={
+        'datalad_hirni':
+            findsome('resources', {'sh'})
     },
 )
