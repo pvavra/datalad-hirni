@@ -190,8 +190,9 @@ class Spec2Bids(Interface):
                         container_name="conversion",  # TODO: config
                         inputs=[rel_dicom_path, rel_spec_path],
                         outputs=[target_dir],
-                        message="DICOM conversion of "
-                                "acquisition {}.".format(basename(acq)),
+                        message="Import DICOM acquisition {}".format(
+                            'for subject {}'.format(subject)
+                            if anonymize else basename(acq)),
                         return_type='generator',
                 ):
                     # if there was an issue with containers-run, yield original
@@ -214,10 +215,12 @@ class Spec2Bids(Interface):
                        'status': 'ok',
                        'message': "acquisition converted."}
 
-            # aggregate bids and nifti metadata:
-            for r in dataset.aggregate_metadata(recursive=False,
-                                                incremental=True):
-                yield r
+            # MIH: Let's not do that, easily done by a user whenever needed,
+            # but in the fashion with annex new files on every import
+            ## aggregate bids and nifti metadata:
+            #for r in dataset.aggregate_metadata(recursive=False,
+            #                                    incremental=True):
+            #    yield r
 
             # remove
             rmtree(opj(dataset.path, rel_trash_path))
