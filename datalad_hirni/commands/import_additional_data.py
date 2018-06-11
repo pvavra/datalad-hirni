@@ -20,9 +20,23 @@ from datalad.interface.utils import eval_results
 from datalad.distribution.create import Create
 from datalad.utils import assure_list
 from datalad.support.network import RI, PathRI
+from datalad.support import json_py
+from datalad.coreapi import metadata
 
 import logging
 lgr = logging.getLogger('datalad.neuroimaging.import_additional_data')
+
+
+def _add_to_spec(spec, path, meta):
+
+    return spec.append({
+        'type': 'additional',
+        'status': None,  # TODO: process state convention; flags
+        'location': op.relpath(meta['path'], path),
+        'dataset_id': meta['dsid'],
+        'dataset_refcommit': meta['refcommit'],
+        'converter': {'value': None, 'approved': False}
+    })
 
 
 @build_doc
@@ -54,6 +68,7 @@ class ImportAdditionalData(Interface):
             metavar="TARGET",
             doc="""subdirectory of the acquisition to store the data in""",
             constraints=EnsureStr() | EnsureNone()),
+
     )
 
     @staticmethod
@@ -69,6 +84,17 @@ class ImportAdditionalData(Interface):
 
         path = assure_list(path)
 
+        # TODO: spec file specifiable or fixed path?
+        #       if we want the former, what we actually need is an association
+        #       of acquisition and its spec path
+        #       => prob. not an option but a config
+        spec_path = op.join(ds.path, acqid, "studyspec.json")
+        spec = [r for r in json_py.load_stream(spec_path)] \
+            if op.exists(spec_path) else list()
+
+        ds_meta = ds.metadata(reporton='datasets', return_type='generator',
+                              result_renderer='disabled')
+
         for p in path:
 
             src = RI(p)
@@ -77,6 +103,7 @@ class ImportAdditionalData(Interface):
 
             dst = op.join(acq_dir, target_dir if target_dir else "",
                           op.basename(src.path))  # TODO: Again windows: If an actual URL (POSIX-path), does it still work with os.path.basename?
+            lgr.debug("Adding %s to %s", src, dst)
 
             result = {'action': 'import additional data',
                       'type': 'file',
@@ -96,7 +123,46 @@ class ImportAdditionalData(Interface):
                                                 annex_result['note']})
                 return
 
-            # TODO: spec
+            if not target_dir:
+                # TODO: This might be wrong; figure out how to do it and beware
+                # that a change also need a change to support.helpers.sort_spec!
 
-            yield result.update({'status': 'ok'})
+                # paths don't go in a common dir;
+                # => add one spec snippet per `p`
+                lgr.debug("Add specification snippet for %s", p)
+                spec = _add_to_spec(spec, p, ds_meta)
 
+        if target_dir:
+            # TODO: This might be wrong; figure out how to do it and beware
+            # that a change also need a change to support.helpers.sort_spec!
+
+            # things went into a common target dir and need a common spec
+            # snippet:
+            lgr.debug("Add specification snippet for %s", target_dir)
+            spec = _add_to_spec(spec, target_dir, ds_meta)
+
+        from ..support.helpers import sort_spec
+        spec = sorted(spec, key=lambda x: sort_spec(x))
+        json_py.dump2stream(spec, spec_path)
+
+        ds.add(spec,
+               to_git=True,
+               save=True,
+               message="[HIRNI] Additional specification snippets for "
+                       "acquisition %s" % acqid,
+               return_type='generator',
+               result_renderer='disabled')
+
+        if target_dir:
+            yield {'status': 'ok',
+                   'action': 'import additional data',
+                   'type': 'directory',
+                   'path': target_dir,
+                   'logger': lgr}
+        else:
+            for p in path:
+                yield {'status': 'ok',
+                       'action': 'import additional data',
+                       'type': 'file',
+                       'path': p,
+                       'logger': lgr}
