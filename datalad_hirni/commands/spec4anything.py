@@ -118,16 +118,27 @@ class Spec4Anything(Interface):
             # ###
 
             # find acquisition and respective specification file:
-            rel_path = resolve_path(ap_path.posixpath, ds_path.posixpath)
+            rel_path = posixpath.relpath(ap_path.posixpath, ds_path.posixpath)
 
             # TODO: This needs more generalization as we want to have higher
             # level specification snippets, that aren't within an acquisition
-            acq = rel_path.split('/')[0]
+            path_parts = rel_path.split('/')
+            if len(path_parts) < 2:
+                yield get_status_dict(
+                        status='error',
+                        path=ap['path'],
+                        message="Not within an acquisition",
+                        type='file',
+                        **res_kwargs
+                )
+                continue
+            acq = path_parts[0]
+
             # TODO: spec file specifiable or fixed path?
             #       if we want the former, what we actually need is an association
             #       of acquisition and its spec path
             #       => prob. not an option but a config
-            spec_path = posixpath.join(ds_path.posixpath, acq, "studyspec")
+            spec_path = posixpath.join(ds_path.posixpath, acq, "studyspec.json")
 
             spec = [r for r in json_py.load_stream(spec_path)] \
                 if posixpath.exists(spec_path) else list()
@@ -141,7 +152,7 @@ class Spec4Anything(Interface):
             #       - What about input paths from different acquisitions?
             #         => store specs per acquisition in memory
             json_py.dump2stream(spec, spec_path)
-            dataset.add(spec,
+            dataset.add(spec_path,
                         to_git=True,
                         save=True,
                         message="[HIRNI] Add specification snippet for %s in "
