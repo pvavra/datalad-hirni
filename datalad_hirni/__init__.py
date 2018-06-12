@@ -35,10 +35,10 @@ command_suite = (
             'hirni_import_dcm',
         ),
         (
-            'datalad_hirni.commands.import_additional_data',
-            'ImportAdditionalData',
-            'hirni-import-data',
-            'hirni_import_data',
+            'datalad_hirni.commands.spec4anything',
+            'Spec4Anything',
+            'hirni-spec4anything',
+            'hirni_spec4anything',
         ),
         (
             'datalad_hirni.commands.dicom2spec',
