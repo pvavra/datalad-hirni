@@ -47,6 +47,12 @@ command_suite = (
             'hirni_dicom2spec',
         ),
         (
+            'datalad_hirni.commands.validate_spec',
+            'ValidateSpec',
+            'hirni-validate-spec',
+            'hirni_validate_spec',
+        ),
+        (
             'datalad_hirni.commands.spec2bids',
             'Spec2Bids',
             'hirni-spec2bids',
