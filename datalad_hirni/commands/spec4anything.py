@@ -18,7 +18,7 @@ from datalad.interface.results import get_status_dict
 from datalad.coreapi import metadata
 
 import logging
-lgr = logging.getLogger('datalad.hirni.import_additional_data')
+lgr = logging.getLogger('datalad.hirni.spec4anything')
 
 
 def _add_to_spec(spec, path, meta):
@@ -135,8 +135,8 @@ class Spec4Anything(Interface):
             acq = path_parts[0]
 
             # TODO: spec file specifiable or fixed path?
-            #       if we want the former, what we actually need is an association
-            #       of acquisition and its spec path
+            #       if we want the former, what we actually need is an
+            #       association of acquisition and its spec path
             #       => prob. not an option but a config
             spec_path = posixpath.join(ds_path.posixpath, acq, "studyspec.json")
 

@@ -154,7 +154,7 @@ class Dicom2Spec(Interface):
 
         if not spec:
             raise InsufficientArgumentsError(
-                "insufficient arguments for dicom2spec: a file is required")
+                "insufficient arguments for dicom2spec: a spec file is required")
         else:
             spec = resolve_path(spec, dataset)
 
