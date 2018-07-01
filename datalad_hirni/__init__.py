@@ -35,10 +35,22 @@ command_suite = (
             'hirni_import_dcm',
         ),
         (
+            'datalad_hirni.commands.spec4anything',
+            'Spec4Anything',
+            'hirni-spec4anything',
+            'hirni_spec4anything',
+        ),
+        (
             'datalad_hirni.commands.dicom2spec',
             'Dicom2Spec',
             'hirni-dicom2spec',
             'hirni_dicom2spec',
+        ),
+        (
+            'datalad_hirni.commands.validate_spec',
+            'ValidateSpec',
+            'hirni-validate-spec',
+            'hirni_validate_spec',
         ),
         (
             'datalad_hirni.commands.spec2bids',

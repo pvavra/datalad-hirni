@@ -24,7 +24,7 @@ from datalad.utils import rmtree
 import datalad_hirni.commands.dicom2spec
 
 import logging
-lgr = logging.getLogger('datalad.neuroimaging.import_dicoms')
+lgr = logging.getLogger('datalad.hirni.import_dicoms')
 
 
 # TODO: Commit-Message to contain hint on the imported tarball
