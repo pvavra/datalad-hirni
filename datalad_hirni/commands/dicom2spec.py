@@ -154,7 +154,7 @@ class Dicom2Spec(Interface):
 
         if not spec:
             raise InsufficientArgumentsError(
-                "insufficient arguments for dicom2spec: a file is required")
+                "insufficient arguments for dicom2spec: a spec file is required")
         else:
             spec = resolve_path(spec, dataset)
 
@@ -221,7 +221,8 @@ class Dicom2Spec(Interface):
         # store as a stream (one record per file) to be able to
         # easily concat files without having to parse them, or
         # process them line by line without having to fully parse them
-        spec_series_list = sorted(spec_series_list, key=lambda x: x['uid'])
+        from ..support.helpers import sort_spec
+        spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
         json_py.dump2stream(spec_series_list, spec)
 
         from datalad.distribution.add import Add

@@ -140,7 +140,6 @@ class DefaultRules(object):
                 # TODO: No defaults yet (May be there shouldn't be defaults, but
                 # right now, that's not a conscious decision ...):
                 'bids_acquisition': apply_bids_label_restrictions(None), #acq
-                'bids_scan': apply_bids_label_restrictions(None), # TODO: not clear yet; tsv only? How to tell heudiconv?
                 'bids_contrast_enhancement': apply_bids_label_restrictions(None), # ce
                 'bids_reconstruction_algorithm': apply_bids_label_restrictions(None), #rec
                 'bids_echo': apply_bids_label_restrictions(None), #echo
