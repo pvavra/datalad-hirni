@@ -3,6 +3,7 @@
 __docformat__ = 'restructuredtext'
 
 
+import os.path as op
 from os.path import isabs
 from os.path import join as opj
 from os.path import basename
@@ -171,7 +172,7 @@ class Spec2Bids(Interface):
                          # https://github.com/nipy/heudiconv/issues/196
                          '-o', rel_trash_path,
                          '-b',
-                         '-a', dataset.path,
+                         '-a', '{{pwd}}',
                          '-l', '',
                          # avoid glory details provided by dcmstack, we have
                          # them in the aggregated DICOM metadata already
