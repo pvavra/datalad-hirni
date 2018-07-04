@@ -36,6 +36,8 @@ import logging
 lgr = logging.getLogger("datalad.hirni.spec2bids")
 
 
+# TODO: optionally run BIDS validator afterwards?
+
 def _get_subject_from_spec(file_, anon=False):
 
     # TODO: this is assuming a session spec snippet.
@@ -68,11 +70,6 @@ class Spec2Bids(Interface):
             doc="""name(s)/path(s) of the acquisition(s) to convert.
                 like 'sourcedata/ax20_435'""",
             constraints=EnsureStr() | EnsureNone()),
-        target_dir=Parameter(
-            args=("-t", "--target-dir"),
-            doc="""Root dir of the BIDS dataset. Defaults to the root
-            dir of the study dataset""",
-            constraints=EnsureStr() | EnsureNone()),
         spec_file=Parameter(
             args=("--spec-file",),
             metavar="SPEC_FILE",
@@ -96,11 +93,11 @@ class Spec2Bids(Interface):
     @staticmethod
     @datasetmethod(name='hirni_spec2bids')
     @eval_results
-    def __call__(acquisition_id=None, dataset=None, target_dir=None,
+    def __call__(acquisition_id=None, dataset=None,
                  spec_file=None, anonymize=False):
 
         dataset = require_dataset(dataset, check_installed=True,
-                                  purpose="dicoms2bids")
+                                  purpose="spec2bids")
 
         # TODO: Be more flexible in how to specify the session to be converted.
         #       Plus: Validate (subdataset with dicoms).
@@ -110,10 +107,6 @@ class Spec2Bids(Interface):
         else:
             raise InsufficientArgumentsError(
                 "insufficient arguments for spec2bids: a session is required")
-
-        # TODO: check if target dir within dataset. (commit!)
-        if target_dir is None:
-            target_dir = dataset.path
 
         if spec_file is None:
             spec_file = "studyspec.json"
@@ -130,13 +123,12 @@ class Spec2Bids(Interface):
                     action='spec2bids',
                     path=acq,
                     status='impossible',
-                    message="Found no spec for acquisition {} at {}".format(acq, spec_path)
+                    message="Found no spec for acquisition {} at {}"
+                            "".format(acq, spec_path)
                 )
                 # TODO: onfailure ignore?
                 continue
             try:
-                # TODO: AutomagicIO?
-                dataset.get(spec_path)
                 subject = _get_subject_from_spec(spec_path, anon=anonymize)
             except ValueError as e:
                 yield get_status_dict(
@@ -179,7 +171,7 @@ class Spec2Bids(Interface):
                          # https://github.com/nipy/heudiconv/issues/196
                          '-o', rel_trash_path,
                          '-b',
-                         '-a', target_dir,
+                         '-a', dataset.path,
                          '-l', '',
                          # avoid glory details provided by dcmstack, we have
                          # them in the aggregated DICOM metadata already
@@ -189,7 +181,7 @@ class Spec2Bids(Interface):
                         sidecar=anonymize,
                         container_name="conversion",  # TODO: config
                         inputs=[rel_dicom_path, rel_spec_path],
-                        outputs=[target_dir],
+                        outputs=[dataset.path],
                         message="Import DICOM acquisition {}".format(
                             'for subject {}'.format(subject)
                             if anonymize else basename(acq)),
@@ -214,13 +206,6 @@ class Spec2Bids(Interface):
                        'path': acq,
                        'status': 'ok',
                        'message': "acquisition converted."}
-
-            # MIH: Let's not do that, easily done by a user whenever needed,
-            # but in the fashion with annex new files on every import
-            ## aggregate bids and nifti metadata:
-            #for r in dataset.aggregate_metadata(recursive=False,
-            #                                    incremental=True):
-            #    yield r
 
             # remove
             rmtree(opj(dataset.path, rel_trash_path))
