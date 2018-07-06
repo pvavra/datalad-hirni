@@ -26,10 +26,22 @@ def _get_edit_dict(value=None, approved=False):
     return dict(approved=approved, value=value)
 
 
-def _add_to_spec(spec, spec_dir, path, meta):
+def _add_to_spec(spec, spec_dir, path, meta, overrides=None):
+    """
+    Parameters
+    ----------
+    spec: list of dict
+      specification to add the snippet to
+    spec_dir:
+      path to where the spec file is (paths in spec are relative to that location)
+    path:
+      path to the entity this snippet is about
+    meta:
+      metadata of the dataset (for dataset_id and refcommit)
+    overrides: dict
+      key, values to add/overwrite the default
+    """
 
-    # XXX this function should be able to take a dict with addition
-    # key/value pairs to ovewrite and extend any of the following
     snippet = {
         'type': 'generic_' + path['type'],
         #'status': None,  # TODO: process state convention; flags
@@ -40,6 +52,14 @@ def _add_to_spec(spec, spec_dir, path, meta):
         'converter': _get_edit_dict(),
         'comment': _get_edit_dict(value=""),
     }
+
+    for k, v in overrides.items():
+        # Note: Not sure yet. Those are not editable. Should it be possible to
+        # use override at all?
+        if k in ['type', 'location', 'dataset_id', 'dataset_refcommit']:
+            snippet[k] = v
+        else:
+            snippet[k] = _get_edit_dict(value=v)
 
     # TODO: if we are in an acquisition, we can get 'subject' from existing spec
     # Possibly same for other BIDS keys
@@ -53,10 +73,7 @@ def _add_to_spec(spec, spec_dir, path, meta):
     # 'id',
     # 'subject',
     spec.append(snippet)
-    from ..support.helpers import sort_spec
-    # XXX why sort on append and not before save?
-    return sorted(spec, key=lambda x: sort_spec(x))
-
+    return spec
 
 @build_doc
 class Spec4Anything(Interface):
@@ -171,10 +188,23 @@ class Spec4Anything(Interface):
             # rather 'set', so we have to check whether a spec for a location
             # is already known and fail or replace it (maybe with --force)
 
-            # TODO: go through all existing specs and extract unique value
+            # go through all existing specs and extract unique value
             # and also assign them to the new record (subjects, ...), but only
             # editable fields!!
-            spec = _add_to_spec(spec, posixpath.split(spec_path)[0], ap, ds_meta)
+            uniques = dict()
+            for s in spec:
+                for k in s:
+                    if isinstance(s[k], dict) and 'value' in s[k]:
+                        if k not in uniques:
+                            uniques[k] = set()
+                        uniques[k].add(s[k]['value'])
+            overrides = dict()
+            for k in uniques:
+                if len(uniques[k]) == 1:
+                    overrides[k] = uniques[k].pop()
+
+            spec = _add_to_spec(spec, posixpath.split(spec_path)[0], ap,
+                                ds_meta, overrides=overrides)
 
             # Note: Not sure whether we really want one commit per snippet.
             #       If not - consider:
@@ -185,7 +215,9 @@ class Spec4Anything(Interface):
             # collect paths of updated files, and give them to a single `add`
             # at the very end?
             # MIH: if we fail, we fail and nothing is committed
-            json_py.dump2stream(spec, spec_path)
+            from ..support.helpers import sort_spec
+            json_py.dump2stream(sorted(spec, key=lambda x: sort_spec(x)),
+                                spec_path)
             # XXX: should capture are re-yield the results
             dataset.add(spec_path,
                         to_git=True,
