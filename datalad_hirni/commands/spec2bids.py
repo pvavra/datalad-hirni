@@ -62,8 +62,8 @@ class Spec2Bids(Interface):
             doc="""bids dataset""",
             constraints=EnsureDataset() | EnsureNone()),
         acquisition_dir=Parameter(
-            args=("-a", "--acquisition-id",),
-            metavar="ACQUISITION_ID",
+            args=("-a", "--acquisition-dir",),
+            metavar="ACQUISITION_DIR",
             nargs="+",
             doc="""name(s)/path(s) of the acquisition(s) to convert.
                 like 'sourcedata/ax20_435'""",
