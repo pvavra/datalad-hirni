@@ -21,15 +21,14 @@ import logging
 lgr = logging.getLogger('datalad.hirni.spec4anything')
 
 
-def _add_to_spec(spec, path, meta):
+def _add_to_spec(spec, spec_dir, path, meta):
 
     snippet = {
         'type': 'generic_' + path['type'],
         'status': None,  # TODO: process state convention; flags
-        'location': path['path'],
+        'location': posixpath.relpath(path['path'], spec_dir),
         'dataset_id': meta['dsid'],
         'dataset_refcommit': meta['refcommit'],
-        'converter': {'value': None, 'approved': False}
     }
 
     # TODO: if we are in an acquisition, we can get 'subject' from existing spec
@@ -71,12 +70,21 @@ class Spec4Anything(Interface):
             snippet""",
             nargs="*",
             constraints=EnsureStr()),
+        spec_file=Parameter(
+            args=("--spec-file",),
+            metavar="SPEC_FILE",
+            doc="""path to the specification file to modify.
+             By default this is a file named 'studyspec.json' in the
+             acquisition directory. This default name can be configured via the
+             'datalad.hirni.studyspec.filename' config variable.""",
+            constraints=EnsureStr() | EnsureNone()),
+
     )
 
     @staticmethod
-    @datasetmethod(name='hirni_import_data')
+    @datasetmethod(name='hirni_spec4anything')
     @eval_results
-    def __call__(path, dataset=None):
+    def __call__(path, dataset=None, spec_file=None):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="hirni spec4anything")
@@ -138,13 +146,17 @@ class Spec4Anything(Interface):
             #       if we want the former, what we actually need is an
             #       association of acquisition and its spec path
             #       => prob. not an option but a config
-            spec_path = posixpath.join(ds_path.posixpath, acq, "studyspec.json")
+
+            spec_path = spec_file if spec_file \
+                else posixpath.join(ds_path.posixpath, acq,
+                                    dataset.config.get("datalad.hirni.studyspec.filename",
+                                                       "studyspec.json"))
 
             spec = [r for r in json_py.load_stream(spec_path)] \
                 if posixpath.exists(spec_path) else list()
 
             lgr.debug("Add specification snippet for %s", ap['path'])
-            spec = _add_to_spec(spec, ap, ds_meta)
+            spec = _add_to_spec(spec, posixpath.split(spec_path)[0], ap, ds_meta)
 
             # Note: Not sure whether we really want one commit per snippet.
             #       If not - consider:
