@@ -141,7 +141,8 @@ class SpecLoader(object):
         if self._spec is None:
             filename = environ.get('HIRNI_STUDY_SPEC')
             if filename:
-                self._spec = [d for d in load_stream(filename)]
+                self._spec = [d for d in load_stream(filename)
+                              if d['type'] == 'dicomseries']
             else:
                 # TODO: Just raise or try a default location first?
                 raise ValueError("No study specification provided. "
