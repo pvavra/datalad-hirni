@@ -26,29 +26,10 @@ from datalad.utils import assure_list
 from datalad.utils import rmtree
 
 from datalad_container import containers_run
-
 import datalad_hirni.support.hirni_heuristic as heuristic
-
-# bound dataset method
-import datalad.metadata.aggregate
-
 import logging
+
 lgr = logging.getLogger("datalad.hirni.spec2bids")
-
-
-# def _get_subject_from_spec(file_, anon=False):
-#
-#     # TODO: this is assuming an acquisition spec snippet.
-#     # Need to elaborate
-#     subject_key = 'subject' if not anon else 'anon_subject'
-#     unique_subs = set([d[subject_key]['value']
-#                        for d in load_stream(file_)
-#                        if subject_key in d.keys() and d[subject_key]['value']])
-#     if not unique_subs:
-#         raise ValueError("missing %s in %s" % (subject_key, file_))
-#     if len(unique_subs) > 1:
-#         raise ValueError("subject ambiguous in %s. candidates: %s" % (file_, unique_subs))
-#     return unique_subs.pop()
 
 
 @build_doc
@@ -61,25 +42,19 @@ class Spec2Bids(Interface):
             args=("-d", "--dataset"),
             doc="""bids dataset""",
             constraints=EnsureDataset() | EnsureNone()),
-        acquisition_dir=Parameter(
-            args=("-a", "--acquisition-dir",),
-            metavar="ACQUISITION_DIR",
-            nargs="+",
-            doc="""name(s)/path(s) of the acquisition(s) to convert.
-                like 'sourcedata/ax20_435'""",
-            constraints=EnsureStr() | EnsureNone()),
-        spec_file=Parameter(
-            args=("--spec-file",),
+        specfile=Parameter(
+            args=("specfile",),
             metavar="SPEC_FILE",
-            doc="""path to the specification file to use for conversion.
+            doc="""path(s) to the specification file(s) to use for conversion.
+             If a directory at the first level beneath the dataset's root is 
+             given instead of a file, it's assumed to be an acqusition directory 
+             that contains a specification file.
              By default this is a file named 'studyspec.json' in the
              acquisition directory. This default name can be configured via the
              'datalad.hirni.studyspec.filename' config variable.
-             NOTE: If a relative path is given, it is interpreted as a path 
-             relative to ACQUISITION_ID's dir (evaluated per acquisition). If an 
-             absolute path is given, that file is used for all acquisitions to 
-             be converted!""",
-            constraints=EnsureStr() | EnsureNone()),
+             """,
+            nargs="*",
+            constraints=EnsureStr()),
         anonymize=Parameter(
             args=("--anonymize",),
             action="store_true",
@@ -93,47 +68,38 @@ class Spec2Bids(Interface):
     @staticmethod
     @datasetmethod(name='hirni_spec2bids')
     @eval_results
-    def __call__(acquisition_dir=None, dataset=None,
-                 spec_file=None, anonymize=False):
+    def __call__(specfile, dataset=None, anonymize=False):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec2bids")
 
-        # TODO: Be more flexible in how to specify the acquisition(visit?)
-        # to be converted.
-        #       Plus: Validate? (subdataset with dicoms).
-        #             -> actually we can convert other data without having
-        #                DICOMs available for this acquisition
-        if acquisition_dir is not None:
-            acquisition_dir = assure_list(acquisition_dir)
-            acquisition_dir = [resolve_path(p, dataset) for p in acquisition_dir]
-        else:
-            raise InsufficientArgumentsError(
-                "insufficient arguments for spec2bids: "
-                "an acquisition is required")
+        specfile = assure_list(specfile)
+        specfile = [resolve_path(p, dataset) for p in specfile]
 
-        if spec_file is None:
-            # TODO: Use config in webapp, too. (specpath_from_id)
-            spec_file = dataset.config.get("datalad.hirni.studyspec.filename",
-                                           "studyspec.json")
-
-        for acq in acquisition_dir:
-
-            if isabs(spec_file):
-                spec_path = spec_file
-            else:
-                spec_path = opj(acq, spec_file)
-
+        for spec_path in specfile:
             if not lexists(spec_path):
                 yield get_status_dict(
                     action='spec2bids',
-                    path=acq,
+                    path=spec_path,
                     status='impossible',
-                    message="Found no spec for acquisition {} at {}"
-                            "".format(acq, spec_path)
+                    message="{} not found".format(spec_path)
                 )
-                # TODO: onfailure ignore?
-                continue
+
+            if op.isdir(spec_path):
+                if op.realpath(op.join(spec_path, op.pardir)) == op.realpath(dataset.path):
+                    spec_path = op.join(
+                            spec_path,
+                            dataset.config.get("datalad.hirni.studyspec.filename",
+                                               "studyspec.json")
+                    )
+                else:
+                    yield get_status_dict(
+                        action='spec2bids',
+                        path=spec_path,
+                        status='impossible',
+                        message="{} is neither a specification file nor an "
+                                "acquisition directory".format(spec_path)
+                    )
 
             ran_heudiconv = False
 
@@ -189,8 +155,6 @@ class Spec2Bids(Interface):
                                                          dir=opj(dataset.path,
                                                                  ".git")),
                                                  dataset.path)
-                        rel_dicom_path = relpath(opj(acq, 'dicoms'),
-                                                 dataset.path)
                         run_results = list()
                         with patch.dict('os.environ',
                                         {'HIRNI_STUDY_SPEC': rel_spec_path,
@@ -215,17 +179,16 @@ class Spec2Bids(Interface):
                                      # we have them in the aggregated DICOM
                                      # metadata already
                                      '--minmeta',
-                                     '--files', rel_dicom_path
+                                     '--files', replacements['location']
                                      ],
                                     sidecar=anonymize,
                                     container_name=dataset.config.get(
                                             "datalad.hirni.conversion-container",
                                             "conversion"),
-                                    inputs=[rel_dicom_path, rel_spec_path],
+                                    inputs=[replacements['location'], rel_spec_path],
                                     outputs=[dataset.path],
-                                    message="Import DICOM acquisition {}".format(
-                                            'for subject {}'.format(replacements['bids_subject'])
-                                            if anonymize else basename(acq)),
+                                    message="Convert DICOM data for subject {}"
+                                            "".format(replacements['bids_subject']),
                                     return_type='generator',
                             ):
                                 # if there was an issue with containers-run,
@@ -238,14 +201,16 @@ class Spec2Bids(Interface):
                         if not all(r['status'] in ['ok', 'notneeded']
                                    for r in run_results):
                             yield {'action': 'heudiconv',
-                                   'path': acq,
+                                   'path': spec_path,
+                                   'snippet': spec_snippet,
                                    'status': 'error',
                                    'message': "acquisition conversion failed. "
                                               "See previous message(s)."}
 
                         else:
                             yield {'action': 'heudiconv',
-                                   'path': acq,
+                                   'path': spec_path,
+                                   'snippet': spec_snippet,
                                    'status': 'ok',
                                    'message': "acquisition converted."}
 
@@ -269,6 +234,7 @@ class Spec2Bids(Interface):
                     else:
                         run_cmd = dataset.run
 
+                    run_results = list()
                     for r in run_cmd(
                             spec_snippet['converter']['value'],
                             sidecar=anonymize,
@@ -278,27 +244,49 @@ class Spec2Bids(Interface):
                             # supposed to not include the acquisition identifier
                             # if --anonymize was given, since it might contain
                             # the original subject ID.
-                            message="Import {} from acquisition {}".format(
+                            message="Convert {} for subject {}".format(
                                         spec_snippet['type'],
-                                        'for subject {}'
-                                        ''.format(replacements['bids_subject'])
-                                        if anonymize else basename(acq)
-                            ),
+                                        replacements['bids_subject']),
                             return_type='generator',
                             #
                             ):
-                        # TODO result treatment
-                        yield r
+
+                        # if there was an issue with containers-run,
+                        # yield original result, otherwise swallow:
+                        if r['status'] not in ['ok', 'notneeded']:
+                            yield r
+
+                        run_results.append(r)
+
+                    if not all(r['status'] in ['ok', 'notneeded']
+                               for r in run_results):
+                        yield {'action': 'spec2bids',
+                               'path': spec_path,
+                               'snippet': spec_snippet,
+                               'status': 'error',
+                               'message': "Conversion failed. "
+                                          "See previous message(s)."}
+
+                    else:
+                        yield {'action': 'spec2bids',
+                               'path': spec_path,
+                               'snippet': spec_snippet,
+                               'status': 'ok',
+                               'message': "specification converted."}
 
                 else:
                     # no converter specified in this snippet or it's a
                     # dicomseries and heudiconv was called already
                     # => nothing to do here.
-                    # yield a notneeded result?
-                    continue
+                    yield get_status_dict(
+                            action='spec2bids',
+                            path=spec_path,
+                            snippet=spec_snippet,
+                            status='notneeded',
+                    )
 
             yield {'action': 'spec2bids',
-                   'path': acq,
+                   'path': spec_path,
                    'status': 'ok'}
 
 
