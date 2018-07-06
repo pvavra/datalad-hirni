@@ -169,7 +169,7 @@ class Spec2Bids(Interface):
                         run_results = list()
                         with patch.dict('os.environ',
                                         {'HIRNI_STUDY_SPEC': rel_spec_path,
-                                         'HIRNI_SPEC2BIDS_SUBJECT': replacements['bids_subject']}):
+                                         'HIRNI_SPEC2BIDS_SUBJECT': replacements['bids_subject']['value']}):
 
                             for r in dataset.containers_run(
                                     ['heudiconv',
@@ -177,14 +177,14 @@ class Spec2Bids(Interface):
                                      # impossible -- hard to avoid
                                      '-f', heuristic.__file__,
                                      # leaves identifying info in run record
-                                     '-s', replacements['bids_subject'],
+                                     '-s', replacements['bids_subject']['value'],
                                      '-c', 'dcm2niix',
                                      # TODO decide on the fate of .heudiconv/
                                      # but ATM we need to (re)move it:
                                      # https://github.com/nipy/heudiconv/issues/196
                                      '-o', rel_trash_path,
                                      '-b',
-                                     '-a', '{{dspath}}',
+                                     '-a', '{dspath}',
                                      '-l', '',
                                      # avoid glory details provided by dcmstack,
                                      # we have them in the aggregated DICOM
@@ -199,7 +199,7 @@ class Spec2Bids(Interface):
                                     inputs=[rel_dicom_path, rel_spec_path],
                                     outputs=[dataset.path],
                                     message="Import DICOM acquisition {}".format(
-                                            'for subject {}'.format(replacements['bids_subject'])
+                                            'for subject {}'.format(replacements['bids_subject']['value'])
                                             if anonymize else basename(acq)),
                                     return_type='generator',
                             ):
@@ -258,7 +258,7 @@ class Spec2Bids(Interface):
                             message="Import {} from acquisition {}".format(
                                         spec_snippet['type'],
                                         'for subject {}'
-                                        ''.format(replacements['bids_subject'])
+                                        ''.format(replacements['bids_subject']['value'])
                                         if anonymize else basename(acq)
                             ),
                             return_type='generator',
