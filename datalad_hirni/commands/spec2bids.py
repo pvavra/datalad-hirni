@@ -166,9 +166,10 @@ class Spec2Bids(Interface):
                             replacements['bids_subject'] = v['value']
                         else:
                             continue
-                    elif k in ['location', 'converter_path']:
-                        replacements[k] = \
-                            op.join(op.dirname(rel_spec_path), v)
+                    elif k == 'location':
+                        replacements[k] = op.join(op.dirname(rel_spec_path), v)
+                    elif k == 'converter_path':
+                        replacements[k] = op.join(op.dirname(rel_spec_path), v['value'])
                     else:
                         replacements[k] = v['value'] if isinstance(v, dict) else v
 
@@ -253,23 +254,23 @@ class Spec2Bids(Interface):
                         # run heudiconv only once
                         ran_heudiconv = True
 
-                elif 'converter' in spec_snippet and spec_snippet['converter']:
+                elif 'converter' in spec_snippet and spec_snippet['converter']['value']:
                     # Spec snippet comes with a specific converter call.
 
                     # TODO: RF: run_converter()
 
-                    if 'converter-container' in spec_snippet and spec_snippet['converter-container']:
+                    if 'converter-container' in spec_snippet and spec_snippet['converter-container']['value']:
                         from functools import partial
                         run_cmd = partial(
                             dataset.containers_run,
-                            container_name=spec_snippet['converter-container']
+                            container_name=spec_snippet['converter-container']['value']
                         )
 
                     else:
                         run_cmd = dataset.run
 
                     for r in run_cmd(
-                            spec_snippet['converter'],
+                            spec_snippet['converter']['value'],
                             sidecar=anonymize,
                             inputs=[replacements['location'], rel_spec_path],
                             outputs=[dataset.path],

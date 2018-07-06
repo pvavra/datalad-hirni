@@ -137,8 +137,10 @@ def test_spec2bids(study_path, bids_path):
                "location": op.join('my_fancy_data', 'my_raw_data.txt'),
                "subject": {"value": "{sub}".format(sub=subject),
                            "approved": True},
-               "converter": "{_hs[converter_path]} {_hs[location]} {dspath}/sub-{_hs[bids_subject]}/my_converted_data.txt",
-               "converter_path": op.join(op.pardir, 'code', 'my_script.sh')
+               "converter": {"value": "{_hs[converter_path]} {_hs[location]} {dspath}/sub-{_hs[bids_subject]}/my_converted_data.txt",
+                             "approved": True},
+               "converter_path": {"value": op.join(op.pardir, 'code', 'my_script.sh'),
+                                  "approved": True}
                }
 
     # TODO: proper spec save helper, not just sort (also to be used in webapp!)
