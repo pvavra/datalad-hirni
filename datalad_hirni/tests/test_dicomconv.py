@@ -172,8 +172,7 @@ def test_spec2bids(study_path, bids_path):
     # converter script itself.
     makedirs(op.join(bids_ds.path, "sub-{sub}".format(sub=subject)))
 
-    bids_ds.hirni_spec2bids(acquisition_dir=op.join("sourcedata", acquisition),
-                            spec_file=spec_file)
+    bids_ds.hirni_spec2bids(op.join("sourcedata", acquisition, spec_file))
 
     assert op.exists(op.join(bids_ds.path, "sub-{sub}".format(sub=subject), "my_converted_data.txt"))
     with open(op.join(bids_ds.path, "sub-{sub}".format(sub=subject), "my_converted_data.txt"), 'r') as f:
