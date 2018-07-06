@@ -28,6 +28,8 @@ def _get_edit_dict(value=None, approved=False):
 
 def _add_to_spec(spec, spec_dir, path, meta):
 
+    # XXX this function should be able to take a dict with addition
+    # key/value pairs to ovewrite and extend any of the following
     snippet = {
         'type': 'generic_' + path['type'],
         #'status': None,  # TODO: process state convention; flags
@@ -52,6 +54,7 @@ def _add_to_spec(spec, spec_dir, path, meta):
     # 'subject',
     spec.append(snippet)
     from ..support.helpers import sort_spec
+    # XXX why sort on append and not before save?
     return sorted(spec, key=lambda x: sort_spec(x))
 
 
@@ -164,6 +167,13 @@ class Spec4Anything(Interface):
                 if posixpath.exists(spec_path) else list()
 
             lgr.debug("Add specification snippet for %s", ap['path'])
+            # XXX 'add' does not seem to be the thing we want to do
+            # rather 'set', so we have to check whether a spec for a location
+            # is already known and fail or replace it (maybe with --force)
+
+            # TODO: go through all existing specs and extract unique value
+            # and also assign them to the new record (subjects, ...), but only
+            # editable fields!!
             spec = _add_to_spec(spec, posixpath.split(spec_path)[0], ap, ds_meta)
 
             # Note: Not sure whether we really want one commit per snippet.
@@ -171,7 +181,12 @@ class Spec4Anything(Interface):
             #       - What if we fail amidst? => Don't write to file yet.
             #       - What about input paths from different acquisitions?
             #         => store specs per acquisition in memory
+            # MIH: One commit per line seems silly. why not update all files
+            # collect paths of updated files, and give them to a single `add`
+            # at the very end?
+            # MIH: if we fail, we fail and nothing is committed
             json_py.dump2stream(spec, spec_path)
+            # XXX: should capture are re-yield the results
             dataset.add(spec_path,
                         to_git=True,
                         save=True,
@@ -182,6 +197,7 @@ class Spec4Anything(Interface):
             # TODO: Once spec snippet is actually identifiable, there should be
             # a 'notneeded' result if nothing changed. ATM it would create an
             # additional identical snippet (which is intended for now)
+            # MIH: add/save does that automatically
             yield get_status_dict(
                     status='ok',
                     type=ap['type'],
