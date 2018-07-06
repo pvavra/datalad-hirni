@@ -21,14 +21,22 @@ import logging
 lgr = logging.getLogger('datalad.hirni.spec4anything')
 
 
+def _get_edit_dict(value=None, approved=False):
+    # our current concept of what an editable field looks like
+    return dict(approved=approved, value=value)
+
+
 def _add_to_spec(spec, spec_dir, path, meta):
 
     snippet = {
         'type': 'generic_' + path['type'],
-        'status': None,  # TODO: process state convention; flags
+        #'status': None,  # TODO: process state convention; flags
         'location': posixpath.relpath(path['path'], spec_dir),
         'dataset_id': meta['dsid'],
         'dataset_refcommit': meta['refcommit'],
+        'id': _get_edit_dict(),
+        'converter': _get_edit_dict(),
+        'comment': _get_edit_dict(value=""),
     }
 
     # TODO: if we are in an acquisition, we can get 'subject' from existing spec
