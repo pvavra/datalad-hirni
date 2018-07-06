@@ -61,7 +61,7 @@ class Spec2Bids(Interface):
             args=("-d", "--dataset"),
             doc="""bids dataset""",
             constraints=EnsureDataset() | EnsureNone()),
-        acquisition_id=Parameter(
+        acquisition_dir=Parameter(
             args=("-a", "--acquisition-id",),
             metavar="ACQUISITION_ID",
             nargs="+",
@@ -93,7 +93,7 @@ class Spec2Bids(Interface):
     @staticmethod
     @datasetmethod(name='hirni_spec2bids')
     @eval_results
-    def __call__(acquisition_id=None, dataset=None,
+    def __call__(acquisition_dir=None, dataset=None,
                  spec_file=None, anonymize=False):
 
         dataset = require_dataset(dataset, check_installed=True,
@@ -104,9 +104,9 @@ class Spec2Bids(Interface):
         #       Plus: Validate? (subdataset with dicoms).
         #             -> actually we can convert other data without having
         #                DICOMs available for this acquisition
-        if acquisition_id is not None:
-            acquisition_id = assure_list(acquisition_id)
-            acquisition_id = [resolve_path(p, dataset) for p in acquisition_id]
+        if acquisition_dir is not None:
+            acquisition_dir = assure_list(acquisition_dir)
+            acquisition_dir = [resolve_path(p, dataset) for p in acquisition_dir]
         else:
             raise InsufficientArgumentsError(
                 "insufficient arguments for spec2bids: "
@@ -117,7 +117,7 @@ class Spec2Bids(Interface):
             spec_file = dataset.config.get("datalad.hirni.studyspec.filename",
                                            "studyspec.json")
 
-        for acq in acquisition_id:
+        for acq in acquisition_dir:
 
             if isabs(spec_file):
                 spec_path = spec_file
@@ -146,11 +146,35 @@ class Spec2Bids(Interface):
             for spec_snippet in load_stream(spec_path):
 
                 # build a dict available for placeholders in format strings:
-                replacements = spec_snippet.copy()
-                sub = replacements.pop('subject')
-                anon_sub = replacements.pop('anon_subject')
-                replacements['bids_subject'] = anon_sub \
-                    if anonymize else sub
+                # Note: This is flattening the structure since we don't need
+                # value/approved for the substitutions. In addition 'subject'
+                # and 'anon_subject' are not passed on, but a new key
+                # 'bids_subject' instead the value of which depends on the
+                # --anonymize switch.
+                # Additionally 'location' is recomputed to be relative to
+                # dataset.path, since this is where the converters are running
+                # from within.
+                replacements = dict()
+                for k, v in spec_snippet.items():
+                    if k == 'subject':
+                        if anonymize:
+                            continue
+                        else:
+                            replacements['bids_subject'] = v['value']
+                    elif k == 'anon_subject':
+                        if anonymize:
+                            replacements['bids_subject'] = v['value']
+                        else:
+                            continue
+                    elif k in ['location', 'converter_path']:
+                        replacements[k] = \
+                            op.join(op.dirname(rel_spec_path), v)
+                    else:
+                        replacements[k] = v['value'] if isinstance(v, dict) else v
+
+                dataset.config.overrides = {
+                    "datalad.run.substitutions._hs": replacements}
+                dataset.config.reload()
 
                 if spec_snippet['type'] == 'dicomseries' and not ran_heudiconv:
                         # special treatment of DICOMs (using heudiconv)
@@ -169,7 +193,7 @@ class Spec2Bids(Interface):
                         run_results = list()
                         with patch.dict('os.environ',
                                         {'HIRNI_STUDY_SPEC': rel_spec_path,
-                                         'HIRNI_SPEC2BIDS_SUBJECT': replacements['bids_subject']['value']}):
+                                         'HIRNI_SPEC2BIDS_SUBJECT': replacements['bids_subject']}):
 
                             for r in dataset.containers_run(
                                     ['heudiconv',
@@ -177,7 +201,7 @@ class Spec2Bids(Interface):
                                      # impossible -- hard to avoid
                                      '-f', heuristic.__file__,
                                      # leaves identifying info in run record
-                                     '-s', replacements['bids_subject']['value'],
+                                     '-s', replacements['bids_subject'],
                                      '-c', 'dcm2niix',
                                      # TODO decide on the fate of .heudiconv/
                                      # but ATM we need to (re)move it:
@@ -199,7 +223,7 @@ class Spec2Bids(Interface):
                                     inputs=[rel_dicom_path, rel_spec_path],
                                     outputs=[dataset.path],
                                     message="Import DICOM acquisition {}".format(
-                                            'for subject {}'.format(replacements['bids_subject']['value'])
+                                            'for subject {}'.format(replacements['bids_subject'])
                                             if anonymize else basename(acq)),
                                     return_type='generator',
                             ):
@@ -229,27 +253,25 @@ class Spec2Bids(Interface):
                         # run heudiconv only once
                         ran_heudiconv = True
 
-                elif spec_snippet['converter']:
+                elif 'converter' in spec_snippet and spec_snippet['converter']:
                     # Spec snippet comes with a specific converter call.
 
                     # TODO: RF: run_converter()
 
-                    dataset.config.overrides = {
-                        "datalad.run.substitutions.hirni-spec": replacements}
-                    dataset.config.reload()
-                    if not spec_snippet['converter-container']:
-                        run_cmd = dataset.run
-                    else:
+                    if 'converter-container' in spec_snippet and spec_snippet['converter-container']:
                         from functools import partial
                         run_cmd = partial(
                             dataset.containers_run,
                             container_name=spec_snippet['converter-container']
                         )
 
+                    else:
+                        run_cmd = dataset.run
+
                     for r in run_cmd(
                             spec_snippet['converter'],
                             sidecar=anonymize,
-                            inputs=[spec_snippet['location'], rel_spec_path],
+                            inputs=[replacements['location'], rel_spec_path],
                             outputs=[dataset.path],
                             # Note: The following message construction is
                             # supposed to not include the acquisition identifier
@@ -258,14 +280,14 @@ class Spec2Bids(Interface):
                             message="Import {} from acquisition {}".format(
                                         spec_snippet['type'],
                                         'for subject {}'
-                                        ''.format(replacements['bids_subject']['value'])
+                                        ''.format(replacements['bids_subject'])
                                         if anonymize else basename(acq)
                             ),
                             return_type='generator',
                             #
                             ):
                         # TODO result treatment
-                        pass
+                        yield r
 
                 else:
                     # no converter specified in this snippet or it's a
