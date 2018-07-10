@@ -129,6 +129,8 @@ class Spec4Anything(Interface):
         ds_path = PathRI(dataset.path)
         # ###
 
+        updated_files = []
+
         for ap in AnnotatePaths.__call__(
                 dataset=dataset,
                 path=path,
@@ -138,8 +140,9 @@ class Spec4Anything(Interface):
                 return_type='generator',
                 # TODO: Check this one out:
                 on_failure='ignore',
-                # Note/TODO: Not sure yet whether and when we need those. Generally
-                # we want to be able to create a spec for subdatasets, too:
+                # Note/TODO: Not sure yet whether and when we need those.
+                # Generally we want to be able to create a spec for subdatasets,
+                # too:
                 # recursive=recursive,
                 # recursion_limit=recursion_limit,
                 # force_subds_discovery=True,
@@ -228,14 +231,7 @@ class Spec4Anything(Interface):
             from ..support.helpers import sort_spec
             json_py.dump2stream(sorted(spec, key=lambda x: sort_spec(x)),
                                 spec_path)
-            # XXX: should capture are re-yield the results
-            dataset.add(spec_path,
-                        to_git=True,
-                        save=True,
-                        message="[HIRNI] Add specification snippet for %s in "
-                                "acquisition %s" % (ap['path'], acq),
-                        return_type='item-or-list',
-                        result_renderer='disabled')
+            updated_files.append(spec_path)
             # TODO: Once spec snippet is actually identifiable, there should be
             # a 'notneeded' result if nothing changed. ATM it would create an
             # additional identical snippet (which is intended for now)
@@ -245,3 +241,12 @@ class Spec4Anything(Interface):
                     type=ap['type'],
                     path=ap['path'],
                     **res_kwargs)
+
+        for r in dataset.add(
+                updated_files,
+                to_git=True,
+                save=True,
+                message="[HIRNI] Add specification snippet(s) for %s " % path,
+                return_type='generator',
+                result_renderer='disabled'):
+            yield r
