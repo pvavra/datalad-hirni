@@ -16,6 +16,7 @@ from datalad.support import json_py
 from datalad.interface.annotate_paths import AnnotatePaths
 from datalad.interface.results import get_status_dict
 from datalad.coreapi import metadata
+import os.path as op
 
 import logging
 lgr = logging.getLogger('datalad.hirni.spec4anything')
@@ -106,13 +107,17 @@ class Spec4Anything(Interface):
              acquisition directory. This default name can be configured via the
              'datalad.hirni.studyspec.filename' config variable.""",
             constraints=EnsureStr() | EnsureNone()),
-
+        properties=Parameter(
+            args=("--properties",),
+            metavar="PATH or JSON string",
+            doc="""""",
+            constraints=EnsureStr() | EnsureNone()),
     )
 
     @staticmethod
     @datasetmethod(name='hirni_spec4anything')
     @eval_results
-    def __call__(path, dataset=None, spec_file=None):
+    def __call__(path, dataset=None, spec_file=None, properties=None):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="hirni spec4anything")
@@ -202,6 +207,14 @@ class Spec4Anything(Interface):
             for k in uniques:
                 if len(uniques[k]) == 1:
                     overrides[k] = uniques[k].pop()
+
+            if properties:
+                # load from file or json string
+                props = json_py.load(properties) \
+                        if op.exists(properties) else json_py.loads(properties)
+                # turn into editable, pre-approved records
+                props = {k: dict(value=v, approved=True) for k, v in props.items()}
+                overrides.update(props)
 
             spec = _add_to_spec(spec, posixpath.split(spec_path)[0], ap,
                                 ds_meta, overrides=overrides)
