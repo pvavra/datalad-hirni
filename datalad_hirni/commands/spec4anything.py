@@ -54,13 +54,8 @@ def _add_to_spec(spec, spec_dir, path, meta, overrides=None):
         'comment': _get_edit_dict(value=""),
     }
 
-    for k, v in overrides.items():
-        # Note: Not sure yet. Those are not editable. Should it be possible to
-        # use override at all?
-        if k in ['type', 'location', 'dataset_id', 'dataset_refcommit']:
-            snippet[k] = v
-        else:
-            snippet[k] = _get_edit_dict(value=v)
+    snippet.update(overrides)
+
 
     # TODO: if we are in an acquisition, we can get 'subject' from existing spec
     # Possibly same for other BIDS keys
@@ -75,6 +70,7 @@ def _add_to_spec(spec, spec_dir, path, meta, overrides=None):
     # 'subject',
     spec.append(snippet)
     return spec
+
 
 @build_doc
 class Spec4Anything(Interface):
@@ -206,7 +202,8 @@ class Spec4Anything(Interface):
             overrides = dict()
             for k in uniques:
                 if len(uniques[k]) == 1:
-                    overrides[k] = uniques[k].pop()
+                    overrides[k] = _get_edit_dict(value=uniques[k].pop(),
+                                                  approved=False)
 
             if properties:
                 # load from file or json string
