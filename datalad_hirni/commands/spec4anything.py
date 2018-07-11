@@ -130,7 +130,7 @@ class Spec4Anything(Interface):
         # ###
 
         updated_files = []
-
+        paths = []
         for ap in AnnotatePaths.__call__(
                 dataset=dataset,
                 path=path,
@@ -241,12 +241,19 @@ class Spec4Anything(Interface):
                     type=ap['type'],
                     path=ap['path'],
                     **res_kwargs)
+            paths.append(ap)
 
+        from datalad.dochelpers import single_or_plural
+        from os import linesep
+        message = "[HIRNI] Add specification {n_snippets} for: {paths}".format(
+                n_snippets=single_or_plural("snippet", "snippets", len(paths)),
+                paths=linesep.join(" - " + p['path'] for p in paths)
+                if len(paths) > 1 else paths[0]['path'])
         for r in dataset.add(
                 updated_files,
                 to_git=True,
                 save=True,
-                message="[HIRNI] Add specification snippet(s) for %s " % path,
+                message=message,
                 return_type='generator',
                 result_renderer='disabled'):
             yield r
