@@ -143,7 +143,9 @@ class Spec2Bids(Interface):
                     "datalad.run.substitutions._hs": replacements}
                 dataset.config.reload()
 
-                if spec_snippet['type'] == 'dicomseries' and not ran_heudiconv:
+                if not ran_heudiconv and \
+                            heuristic.has_specval(spec_snippet, 'converter') and \
+                            heuristic.get_specval(spec_snippet, 'converter') == 'heudiconv':
                         # special treatment of DICOMs (using heudiconv)
                         # But it's one call to heudiconv for all DICOMs of an
                         # acquisition!
@@ -219,7 +221,8 @@ class Spec2Bids(Interface):
                         # run heudiconv only once
                         ran_heudiconv = True
 
-                elif 'converter' in spec_snippet and spec_snippet['converter']['value']:
+                elif heuristic.has_specval(spec_snippet, 'converter') and \
+                        heuristic.get_specval(spec_snippet, 'converter') != 'heudiconv':
                     # Spec snippet comes with a specific converter call.
 
                     # TODO: RF: run_converter()
@@ -268,22 +271,29 @@ class Spec2Bids(Interface):
                                           "See previous message(s)."}
 
                     else:
-                        yield {'action': 'spec2bids',
+                        yield {'action': 'specsnippet2bids',
                                'path': spec_path,
                                'snippet': spec_snippet,
                                'status': 'ok',
                                'message': "specification converted."}
 
                 else:
-                    # no converter specified in this snippet or it's a
-                    # dicomseries and heudiconv was called already
-                    # => nothing to do here.
-                    yield get_status_dict(
-                            action='spec2bids',
-                            path=spec_path,
-                            snippet=spec_snippet,
-                            status='notneeded',
-                    )
+                    if heuristic.has_specval(spec_snippet, 'converter') and \
+                            heuristic.get_specval(spec_snippet, 'converter') == 'heudiconv' and \
+                            ran_heudiconv:
+                        # in this case we acted upon this snippet already and
+                        # do not have to produce a result
+                        pass
+                    else:
+                        # no converter specified in this snippet or it's a
+                        # dicomseries and heudiconv was called already
+                        # => nothing to do here.
+                        yield get_status_dict(
+                                action='spec2bids',
+                                path=spec_path,
+                                snippet=spec_snippet,
+                                status='notneeded',
+                        )
 
             yield {'action': 'spec2bids',
                    'path': spec_path,
