@@ -83,7 +83,7 @@ def _single_session_dicom2bids(label, path):
     ds.containers_add(name="conversion",
                       url="shub://mih/ohbm2018-training:heudiconv")
 
-    ds.hirni_spec2bids(acquisition_id=acquisition, spec_file=spec_file)
+    ds.hirni_spec2bids(specfile=spec_file)
 
 
 def test_dicom2bids():
