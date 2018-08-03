@@ -202,7 +202,7 @@ class Dicom2Spec(Interface):
             found_some = True
             spec_series_list = add_to_spec(meta,
                                            spec_series_list,
-                                           dataset.path,
+                                           op.dirname(spec),
                                            subject=subject,
                                            anon_subject=anon_subject,
                                            session=session)

@@ -134,14 +134,15 @@ class SpecLoader(object):
 
     def __init__(self):
         self._spec = None
-        # determine spec key to use for subject ('subject' or 'anon_subject'):
-        self.subject_key = environ.get('HIRNI_SPEC2BIDS_SUBJECT', 'subject')
+        # get chosen subject id (orig or anon) from env var
+        self.subject = environ.get('HIRNI_SPEC2BIDS_SUBJECT')
 
     def get_study_spec(self):
         if self._spec is None:
             filename = environ.get('HIRNI_STUDY_SPEC')
             if filename:
-                self._spec = [d for d in load_stream(filename)]
+                self._spec = [d for d in load_stream(filename)
+                              if d['type'] == 'dicomseries']
             else:
                 # TODO: Just raise or try a default location first?
                 raise ValueError("No study specification provided. "
@@ -189,9 +190,9 @@ def validate_spec(spec):
         lgr.warning("Missing image series UID.")
         return False
 
-    for var in (_spec.subject_key, 'bids_modality'):
+    for var in ('bids_modality',):
         if not has_specval(spec, var):
-            lgr.warning("Missing specification value '%s'", var)
+            lgr.warning("Missing specification value for key '%s'", var)
             return False
 
     return True
@@ -232,7 +233,7 @@ def infotodict(seqinfo):  # pragma: no cover
             lgr.debug("Series invalid (%s). Skip.", str(s.series_uid))
             continue
 
-        dirname = filename = "sub-{}".format(get_specval(series_spec, _spec.subject_key))
+        dirname = filename = "sub-{}".format(_spec.subject)
         # session
         if has_specval(series_spec, 'bids_session'):
             ses = get_specval(series_spec, 'bids_session')
