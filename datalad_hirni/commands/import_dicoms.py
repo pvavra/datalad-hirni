@@ -178,13 +178,19 @@ class ImportDicoms(Interface):
             metavar="ANON_SUBJECT",
             doc="""TODO""",
             constraints=EnsureStr() | EnsureNone()),
+        properties=Parameter(
+                args=("--properties",),
+                metavar="PATH or JSON string",
+                doc="""""",
+                constraints=EnsureStr() | EnsureNone()),
+
     )
 
     @staticmethod
     @datasetmethod(name='hirni_import_dcm')
     @eval_results
     def __call__(path, acqid=None, dataset=None,
-                 subject=None, anon_subject=None):
+                 subject=None, anon_subject=None, properties=None):
         ds = require_dataset(dataset, check_installed=True,
                              purpose="import DICOM session")
         if acqid:
@@ -235,7 +241,8 @@ class ImportDicoms(Interface):
                 dicom_ds.path, op.pardir, "studyspec.json")),
             subject=subject,
             anon_subject=anon_subject,
-            session=acqid
+            session=acqid,
+            properties=properties
         )
 
         # We have the tarball and can drop extracted stuff:

@@ -27,7 +27,7 @@ lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
 
 def add_to_spec(ds_metadata, spec_list, basepath,
-                subject=None, anon_subject=None, session=None):
+                subject=None, anon_subject=None, session=None, overrides=None):
 
     from datalad_hirni.support.dicom2bids_rules import \
         get_rules_from_metadata, series_is_valid  # TODO: RF?
@@ -67,8 +67,11 @@ def add_to_spec(ds_metadata, spec_list, basepath,
                 base_list[idx][k] = {'value': values[k],
                                      'approved': False}
 
-    # merge with existing spec:
+    # merge with existing spec plus overrides:
     for series in base_list:
+
+        series.update(overrides)
+
         existing = [i for s, i in
                     zip(spec_list, range(len(spec_list)))
                     if s['uid'] == series['uid']]
@@ -125,6 +128,12 @@ class Dicom2Spec(Interface):
                     doc="""session identifier. If not specified, an attempt will be made 
                     to derive SESSION from DICOM headers""",
                     constraints=EnsureStr() | EnsureNone()),
+            properties=Parameter(
+                    args=("--properties",),
+                    metavar="PATH or JSON string",
+                    doc="""""",
+                    constraints=EnsureStr() | EnsureNone()),
+
             recursive=recursion_flag,
             # TODO: invalid, since datalad-metadata doesn't support it:
             # recursion_limit=recursion_limit,
@@ -134,7 +143,8 @@ class Dicom2Spec(Interface):
     @datasetmethod(name='hirni_dicom2spec')
     @eval_results
     def __call__(path=None, spec=None, dataset=None, subject=None,
-                 anon_subject=None, session=None, recursive=False):
+                 anon_subject=None, session=None, recursive=False,
+                 properties=None):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec from dicoms")
@@ -199,12 +209,24 @@ class Dicom2Spec(Interface):
                 continue
 
             found_some = True
+
+            overrides = dict()
+            if properties:
+                # load from file or json string
+                props = json_py.load(properties) \
+                        if op.exists(properties) else json_py.loads(properties)
+                # turn into editable, pre-approved records
+                props = {k: dict(value=v, approved=True) for k, v in props.items()}
+                overrides.update(props)
+
             spec_series_list = add_to_spec(meta,
                                            spec_series_list,
                                            op.dirname(spec),
                                            subject=subject,
                                            anon_subject=anon_subject,
-                                           session=session)
+                                           session=session,
+                                           overrides=overrides
+                                           )
 
         if not found_some:
             yield dict(status='impossible',

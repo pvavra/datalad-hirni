@@ -243,14 +243,12 @@ def _guess_run(record):
         for part in prot_parts:
             if re.match(r'r[0-9]*', part):
                 run = part[1:]
-            # TODO: correct padding; see above
-            if len(run) == 1:
-                run = "0" + run
-            return run
-
-    else:
-        # default to entire protocol name
-        return protocol
+                # TODO: correct padding; see above
+                if len(run) == 1:
+                    run = "0" + run
+                return run
+    # default to entire protocol name
+    return protocol
 
 
 def _guess_session(record):
