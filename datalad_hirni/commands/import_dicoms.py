@@ -178,40 +178,33 @@ class ImportDicoms(Interface):
             metavar="ANON_SUBJECT",
             doc="""TODO""",
             constraints=EnsureStr() | EnsureNone()),
-        session=Parameter(
-                args=("--session",),
-                metavar="SESSION",
-                doc="""session identifier. If not specified, an attempt will be made
-                to derive SESSION from DICOM headers""",
-                constraints=EnsureStr() | EnsureNone()),
-
     )
 
     @staticmethod
     @datasetmethod(name='hirni_import_dcm')
     @eval_results
     def __call__(path, acqid=None, dataset=None,
-                 subject=None, anon_subject=None, session=None):
+                 subject=None, anon_subject=None):
         ds = require_dataset(dataset, check_installed=True,
                              purpose="import DICOM session")
         if acqid:
-            # session was specified => we know where to create subds
-            ses_dir = op.join(ds.path, acqid)
-            if not op.exists(ses_dir):
-                makedirs(ses_dir)
+            # acquisition was specified => we know where to create subds
+            acq_dir = op.join(ds.path, acqid)
+            if not op.exists(acq_dir):
+                makedirs(acq_dir)
             # TODO: if exists: needs to be empty?
 
-            dicom_ds = _create_subds_from_tarball(path, ses_dir)
+            dicom_ds = _create_subds_from_tarball(path, acq_dir)
 
         else:
-            # we don't know the session yet => create in tmp
+            # we don't know the acquisition id yet => create in tmp
 
-            ses_dir = op.join(ds.path, '.git', 'datalad', 'hirni_import')
-            assert not op.exists(ses_dir)
+            acq_dir = op.join(ds.path, '.git', 'datalad', 'hirni_import')
+            assert not op.exists(acq_dir)
             # TODO: don't assert; check and adapt instead
 
             try:
-                dicom_ds = _create_subds_from_tarball(path, ses_dir)
+                dicom_ds = _create_subds_from_tarball(path, acq_dir)
                 dicom_ds = _guess_acquisition_and_move(dicom_ds, ds)
             except OSError as e:
                 # TODO: Was FileExistsError. Find more accurate PY2/3 solution
@@ -222,12 +215,12 @@ class ImportDicoms(Interface):
                            action='import DICOM tarball',
                            logger=lgr,
                            message='%s already exists' % e.filename)
-                rmtree(ses_dir)
+                rmtree(acq_dir)
 
             finally:
-                if op.exists(ses_dir):
-                    lgr.debug("Killing temp dataset at %s ...", ses_dir)
-                    rmtree(ses_dir)
+                if op.exists(acq_dir):
+                    lgr.debug("Killing temp dataset at %s ...", acq_dir)
+                    rmtree(acq_dir)
 
         acqid = op.basename(op.dirname(dicom_ds.path))
         ds.add(
@@ -242,7 +235,7 @@ class ImportDicoms(Interface):
                 dicom_ds.path, op.pardir, "studyspec.json")),
             subject=subject,
             anon_subject=anon_subject,
-            session=session
+            session=acqid
         )
 
         # We have the tarball and can drop extracted stuff:
