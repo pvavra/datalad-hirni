@@ -237,8 +237,17 @@ def _guess_run(record):
                 run = "0" + run
             return run
         except (ValueError, IndexError):
-            # default to entire protocol name
-            return protocol
+            # no result yet
+            pass
+
+        for part in prot_parts:
+            if re.match(r'r[0-9]*', part):
+                run = part[1:]
+            # TODO: correct padding; see above
+            if len(run) == 1:
+                run = "0" + run
+            return run
+
     else:
         # default to entire protocol name
         return protocol
