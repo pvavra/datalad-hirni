@@ -162,7 +162,7 @@ class ImportDicoms(Interface):
         acqid=Parameter(
             args=("acqid",),
             metavar="ACQUISITION ID",
-            doc="""session identifier for the imported DICOM files. If not
+            doc="""acquisition identifier for the imported DICOM files. If not
             specified, an attempt will be made to derive ACQUISITION_ID from DICOM
             headers.""",
             nargs="?",
@@ -213,7 +213,9 @@ class ImportDicoms(Interface):
             try:
                 dicom_ds = _create_subds_from_tarball(path, ses_dir)
                 dicom_ds = _guess_acquisition_and_move(dicom_ds, ds)
-            except FileExistsError as e:
+            except OSError as e:
+                # TODO: Was FileExistsError. Find more accurate PY2/3 solution
+                # than just OSError
                 yield dict(status='impossible',
                            path=e.filename,
                            type='file',

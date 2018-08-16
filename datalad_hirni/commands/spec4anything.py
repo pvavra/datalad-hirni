@@ -232,10 +232,7 @@ class Spec4Anything(Interface):
             json_py.dump2stream(sorted(spec, key=lambda x: sort_spec(x)),
                                 spec_path)
             updated_files.append(spec_path)
-            # TODO: Once spec snippet is actually identifiable, there should be
-            # a 'notneeded' result if nothing changed. ATM it would create an
-            # additional identical snippet (which is intended for now)
-            # MIH: add/save does that automatically
+
             yield get_status_dict(
                     status='ok',
                     type=ap['type'],

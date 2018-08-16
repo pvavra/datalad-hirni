@@ -22,8 +22,7 @@ from datalad.support.param import Parameter
 
 lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
-
-############################## Build plugin mechanism for Rules finally!
+# ############################# Build plugin mechanism for Rules finally!
 #########################################
 
 
@@ -43,7 +42,7 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             # Note: The first 4 entries aren't a dict and have no
             # "approved flag", since they are automatically managed
             'type': 'dicomseries',
-            'status': None,  # TODO: process state convention; flags
+            #'status': None,  # TODO: process state convention; flags
             'location': op.relpath(ds_metadata['path'], basepath),
             'uid': series['SeriesInstanceUID'],
             'dataset_id': ds_metadata['dsid'],
