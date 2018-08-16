@@ -224,7 +224,11 @@ class Dicom2Spec(Interface):
                                            op.dirname(spec),
                                            subject=subject,
                                            anon_subject=anon_subject,
-                                           session=session,
+                                           # session=session,
+                                           # TODO: parameter "session" was what
+                                           # we now call acquisition. This is
+                                           # NOT a good default for bids_session!
+                                           # Particularly wrt to anonymization
                                            overrides=overrides
                                            )
 
