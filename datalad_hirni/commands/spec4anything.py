@@ -13,6 +13,7 @@ from datalad.distribution.dataset import require_dataset
 from datalad.interface.utils import eval_results
 from datalad.support.network import PathRI
 from datalad.support import json_py
+from datalad.utils import assure_list
 from datalad.interface.annotate_paths import AnnotatePaths
 from datalad.interface.results import get_status_dict
 from datalad.coreapi import metadata
@@ -117,6 +118,8 @@ class Spec4Anything(Interface):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="hirni spec4anything")
+        path = assure_list(path)
+        path = [resolve_path(p, dataset) for p in path]
 
         res_kwargs = dict(action='hirni spec4anything', logger=lgr)
         res_kwargs['refds'] = Interface.get_refds_path(dataset)
@@ -215,6 +218,10 @@ class Spec4Anything(Interface):
                 # turn into editable, pre-approved records
                 props = {k: dict(value=v, approved=True) for k, v in props.items()}
                 overrides.update(props)
+
+            # TODO: It's probably wrong to use uniques for overwriting! At least
+            # they cannot be used to overwrite values explicitly set in
+            # _add_to_spec like "location", "type", etc.
 
             spec = _add_to_spec(spec, posixpath.split(spec_path)[0], ap,
                                 ds_meta, overrides=overrides)
