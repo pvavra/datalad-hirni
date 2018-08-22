@@ -28,7 +28,7 @@ def _get_edit_dict(value=None, approved=False):
     return dict(approved=approved, value=value)
 
 
-def _add_to_spec(spec, spec_dir, path, meta, overrides=None):
+def _add_to_spec(spec, spec_dir, path, meta, overrides=None, replace=False):
     """
     Parameters
     ----------
@@ -46,7 +46,6 @@ def _add_to_spec(spec, spec_dir, path, meta, overrides=None):
 
     snippet = {
         'type': 'generic_' + path['type'],
-        #'status': None,  # TODO: process state convention; flags
         'location': posixpath.relpath(path['path'], spec_dir),
         'dataset_id': meta['dsid'],
         'dataset_refcommit': meta['refcommit'],
@@ -57,18 +56,19 @@ def _add_to_spec(spec, spec_dir, path, meta, overrides=None):
 
     snippet.update(overrides)
 
+    # figure, whether we need to append the snippet or replace an
+    # existing one
+    if replace:
+        for s in spec:
+            if s['type'] == snippet['type'] and \
+               s['location'] == snippet['location'] and \
+               s['id']['value'] == snippet['id']['value']:
+                # replace existing snippet:
+                # Note: This needs to be documented. The identification as well
+                # as the fact that only first occurence will be replaced.
+                s.update(snippet)
+                return spec
 
-    # TODO: if we are in an acquisition, we can get 'subject' from existing spec
-    # Possibly same for other BIDS keys
-    # 'bids_session',
-    # 'bids_task',
-    # 'bids_run',
-    # 'bids_modality',
-    # 'comment',
-    # 'converter',
-    # 'description',
-    # 'id',
-    # 'subject',
     spec.append(snippet)
     return spec
 
@@ -77,8 +77,6 @@ def _add_to_spec(spec, spec_dir, path, meta, overrides=None):
 class Spec4Anything(Interface):
     """
     """
-
-    # TODO: Allow for passing in spec values!
 
     _params_ = dict(
         dataset=Parameter(
@@ -109,12 +107,21 @@ class Spec4Anything(Interface):
             metavar="PATH or JSON string",
             doc="""""",
             constraints=EnsureStr() | EnsureNone()),
+        replace=Parameter(
+            args=("--replace",),
+            action="store_true",
+            doc="""if set, replace existing spec if values of 'type', 'location' "
+                "and 'id' match. Note, that only the first match will be "
+                "replaced.""",
+
+        )
     )
 
     @staticmethod
     @datasetmethod(name='hirni_spec4anything')
     @eval_results
-    def __call__(path, dataset=None, spec_file=None, properties=None):
+    def __call__(path, dataset=None, spec_file=None, properties=None,
+                 replace=False):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="hirni spec4anything")
@@ -222,9 +229,11 @@ class Spec4Anything(Interface):
             # TODO: It's probably wrong to use uniques for overwriting! At least
             # they cannot be used to overwrite values explicitly set in
             # _add_to_spec like "location", "type", etc.
+            #
+            # But then: This should concern non-editable fields only, right?
 
             spec = _add_to_spec(spec, posixpath.split(spec_path)[0], ap,
-                                ds_meta, overrides=overrides)
+                                ds_meta, overrides=overrides, replace=replace)
 
             # Note: Not sure whether we really want one commit per snippet.
             #       If not - consider:
