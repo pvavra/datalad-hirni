@@ -39,7 +39,8 @@ class SnippetValidator(object):
         #        extraction? Currently spec4anything would ask the dataset
         #        for its refcommit via datalad-metadata. But since there might
         #        be no datalad-metadata relevant commit, that refcommit would
-        #        be null.
+        #        be null. Also: for such an arbitrary spec it's not clear,
+        #        whether metadata is relevant at all.
 
         'dataset_id',
         'dataset_refcommit',

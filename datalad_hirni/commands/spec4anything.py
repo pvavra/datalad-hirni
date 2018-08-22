@@ -13,6 +13,7 @@ from datalad.distribution.dataset import require_dataset
 from datalad.interface.utils import eval_results
 from datalad.support.network import PathRI
 from datalad.support import json_py
+from datalad.utils import assure_list
 from datalad.interface.annotate_paths import AnnotatePaths
 from datalad.interface.results import get_status_dict
 from datalad.coreapi import metadata
@@ -117,6 +118,8 @@ class Spec4Anything(Interface):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="hirni spec4anything")
+        path = assure_list(path)
+        path = [resolve_path(p, dataset) for p in path]
 
         res_kwargs = dict(action='hirni spec4anything', logger=lgr)
         res_kwargs['refds'] = Interface.get_refds_path(dataset)
@@ -130,7 +133,7 @@ class Spec4Anything(Interface):
         # ###
 
         updated_files = []
-
+        paths = []
         for ap in AnnotatePaths.__call__(
                 dataset=dataset,
                 path=path,
@@ -216,6 +219,10 @@ class Spec4Anything(Interface):
                 props = {k: dict(value=v, approved=True) for k, v in props.items()}
                 overrides.update(props)
 
+            # TODO: It's probably wrong to use uniques for overwriting! At least
+            # they cannot be used to overwrite values explicitly set in
+            # _add_to_spec like "location", "type", etc.
+
             spec = _add_to_spec(spec, posixpath.split(spec_path)[0], ap,
                                 ds_meta, overrides=overrides)
 
@@ -232,21 +239,25 @@ class Spec4Anything(Interface):
             json_py.dump2stream(sorted(spec, key=lambda x: sort_spec(x)),
                                 spec_path)
             updated_files.append(spec_path)
-            # TODO: Once spec snippet is actually identifiable, there should be
-            # a 'notneeded' result if nothing changed. ATM it would create an
-            # additional identical snippet (which is intended for now)
-            # MIH: add/save does that automatically
+
             yield get_status_dict(
                     status='ok',
                     type=ap['type'],
                     path=ap['path'],
                     **res_kwargs)
+            paths.append(ap)
 
+        from datalad.dochelpers import single_or_plural
+        from os import linesep
+        message = "[HIRNI] Add specification {n_snippets} for: {paths}".format(
+                n_snippets=single_or_plural("snippet", "snippets", len(paths)),
+                paths=linesep.join(" - " + p['path'] for p in paths)
+                if len(paths) > 1 else paths[0]['path'])
         for r in dataset.add(
                 updated_files,
                 to_git=True,
                 save=True,
-                message="[HIRNI] Add specification snippet(s) for %s " % path,
+                message=message,
                 return_type='generator',
                 result_renderer='disabled'):
             yield r
