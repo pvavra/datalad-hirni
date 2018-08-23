@@ -22,6 +22,10 @@ import os.path as op
 import logging
 lgr = logging.getLogger('datalad.hirni.spec4anything')
 
+# TODO: Prob. should be (partially?) editable, but for now we need consistency
+# here:
+non_editables = ['location', 'type', 'dataset_id', 'dataset_refcommit']
+
 
 def _get_edit_dict(value=None, approved=False):
     # our current concept of what an editable field looks like
@@ -223,8 +227,13 @@ class Spec4Anything(Interface):
                 props = json_py.load(properties) \
                         if op.exists(properties) else json_py.loads(properties)
                 # turn into editable, pre-approved records
-                props = {k: dict(value=v, approved=True) for k, v in props.items()}
-                overrides.update(props)
+                spec_props = {k: dict(value=v, approved=True)
+                              for k, v in props.items()
+                              if k not in non_editables}
+                spec_props.update({k: v
+                                   for k, v in props.items()
+                                   if k in non_editables})
+                overrides.update(spec_props)
 
             # TODO: It's probably wrong to use uniques for overwriting! At least
             # they cannot be used to overwrite values explicitly set in
