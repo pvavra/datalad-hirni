@@ -242,6 +242,25 @@ class Dicom2Spec(Interface):
                        logger=lgr)
             return
 
+        # ignore duplicates (prob. reruns of aborted runs)
+        # -> convert highest id only
+        import datalad_hirni.support.hirni_heuristic as heuristic
+        spec = sorted(spec_series_list,
+                      key=lambda x: heuristic.get_specval(x, 'id'))
+        for i in range(len(spec)):
+            if spec[i]["type"] == "dicomseries" and \
+                    heuristic.has_specval(spec[i], "converter") and \
+                            heuristic.get_specval(spec[i], "bids_run") in \
+                            [heuristic.get_specval(s, "bids_run")
+                             for s in spec[i + 1:]
+                             if heuristic.get_specval(s,
+                                                      "description") == heuristic.get_specval(
+                                    spec[i], "description") and \
+                                             heuristic.get_specval(s,
+                                                                   "id") > heuristic.get_specval(
+                                             spec[i], "id")]:
+                spec[i]["converter"] = dict(approved=True, value=None)
+
         lgr.debug("Storing specification (%s)", spec)
         # store as a stream (one record per file) to be able to
         # easily concat files without having to parse them, or
