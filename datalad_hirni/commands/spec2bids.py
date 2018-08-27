@@ -223,7 +223,7 @@ class Spec2Bids(Interface):
                     rmtree(opj(dataset.path, rel_trash_path))
                     # remove empty *_events.tsv files created by heudiconv
                     import glob
-                    dataset.remove(glob.glob('**/*_events.tsv', recursive=True),
+                    dataset.remove(glob.glob('*/*/*_events.tsv'),
                                    check=False,
                                    message="[HIRNI] Remove empty *_event.tsv "
                                            "files")
