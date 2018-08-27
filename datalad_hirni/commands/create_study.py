@@ -44,6 +44,12 @@ class CreateStudy(Create):
         from datalad.distribution.dataset import Dataset
         from datalad.distribution.install import Install
         from datalad.distribution.siblings import Siblings
+        from datalad.support.exceptions import DeprecatedError
+
+        raise DeprecatedError(new="use 'datalad create' and 'datalad "
+                                  "run-procedure setup_study_dataset' instead "
+                                  "to setup a HIRNI study dataset.",
+                              msg="'hirni-create-study is deprecated.")
 
         import os
 
