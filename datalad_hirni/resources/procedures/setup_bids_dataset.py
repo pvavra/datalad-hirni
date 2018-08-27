@@ -7,6 +7,7 @@ from datalad.distribution.dataset import require_dataset
 
 # bound dataset methods
 import datalad.distribution.add
+import datalad.interface.run_procedure
 
 ds = require_dataset(
     sys.argv[1],
@@ -29,7 +30,10 @@ force_in_git = [
 ]
 
 ###################################################################
-to_add = []
+to_add = set()
+
+# configure minimal set of metadata extractors
+ds.run_procedure(['cfg_metadatatypes', 'bids', 'nifti'])
 
 # amend gitattributes
 for path in force_in_git:
@@ -40,7 +44,7 @@ for path in force_in_git:
     with open(ga_path, 'a') as gaf:
         gaf.write('{} annex.largefiles=nothing\n'.format(
             op.relpath(abspath, start=d) if op.exists(d) else path))
-    to_add.append(ga_path)
+    to_add.add(ga_path)
 
 # leave clean
 ds.add(
