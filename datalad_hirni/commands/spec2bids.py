@@ -25,6 +25,7 @@ from datalad.support.json_py import load_stream
 from datalad.utils import assure_list
 from datalad.utils import rmtree
 
+from datalad.coreapi import Remove
 from datalad_container import containers_run
 import datalad_hirni.support.hirni_heuristic as heuristic
 import logging
@@ -166,8 +167,8 @@ class Spec2Bids(Interface):
 
                         for r in dataset.containers_run(
                                 ['heudiconv',
-                                 # XXX absolute path will make rerun on other system
-                                 # impossible -- hard to avoid
+                                 # XXX absolute path will make rerun on other
+                                 # system impossible -- hard to avoid
                                  '-f', heuristic.__file__,
                                  # leaves identifying info in run record
                                  '-s', replacements['bids_subject'],
@@ -191,7 +192,7 @@ class Spec2Bids(Interface):
                                         "conversion"),
                                 inputs=[replacements['location'], rel_spec_path],
                                 outputs=[dataset.path],
-                                message="Convert DICOM data for subject {}"
+                                message="[HIRNI] Convert DICOM data for subject {}"
                                         "".format(replacements['bids_subject']),
                                 return_type='generator',
                         ):
@@ -220,6 +221,14 @@ class Spec2Bids(Interface):
 
                     # remove superfluous heudiconv output
                     rmtree(opj(dataset.path, rel_trash_path))
+                    # remove empty *_events.tsv files created by heudiconv
+                    from glob import glob
+                    dataset.remove(glob('**/*_events.tsv'),
+                                   recursive=True,
+                                   check=False,
+                                   message="[HIRNI] Remove empty *_event.tsv "
+                                           "files")
+
                     # run heudiconv only once
                     ran_heudiconv = True
 
