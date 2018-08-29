@@ -259,6 +259,7 @@ class Dicom2Spec(Interface):
                                              heuristic.get_specval(s,
                                                                    "id") > heuristic.get_specval(
                                              spec[i], "id")]:
+                lgr.debug("Set converter to None for SeriesNumber %s" % i)
                 spec[i]["converter"] = dict(approved=True, value=None)
 
         lgr.debug("Storing specification (%s)", spec)
