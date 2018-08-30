@@ -269,8 +269,9 @@ class Spec4Anything(Interface):
         from os import linesep
         message = "[HIRNI] Add specification {n_snippets} for: {paths}".format(
                 n_snippets=single_or_plural("snippet", "snippets", len(paths)),
-                paths=linesep.join(" - " + p['path'] for p in paths)
-                if len(paths) > 1 else paths[0]['path'])
+                paths=linesep.join(" - " + op.relpath(p['path'], dataset.path)
+                                   for p in paths)
+                if len(paths) > 1 else op.relpath(paths[0]['path'], dataset.path))
         for r in dataset.add(
                 updated_files,
                 to_git=True,

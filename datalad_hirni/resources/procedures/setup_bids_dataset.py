@@ -14,6 +14,8 @@ ds = require_dataset(
     check_installed=True,
     purpose='BIDS dataset setup')
 
+# TODO: This looks like it was supposed to be a default README but isn't used
+# ATM.
 README_code = """\
 All custom code goes into the directory. All scripts should be written such
 that they can be executed from the root of the dataset, and are only using
@@ -36,18 +38,8 @@ to_add = set()
 ds.run_procedure(['cfg_metadatatypes', 'bids', 'nifti'])
 
 # amend gitattributes
-for path in force_in_git:
-    abspath = op.join(ds.path, path)
-    d = op.dirname(abspath)
-    ga_path = op.join(d, '.gitattributes') \
-        if op.exists(d) else op.join(ds.path, '.gitattributes')
-    with open(ga_path, 'a') as gaf:
-        gaf.write('{} annex.largefiles=nothing\n'.format(
-            op.relpath(abspath, start=d) if op.exists(d) else path))
-    to_add.add(ga_path)
+ds.repo.set_gitattributes([(path, {'annex.largefiles': 'nothing'})
+                           for path in force_in_git])
 
 # leave clean
-ds.add(
-    to_add,
-    message="Default BIDS dataset setup",
-)
+ds.add('.gitattributes', message="[HIRNI] Default BIDS dataset setup")
