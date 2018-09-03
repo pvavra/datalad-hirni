@@ -244,7 +244,7 @@ def _guess_run(record):
         for part in prot_parts:
             match = re.match(pattern, part)
             if match:
-                run = match.group(0)
+                run = match.group(0)[1:]
                 # TODO: correct padding; see above
                 if len(run) == 1:
                     run = "0" + run
