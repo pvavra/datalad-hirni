@@ -240,9 +240,11 @@ def _guess_run(record):
             # no result yet
             pass
 
+        pattern = re.compile(r'r[0-9]*')
         for part in prot_parts:
-            if re.match(r'r[0-9]*', part):
-                run = part[1:]
+            match = re.match(pattern, part)
+            if match:
+                run = match.group(0)
                 # TODO: correct padding; see above
                 if len(run) == 1:
                     run = "0" + run
