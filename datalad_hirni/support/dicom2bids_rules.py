@@ -240,7 +240,7 @@ def _guess_run(record):
             # no result yet
             pass
 
-        pattern = re.compile(r'r[0-9]*')
+        pattern = re.compile(r'r[0-9]+')
         for part in prot_parts:
             match = re.match(pattern, part)
             if match:
