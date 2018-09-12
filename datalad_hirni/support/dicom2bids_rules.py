@@ -128,7 +128,7 @@ class DefaultRules(object):
                 # SeriesNumber
                 # SeriesDate
                 # SeriesTime
-                'description': record['SeriesDescription'],
+                'description': record['SeriesDescription'] if "SeriesDescription" in record else '',
                 'comment': '',
                 'subject': apply_bids_label_restrictions(_guess_subject(record) if not subject else subject),
                 'anon_subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
