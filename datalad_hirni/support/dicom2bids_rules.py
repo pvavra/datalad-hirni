@@ -205,6 +205,23 @@ def _guess_modality(record):
 
     protocol = record.get("ProtocolName", None)
     if protocol:
+
+        # BEGIN Additional rule for forrest-structural
+        # TODO: Probably to be moved to some rule enhancement
+        if "-VEN_BOLD" in protocol:
+            # TODO: Not clear yet; swi might be considered a datatype rather than
+            # a modality by respective BIDS extension:
+            # https://docs.google.com/document/d/1kyw9mGgacNqeMbp4xZet3RnDhcMmf4_BmRgKaOkO2Sc
+            return "swi"
+
+        if "Reg - DTI_high" in protocol:
+            # TODO: What actually is the relevant part of protocol here?
+            return "dwi"
+
+        if "field map" in protocol:
+            return "fieldmap"
+        # END
+
         import re
         prot_parts = re.split('_|-', protocol.lower())
         direct_search_terms = ["t1", "t1w", "t2", "t2w",
@@ -217,6 +234,14 @@ def _guess_modality(record):
         for m in direct_search_terms:
             if m in prot_parts:
                 return m
+
+        # BEGIN: Additional rule for forrest-structural
+        # TODO: Probably to be moved to some rule enhancement
+        if "st1w" in prot_parts:
+            return "t1w"
+        if "st2w" in prot_parts:
+            return "t2w"
+        # END
 
     # found nothing, but modality isn't necessarily required
     return None
