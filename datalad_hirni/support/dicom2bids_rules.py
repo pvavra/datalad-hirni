@@ -134,7 +134,7 @@ class DefaultRules(object):
                 'anon_subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
                 'bids_session': apply_bids_label_restrictions(_guess_session(record) if not session else session),
                 'bids_task': apply_bids_label_restrictions(_guess_task(record)),
-                'bids_run': apply_bids_label_restrictions(run) if run else self.runs[protocol_name],
+                'bids_run': apply_bids_label_restrictions(run) if run else str(self.runs[protocol_name]),
                 'bids_modality': apply_bids_label_restrictions(_guess_modality(record)),
 
                 # TODO: No defaults yet (May be there shouldn't be defaults, but
@@ -274,8 +274,8 @@ def _guess_run(record):
                 if len(run) == 1:
                     run = "0" + run
                 return run
-    # default to entire protocol name
-    return protocol
+    # default to None will lead to counting series with same protocol
+    return None
 
 
 def _guess_session(record):
