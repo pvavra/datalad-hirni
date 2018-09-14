@@ -128,13 +128,13 @@ class DefaultRules(object):
                 # SeriesNumber
                 # SeriesDate
                 # SeriesTime
-                'description': record['SeriesDescription'],
+                'description': record['SeriesDescription'] if "SeriesDescription" in record else '',
                 'comment': '',
                 'subject': apply_bids_label_restrictions(_guess_subject(record) if not subject else subject),
                 'anon_subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
                 'bids_session': apply_bids_label_restrictions(_guess_session(record) if not session else session),
                 'bids_task': apply_bids_label_restrictions(_guess_task(record)),
-                'bids_run': apply_bids_label_restrictions(run) if run else self.runs[protocol_name],
+                'bids_run': apply_bids_label_restrictions(run) if run else str(self.runs[protocol_name]),
                 'bids_modality': apply_bids_label_restrictions(_guess_modality(record)),
 
                 # TODO: No defaults yet (May be there shouldn't be defaults, but
@@ -205,6 +205,23 @@ def _guess_modality(record):
 
     protocol = record.get("ProtocolName", None)
     if protocol:
+
+        # BEGIN Additional rule for forrest-structural
+        # TODO: Probably to be moved to some rule enhancement
+        if "-VEN_BOLD" in protocol:
+            # TODO: Not clear yet; swi might be considered a datatype rather than
+            # a modality by respective BIDS extension:
+            # https://docs.google.com/document/d/1kyw9mGgacNqeMbp4xZet3RnDhcMmf4_BmRgKaOkO2Sc
+            return "swi"
+
+        if "Reg - DTI_high" in protocol:
+            # TODO: What actually is the relevant part of protocol here?
+            return "dwi"
+
+        if "field map" in protocol:
+            return "fieldmap"
+        # END
+
         import re
         prot_parts = re.split('_|-', protocol.lower())
         direct_search_terms = ["t1", "t1w", "t2", "t2w",
@@ -217,6 +234,14 @@ def _guess_modality(record):
         for m in direct_search_terms:
             if m in prot_parts:
                 return m
+
+        # BEGIN: Additional rule for forrest-structural
+        # TODO: Probably to be moved to some rule enhancement
+        if "st1w" in prot_parts:
+            return "t1w"
+        if "st2w" in prot_parts:
+            return "t2w"
+        # END
 
     # found nothing, but modality isn't necessarily required
     return None
@@ -240,15 +265,17 @@ def _guess_run(record):
             # no result yet
             pass
 
+        pattern = re.compile(r'r[0-9]+')
         for part in prot_parts:
-            if re.match(r'r[0-9]*', part):
-                run = part[1:]
+            match = re.match(pattern, part)
+            if match:
+                run = match.group(0)[1:]
                 # TODO: correct padding; see above
                 if len(run) == 1:
                     run = "0" + run
                 return run
-    # default to entire protocol name
-    return protocol
+    # default to None will lead to counting series with same protocol
+    return None
 
 
 def _guess_session(record):

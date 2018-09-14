@@ -4,6 +4,7 @@ from os import listdir
 from os import makedirs
 from os import rename
 import os.path as op
+import shutil
 from datalad.consts import ARCHIVES_SPECIAL_REMOTE
 from datalad.consts import DATALAD_SPECIAL_REMOTES_UUIDS
 from datalad.interface.base import build_doc, Interface
@@ -42,9 +43,8 @@ def _import_dicom_tarball(target_ds, tarball, filename):
                      DATALAD_SPECIAL_REMOTES_UUIDS[ARCHIVES_SPECIAL_REMOTE])
                 ])
 
-    target_ds.repo.add_url_to_file(
-        file_=filename,
-        url=get_local_file_url(tarball))
+    shutil.copy2(tarball, op.join(target_ds.path, filename))
+    target_ds.repo.add(filename)
     target_ds.repo.commit(msg="Retrieved %s" % tarball)
     target_ds.repo.checkout('incoming-processed', options=['--orphan'])
     if target_ds.repo.dirty:
