@@ -9,7 +9,7 @@
 
 <div id="app">
   <ul>
-    <li v-for="spec in specs">
+    <li v-for="(spec, specs_key) in specs">
       <ul>
         <li v-for="(sval, skey) in spec">
           <div v-if="sval === Object(sval)">
@@ -17,6 +17,7 @@
             <label form="specform">{{skey}}</label>
             <input v-model="sval.value" placeholder="edit me" :disabled="sval.approved">
             <input type="checkbox" id="skey" v-model="sval.approved">
+            <button @click="removeElement(specs_key, skey);">Remove</button>
           </div>
           <div v-else>
             <!-- this is a fact -->
@@ -62,7 +63,10 @@ var app = new Vue({
             .catch(function (error) {
               console.log(error);
             });
-        }
+        },
+        removeElement: function(specs_key, skey) {
+            this.$delete(this.specs[specs_key], skey)
+        },
     }
 });
 
