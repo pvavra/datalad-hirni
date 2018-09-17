@@ -17,7 +17,7 @@
             <label form="specform">{{skey}}</label>
             <input v-model="sval.value" placeholder="edit me" :disabled="sval.approved">
             <input type="checkbox" id="skey" v-model="sval.approved">
-            <button @click="removeElement(specs_key, skey);">Remove</button>
+            <button @click="removeElement(spec, skey);">Remove</button>
           </div>
           <div v-else>
             <!-- this is a fact -->
@@ -66,8 +66,8 @@ var app = new Vue({
               console.log(error);
             });
         },
-        removeElement: function(specs_key, skey) {
-            this.$delete(this.specs[specs_key], skey)
+        removeElement: function(spec, skey) {
+            this.$delete(spec, skey)
         },
         addField: function(spec, input_field) {
             app.$set(
