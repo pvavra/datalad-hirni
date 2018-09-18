@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="js/vue.js"></script>
+    <script src="js/axios.min.js"></script>
+  </head>
+<body>
+
+<div id="app">
+  <label for="name">Study name:
+    <input id="name" v-model="spec.Name">
+  </label>
+  <label for="authors">Authors:
+  <ol id="authors">
+    <li v-for="(sval, skey) in spec.Authors">
+        <input v-model="sval.name" placeholder="name">
+        <input v-model="sval.givenname" placeholder="given name(s)">
+        <input v-model="sval.email" placeholder="email">
+    </li>
+    <button @click="addField('Authors', {name: '', givenname: '', email: ''});">Add author</button>
+  </ol>
+  </label>
+  <label for="license">Dataset license:
+    <input id="license" v-model="spec.License">
+  </label>
+  <label for="doi">Dataset DOI:
+    <input id="doi" v-model="spec.DatasetDOI">
+  </label>
+  <label for="acknowledgements">Acknowledgements:
+    <textarea
+        id="acknowledgements"
+        v-model="spec.Acknowledgements"
+        placeholder="Fill me in"></textarea>
+  </label>
+  <label for="howtoacknowledge">How to acknowledge:
+    <textarea
+        id="howtoacknowledge"
+        v-model="spec.HowToAcknowledge"
+        placeholder="Fill me in"></textarea>
+  </label>
+  <ul>
+    <li v-for="(sval, skey) in spec.Funding">
+        <input v-model="sval.refno" placeholder="ref#">
+        <input v-model="sval.description" placeholder="description">
+    </li>
+    <button @click="addField('Funding', {refno: '', description: ''});">Add funding reference</button>
+  </ul>
+  <ul>
+    <li v-for="(sval, skey) in spec.ReferencesAndLinks">
+        <input v-model="sval.ref" placeholder="reference">
+        <input v-model="sval.description" placeholder="description">
+    </li>
+    <button @click="addField('ReferencesAndLinks', {ref: '', description: ''});">Add reference</button>
+  </ul>
+  <label for="ethics">Ethics:
+    <textarea
+        id="ethics"
+        v-model="spec.Ethics"
+        placeholder="Fill me in"></textarea>
+  </label>
+  <label for="preregistration">Preregistration:
+    <textarea
+        id="preregistration"
+        v-model="spec.Preregistration"
+        placeholder="Fill me in"></textarea>
+  </label>
+  <label for="power">Power:
+    <textarea
+        id="power"
+        v-model="spec.Power"
+        placeholder="Fill me in"></textarea>
+  </label>
+  <input type="button" @click="checkForm" value="Save">
+</div>
+
+
+<script>
+var app = new Vue({
+    el: '#app',
+    data: {
+        spec: {
+            //REQUIRED. Name of the dataset.
+            Name: '',
+            //BIDSVersion: '',
+            //RECOMMENDED. What license is this dataset distributed under? The use of license name abbreviations is suggested for specifying a license. A list of common licenses with suggested abbreviations can be found in Appendix II.
+            License: '',
+            //OPTIONAL. List of individuals who contributed to the creation/curation of the dataset.
+            Authors: [],
+            Acknowledgements: '',
+            //OPTIONAL. Instructions how researchers using this dataset should acknowledge the original authors. This field can also be used to define a publication that should be cited in publications that use the dataset.
+            HowToAcknowledge: '',
+            //OPTIONAL. List of sources of funding (grant numbers)
+            Funding: [],
+            //OPTIONAL. List of references to publication that contain information on the dataset, or links.
+            ReferencesAndLinks: [],
+            //OPTIONAL. The Document Object Identifier of the dataset (not the corresponding paper).
+            DatasetDOI: '',
+            //OPTIONAL. Reference to the ethics committe and IRB that approved the data collection 
+            Ethics: '',
+            //OPTIONAL. If the data was collected as part of a pre-registered study or a registered reports URL of the pre-registration (OSF, aspredicted, …)
+            Preregistration: '',
+            //OPTIONAL. If a power analysis was run mention (the outcome it was based on, the predicted effect size and its source, the significance level and targeted power).
+            Power: ''
+        }
+    },
+    methods: {
+        addField: function(name, content) {
+            app.spec[name].splice(app.spec[name].length + 1, 1, content);
+        },
+        checkForm: function() {
+            axios.put("/api/v1/file/dataset_description.json", {
+                content: JSON.stringify(this.$data.spec),
+                json: 'yes',
+                togit: true
+            })
+            .then(function (response) {
+              console.log(response);
+            })
+            .catch(function (error) {
+              console.log(error);
+            });
+        },
+ 
+    }
+});
+
+/*
+PD 
+Public Domain
+No license required for any purpose; the work is not subject to copyright in any jurisdiction.
+PDDL
+Open Data Commons Public Domain Dedication and License
+License to assign public domain like permissions without giving up the copyright: http://opendatacommons.org/licenses/pddl/
+CC0
+Creative Commons Zero 1.0 Universal.
+Use this if you are a holder of copyright or database rights, and you wish to waive all your interests in your work worldwide: https://creativecommons.org/about/cc0
+*/
+
+
+/* dummy auth for now */
+axios.get('/api/v1/auth')
+    .then(function (response) {
+        axios.get("/api/v1/file/dataset_description.json", {
+                params: {
+                    json: 'yes'
+                }
+            })
+            .then(function (response) {
+                app.$data.spec = response.data.content;
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    })
+    .catch(function (error) {
+        console.log(error);
+    });
+
+</script>
+</body>
+</html>
