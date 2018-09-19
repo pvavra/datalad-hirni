@@ -115,12 +115,14 @@ var app = new Vue({
         removeElement: function(spec, skey) {
             this.$delete(spec, skey)
         },
-        addField: function(spec, input_field) {
+        addField: function(spec, input_id) {
+            var input_field = document.getElementById(input_id)
             app.$set(
                 spec,
-                document.getElementById(input_field).value,
+                input_field.value,
                 {value: '', approved: false}
             );
+            input_field.value = '';
         },
     }
 });
