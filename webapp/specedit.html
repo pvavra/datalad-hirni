@@ -16,21 +16,35 @@
     <li v-for="(spec, specs_key) in specs">
       <ul>
         <li v-for="(sval, skey) in spec">
-          <div v-if="sval === Object(sval)">
+          <div v-if="sval === Object(sval)" class="form-group row">
             <!-- this is some editable property -->
-            <label form="specform">{{skey}}</label>
-            <input v-model="sval.value" placeholder="edit me" :disabled="sval.approved">
-            <input type="checkbox" id="skey" v-model="sval.approved">
-            <button @click="removeElement(spec, skey);">Remove</button>
+            <label form="specform" class="col-sm-2 col-form-label">{{skey}}</label>
+            <div class="col-sm-10">
+              <div class="input-group">
+                <input v-model="sval.value" type="text" placeholder="edit me" :disabled="sval.approved" class="form-control">
+                <div class="input-group-append">
+                  <div class="input-group-text">
+                    <input v-model="sval.approved" type="checkbox" :id="skey">
+                  </div>
+                  <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
+                  <div class="dropdown-menu">
+                    <a @click="removeElement(spec, skey);"><span class="oi oi-trash">Delete</span></a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div v-else>
+          <div v-else class="form-group row">
             <!-- this is a fact -->
-            <strong>NO</strong> {{ skey }}: {{ sval }}
+            <label form="specform" class="col-sm-2 col-form-label">{{skey}}</label>
+            <div class="col-sm-10">
+              <input type="text" readonly class="form-control-plaintext" :id="skey" :value="sval">
+            </div>
           </div>
         </li>
       </ul>
       <input v-bind:id="'tba_fieldname_' + specs_key" placeholder="fieldname">
-      <button @click="addField(spec, 'tba_fieldname_' + specs_key);">Add field</button>
+      <button @click="addField(spec, 'tba_fieldname_' + specs_key);" class="btn btn-outline-success">Add Field</button>
     </li>
   </ul>
   <input type="button" @click="checkForm" value="Submit">
