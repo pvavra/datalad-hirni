@@ -10,8 +10,12 @@
     <script src="js/axios.min.js"></script>
   </head>
   <style>
+    html {
+      margin: 0;
+      padding: 0;
+    }
     main {
-      max-width: 1280px;
+      max-width: 1024px;
       margin: 2em auto;
     }
     .add-field input[type=text] {
@@ -21,6 +25,19 @@
       color: red;
       cursor: pointer;
       padding: .375rem .75rem;
+    }
+    .specs-list, .spec {
+      padding: 0;
+    }
+    .specs-list > li {
+      background: #fbfbfb;
+      border: 1px solid #e0e0e0;
+      list-style: none;
+      padding: 2rem;
+    }
+    .specs-list > li:nth-child(even) {
+      background: #f0f0f0;
+      border-width: 0 1px;
     }
     .spec .form-group {
       margin-bottom: 0.3rem;
@@ -41,7 +58,7 @@
             <label form="specform" class="col-sm-2 col-form-label">{{skey}}</label>
             <div class="col-sm-10">
               <div class="input-group">
-                <input v-model="sval.value" type="text" placeholder="edit me" :disabled="sval.approved" class="form-control">
+                <input v-model="sval.value" type="text" :disabled="sval.approved" class="form-control">
                 <div class="input-group-append">
                   <div class="input-group-text">
                     <input v-model="sval.approved" type="checkbox" :id="skey" title="Approve">
@@ -74,7 +91,7 @@
       </ul>
     </li>
   </ul>
-  <input type="button" @click="checkForm" value="Submit">
+  <input class="btn btn-primary" type="button" @click="checkForm" value="Submit">
 </div>
 </main>
 
