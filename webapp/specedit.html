@@ -14,13 +14,27 @@
       max-width: 1280px;
       margin: 2em auto;
     }
+    .add-field input[type=text] {
+      padding: .375rem .75rem;
+    }
+    .dropdown-menu span {
+      color: red;
+      cursor: pointer;
+      padding: .375rem .75rem;
+    }
+    .spec .form-group {
+      margin-bottom: 0.3rem;
+    }
+    .spec .form-control-plaintext {
+      padding: .375rem .75rem;
+    }
   </style>
 <body>
 <main>
 <div id="app">
-  <ul>
+  <ul class='specs-list'>
     <li v-for="(spec, specs_key) in specs">
-      <ul>
+      <ul class='spec'>
         <li v-for="(sval, skey) in spec">
           <div v-if="sval === Object(sval)" class="form-group row">
             <!-- this is some editable property -->
@@ -30,11 +44,11 @@
                 <input v-model="sval.value" type="text" placeholder="edit me" :disabled="sval.approved" class="form-control">
                 <div class="input-group-append">
                   <div class="input-group-text">
-                    <input v-model="sval.approved" type="checkbox" :id="skey">
+                    <input v-model="sval.approved" type="checkbox" :id="skey" title="Approve">
                   </div>
                   <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
                   <div class="dropdown-menu">
-                    <a @click="removeElement(spec, skey);"><span class="oi oi-trash">Delete</span></a>
+                    <span @click="removeElement(spec, skey);" class="oi oi-trash">Delete</span>
                   </div>
                 </div>
               </div>
@@ -48,9 +62,16 @@
             </div>
           </div>
         </li>
+
+        <li>
+          <div class="input-group add-field">
+            <input v-bind:id="'tba_fieldname_' + specs_key" type="text" placeholder="new field name">
+            <div class="input-group-append">
+              <button @click="addField(spec, 'tba_fieldname_' + specs_key);" class="btn btn-outline-success" type="button">Add Field</button>
+            </div>
+          </div>
+        </li>
       </ul>
-      <input v-bind:id="'tba_fieldname_' + specs_key" placeholder="fieldname">
-      <button @click="addField(spec, 'tba_fieldname_' + specs_key);" class="btn btn-outline-success">Add Field</button>
     </li>
   </ul>
   <input type="button" @click="checkForm" value="Submit">
