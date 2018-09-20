@@ -2,6 +2,7 @@
 
 __docformat__ = 'restructuredtext'
 
+import os.path as op
 from os.path import curdir
 from os.path import abspath
 
@@ -60,6 +61,8 @@ command_suite = (
         ),
     ]
 )
+
+webapp_location = op.join('resources', 'webapp')
 
 from datalad import setup_package
 from datalad import teardown_package
