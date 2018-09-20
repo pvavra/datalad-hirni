@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/open-iconic-bootstrap.min.css">
+    <script src="js/jquery.slim.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/vue.min.js"></script>
+    <script src="js/axios.min.js"></script>
+  <style>
+    #app {
+      padding: 1em;
+    }
+    .card-body {
+      padding: 2em;
+    }
+    ol, ul > button {
+      margin-left: -15px;
+    }
+  </style>
+  </head>
+<body>
+
+<div id="app">
+  <div class="card border-dark">
+    <div class="card-header">
+      Information on this study
+    </div>
+    <div class="card-body">
+      <div class="form-group row">
+        <label class="col-sm-2 col-form-label" for="name">Study name</label>
+        <input id="name" v-model="spec.Name" class="col-sm-10 form-control" placeholder="Name of the study or dataset">
+      </div>
+      <div class="form-group row">
+      <label class="col-sm-2 col-form-label" for="authors">Authors</label>
+      <ol class="col-sm-10" id="authors">
+        <li v-for="(sval, skey) in spec.Authors">
+            <div class="form-inline">
+              <input v-model="sval.name" placeholder="Name" class="col-sm-3 form-control">
+              <input v-model="sval.givenname" placeholder="Given name(s)" class="col-sm-5 form-control">
+              <input v-model="sval.email" type="email" placeholder="Email" class="col-sm-4 form-control">
+            </div>
+        </li>
+        <button @click="addField('Authors', {name: '', givenname: '', email: ''});">Add author</button>
+      </ol>
+      </div>
+      <div class="form-group row">
+      <label class="col-sm-2 col-form-label" for="license">Dataset license</label>
+        <input id="license" v-model="spec.License" class="col-sm-10 form-control" placeholder="Text or label (e.g., PD, PDDL, CC0) of the data license">
+      </div>
+      <div class="form-group row">
+      <label class="col-sm-2 col-form-label" for="acknowledgements">Acknowledgements</label>
+        <textarea
+            id="acknowledgements"
+            v-model="spec.Acknowledgements"
+            placeholder="Statement of the dataset author(s)" class="col-sm-10 form-control"></textarea>
+      </div>
+      <div class="form-group row">
+      <label class="col-sm-2 col-form-label" for="howtoacknowledge">How to acknowledge</label>
+        <textarea
+            id="howtoacknowledge"
+            v-model="spec.HowToAcknowledge"
+            placeholder="Instructions on how to acknowlegde the use of this dataset" class="col-sm-10 form-control"></textarea>
+      </div>
+      <div class="form-group row">
+      <label class="col-sm-2 col-form-label" for="funding">Funding</label>
+      <ul class="col-sm-10">
+        <li v-for="(sval, skey) in spec.Funding">
+            <div class="form-inline">
+              <input v-model="sval.refno" placeholder="ref#" class="col-sm-2 form-control">
+              <input v-model="sval.description" placeholder="Description of the funding source" class="col-sm-10 form-control">
+            </div>
+        </li>
+        <button @click="addField('Funding', {refno: '', description: ''});">Add funding reference</button>
+      </ul>
+      </div>
+      <div class="form-group row">
+      <label class="col-sm-2 col-form-label" for="references">References</label>
+      <ul class="col-sm-10">
+        <li v-for="(sval, skey) in spec.ReferencesAndLinks">
+            <div class="form-inline">
+              <input v-model="sval.ref" placeholder="Link to or citation of information on this dataset" class="col-sm-12 form-control">
+              <textarea
+                v-model="sval.description"
+                placeholder="Comment regarding this reference (e.g. scope or purpose)" class="col-sm-12 form-control"></textarea>
+            </div>
+        </li>
+        <button @click="addField('ReferencesAndLinks', {ref: '', description: ''});">Add reference</button>
+      </ul>
+      </div>
+      <div class="form-group row">
+      <label class="col-sm-2 col-form-label" for="ethics">Ethics</label>
+        <textarea
+            id="ethics"
+            v-model="spec.Ethics"
+            placeholder="Reference to the ethics committee and/or IRB that approved the data collection" class="col-sm-10 form-control"></textarea>
+      </div>
+      <div class="form-group row">
+      <label class="col-sm-2 col-form-label" for="preregistration">Preregistration</label>
+        <textarea
+            id="preregistration"
+            v-model="spec.Preregistration"
+            placeholder="If the data was collected as part of a pre-registered study or a registered reports: list URL of the pre-registration document" class="col-sm-10 form-control"></textarea>
+      </div>
+      <div class="form-group row">
+      <label class="col-sm-2 col-form-label" for="power">Power</label>
+        <textarea
+            id="power"
+            v-model="spec.Power"
+            placeholder="If a power analysis was performed, state the outcome it was based on, the predicted effect size and its source, the significance level and targeted power" class="col-sm-10 form-control"></textarea>
+      </div>
+    </div>
+  </div>
+  <input type="button" @click="checkForm" value="Save to dataset">
+</div>
+
+
+<script>
+var app = new Vue({
+    el: '#app',
+    data: {
+        spec: {
+            Name: '',
+            License: '',
+            //OPTIONAL. List of individuals who contributed to the creation/curation of the dataset.
+            Authors: [],
+            Acknowledgements: '',
+            //OPTIONAL. Instructions how researchers using this dataset should acknowledge the original authors. This field can also be used to define a publication that should be cited in publications that use the dataset.
+            HowToAcknowledge: '',
+            //OPTIONAL. List of sources of funding (grant numbers)
+            Funding: [],
+            //OPTIONAL. List of references to publication that contain information on the dataset, or links.
+            ReferencesAndLinks: [],
+            Ethics: '',
+            Preregistration: '',
+            //OPTIONAL. If a power analysis was run mention (the outcome it was based on, the predicted effect size and its source, the significance level and targeted power).
+            Power: ''
+        }
+    },
+    methods: {
+        addField: function(name, content) {
+            app.spec[name].splice(app.spec[name].length + 1, 1, content);
+        },
+        checkForm: function() {
+            axios.put("/api/v1/file/dataset_description.json", {
+                content: JSON.stringify(this.$data.spec),
+                json: 'yes',
+                togit: true
+            })
+            .then(function (response) {
+              console.log(response);
+            })
+            .catch(function (error) {
+              console.log(error);
+            });
+        },
+ 
+    }
+});
+
+/*
+PD 
+Public Domain
+No license required for any purpose; the work is not subject to copyright in any jurisdiction.
+PDDL
+Open Data Commons Public Domain Dedication and License
+License to assign public domain like permissions without giving up the copyright: http://opendatacommons.org/licenses/pddl/
+CC0
+Creative Commons Zero 1.0 Universal.
+Use this if you are a holder of copyright or database rights, and you wish to waive all your interests in your work worldwide: https://creativecommons.org/about/cc0
+*/
+
+
+/* dummy auth for now */
+axios.get("/api/v1/file/dataset_description.json", {
+        params: {
+            json: 'yes'
+        }
+    })
+    .then(function (response) {
+        app.$data.spec = response.data.content;
+    })
+    .catch(function (error) {
+        console.log(error);
+    });
+
+</script>
+</body>
+</html>

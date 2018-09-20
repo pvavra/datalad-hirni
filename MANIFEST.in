@@ -1,0 +1,2 @@
+include datalad_hirni/resources/procedures/*
+graft datalad_hirni/resources/webapp

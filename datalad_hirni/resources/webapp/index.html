@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/open-iconic-bootstrap.min.css">
+    <script src="js/jquery.slim.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/axios.min.js"></script>
+  <style>
+    #maincard {
+      margin: 4em;
+      padding: 0px;
+    }
+    ol, ul > button {
+      margin-left: -15px;
+    }
+  </style>
+  </head>
+<body>
+
+<div id="maincard" class="card mx-auto border-dark" style="width: 50%">
+<div class="card-header h1 bg-dark text-light">
+HIRNI dataset interface
+</div>
+<div class="card-body list-group list-group-flush" style="padding:0px">
+  <a href="studymetadata_edit.html" class="list-group-item list-group-item-action">
+    Edit study metadata
+  </a>
+  <a href="specedit.html" class="list-group-item list-group-item-action">
+    Edit acquisition metadata
+  </a>
+  <a href="#" class="list-group-item list-group-item-action disabled">View dataset statistics</a>
+</div>
+</div>
+
+<script>
+/* dummy auth for now */
+axios.get('/api/v1/auth')
+    .catch(function (error) {
+        console.log(error);
+    });
+
+</script>
+</body>
+</html>

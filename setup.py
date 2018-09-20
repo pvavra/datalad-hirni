@@ -3,22 +3,9 @@
 import os.path as op
 from setuptools import setup
 from setuptools import find_packages
-from setuptools import findall
 
 from setup_support import BuildManPage
 from setup_support import get_version
-
-
-def findsome(subdir, extensions):
-    """Find files under subdir having specified extensions
-
-    Leading directory (datalad) gets stripped
-    """
-    return [
-        f.split(op.sep, 1)[1]
-        for f in findall(op.join('datalad_hirni', subdir))
-        if op.splitext(f)[-1].lstrip('.') in extensions
-    ]
 
 
 # extension version
@@ -55,10 +42,12 @@ setup(
     description="DataLad extension for CBBS imaging platform workflows",
     long_description=long_description,
     packages=[pkg for pkg in find_packages('.') if pkg.startswith('datalad')],
+    zip_safe=False,
     # datalad command suite specs from here
     install_requires=[
         'datalad-neuroimaging',
         'datalad-container',
+        'datalad-webapp',
     ],
     extras_require={
         'devel-docs': [
@@ -76,12 +65,12 @@ setup(
             # valid datalad interface specification (see demo in this extensions
             'hirni=datalad_hirni:command_suite',
         ],
+        'datalad.webapp.apps': [
+            'hirni=datalad_hirni:webapp_location',
+        ],
         'datalad.tests': [
             'hirni=datalad_hirni',
         ],
     },
-    package_data={
-        'datalad_hirni':
-            findsome('resources', {'sh'})
-    },
+    include_package_data=True,
 )
