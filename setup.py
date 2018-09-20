@@ -47,6 +47,7 @@ setup(
     install_requires=[
         'datalad-neuroimaging',
         'datalad-container',
+        'datalad-webapp',
     ],
     extras_require={
         'devel-docs': [
