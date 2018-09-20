@@ -172,19 +172,13 @@ Use this if you are a holder of copyright or database rights, and you wish to wa
 
 
 /* dummy auth for now */
-axios.get('/api/v1/auth')
+axios.get("/api/v1/file/dataset_description.json", {
+        params: {
+            json: 'yes'
+        }
+    })
     .then(function (response) {
-        axios.get("/api/v1/file/dataset_description.json", {
-                params: {
-                    json: 'yes'
-                }
-            })
-            .then(function (response) {
-                app.$data.spec = response.data.content;
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
+        app.$data.spec = response.data.content;
     })
     .catch(function (error) {
         console.log(error);

@@ -58,10 +58,21 @@ var field_purpose = {
 <body>
 <main>
 <div id="app">
-  <ul class='specs-list'>
+  <div class="input-group mb-3 col-sm-12">
+    <div class="input-group-prepend">
+      <label class="input-group-text" for="recordselection">Acquisition record to edit</label>
+    </div>
+    <select v-model="studyspecfile" v-on:change="load_specs(studyspecfile)" id="recordselection" class="form-control">
+      <option v-for="specfile in specfiles" v-bind:value="specfile">
+        {{ specfile.replace('/studyspec.json', '') }}
+      </option>
+    </select>
+  </div>
+
+  <ul v-if="specs[0]" class='specs-list'>
     <li class="card border-primary">
       <div class="card-header">
-        Common properties (record: <code>{{ id }}/studyspec.json</code>)
+        Common properties (record: <code>{{ studyspecfile }}</code>)
       </div>
       <div class="card-body">
           <div v-for="(sval, skey) in {'Subject ID': 'subject', 'Anonymized Subject ID': 'anon_subject'}" class="form-group row">
@@ -80,7 +91,7 @@ var field_purpose = {
   <ul class='specs-list'>
     <li class="card border-dark" v-for="(spec, specs_key) in specs">
       <div class="card-header">
-        {{ id }}/{{ spec.location }} [ <code>{{ spec.type }}</code><span v-if="spec.uid">; {{ spec.uid }}</span> ]
+        {{ studyspecfile }}/{{ spec.location }} [ <code>{{ spec.type }}</code><span v-if="spec.uid">; {{ spec.uid }}</span> ]
       </div>
       <ul class="card-body">
           <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, anon_subject: null})">
@@ -122,7 +133,7 @@ var field_purpose = {
       </ul>
     </li>
   </ul>
-  <input class="btn btn-primary" type="button" @click="checkForm" value="Save to dataset">
+  <input v-if="specs[0]" class="btn btn-primary" type="button" @click="checkForm" value="Save to dataset">
 </div>
 </main>
 
@@ -139,16 +150,17 @@ var getUrlParams = function (url) {
   return params;
 };
 
-var id = getUrlParams(window.location.href)['id'];
+var studyspecfile = getUrlParams(window.location.href)['studyspecfile'];
 
 var app = new Vue({
     el: '#app',
     data: {
-      specs: []
+      specs: [],
+      specfiles: []
     },
     methods: {
         checkForm: function() {
-            axios.put("/api/v1/file/" + id + "/studyspec.json", {
+            axios.put("/api/v1/file/" + studyspecfile, {
                 content: JSON.stringify(this.$data.specs),
                 json: 'stream',
                 togit: true
@@ -181,28 +193,37 @@ var app = new Vue({
             for (i=0; i < app.$data.specs.length; i++) {
                 app.$set(app.$data.specs[i][k], "approved", v);
             }
+        },
+        load_specs: function(studyspecfile) {
+            axios.get("/api/v1/file/" + studyspecfile, {
+                    params: {
+                        json: 'stream'
+                    }
+                })
+                .then(function (response) {
+                    app.$data.specs = response.data.content;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        },
+        load_specfile_list: function() {
+            axios.get("/api/v1/file/*/studyspec.json", {
+                })
+                .then(function (response) {
+                    app.$data.specfiles = response.data.files;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
         }
     }
 });
 
-/* dummy auth for now */
-axios.get('/api/v1/auth')
-    .then(function (response) {
-        axios.get("/api/v1/file/" + id + "/studyspec.json", {
-                params: {
-                    json: 'stream'
-                }
-            })
-            .then(function (response) {
-                app.$data.specs = response.data.content;
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
-    })
-    .catch(function (error) {
-        console.log(error);
-    });
+app.load_specfile_list();
+if (studyspecfile) {
+    app.load_specs(studyspecfile);
+}
 </script>
 </body>
 </html>
