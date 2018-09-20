@@ -26,14 +26,13 @@
       cursor: pointer;
       padding: .375rem .75rem;
     }
-    .specs-list, .spec {
-      padding: 0;
+    .specs-list, .card-body {
+      padding: 1em;
+      list-style: none;
     }
     .specs-list > li {
       background: #fbfbfb;
-      border: 1px solid #e0e0e0;
       list-style: none;
-      padding: 2rem;
     }
     .specs-list > li:nth-child(even) {
       background: #f0f0f0;
@@ -46,24 +45,63 @@
       padding: .375rem .75rem;
     }
   </style>
+
+<script>
+var field_purpose = {
+    comment: "Comments or notes for this record",
+    converter: "Command to call for converting data associated with this record to BIDS format, may use template syntax and placeholders",
+    converter_path: "Location of a program/script to use as converter command for this record, value can be used in converter command via {_hs[converter_path]} placeholder",
+    description: "Record description, originally extracted from the source file(s)"
+}
+</script>
+
 <body>
 <main>
 <div id="app">
   <ul class='specs-list'>
-    <li v-for="(spec, specs_key) in specs">
-      <ul class='spec'>
-        <li v-for="(sval, skey) in spec">
-          <div v-if="sval === Object(sval)" class="form-group row">
+    <li class="card border-primary">
+      <div class="card-header">
+        Common properties (record: <code>{{ id }}/studyspec.json</code>)
+      </div>
+      <div class="card-body">
+          <div v-for="(sval, skey) in {'Subject ID': 'subject', 'Anonymized Subject ID': 'anon_subject'}" class="form-group row">
+            <label form="specform" class="col-sm-2 col-form-label">{{ skey }}</label>
+            <div class="col-sm-10">
+              <div v-if="specs[0]" class="input-group">
+                <input v-model="specs[0][sval].value" v-on:change="assign2all(sval, specs[0][sval].value);" type="text" :disabled="specs[0][sval].approved" class="form-control">
+                <div class="input-group-text">
+                  <input v-model="specs[0][sval].approved" v-on:change="approveAll(sval, specs[0][sval].approved);"  type="checkbox" title="Toggle approval of record">
+                </div>
+              </div>
+            </div>
+      </div>
+    </li>
+  </ul>
+  <ul class='specs-list'>
+    <li class="card border-dark" v-for="(spec, specs_key) in specs">
+      <div class="card-header">
+        {{ id }}/{{ spec.location }} [ <code>{{ spec.type }}</code><span v-if="spec.uid">; {{ spec.uid }}</span> ]
+      </div>
+      <ul class="card-body">
+          <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, anon_subject: null})">
+          <div class="form-group row" v-bind:title="field_purpose[skey] || ''">
             <!-- this is some editable property -->
-            <label form="specform" class="col-sm-2 col-form-label">{{skey}}</label>
+            <label form="specform" class="col-sm-2 col-form-label">
+                <span v-if="skey !== skey.replace('bids_', '')">
+                    <span class="badge badge-primary">BIDS</span> {{ skey.replace('bids_', '') }}
+                </span>
+                <span v-else>
+                  {{ skey }}
+                </span>
+            </label>
             <div class="col-sm-10">
               <div class="input-group">
                 <input v-model="sval.value" type="text" :disabled="sval.approved" class="form-control">
                 <div class="input-group-append">
                   <div class="input-group-text">
-                    <input v-model="sval.approved" type="checkbox" :id="skey" title="Approve">
+                    <input v-model="sval.approved" type="checkbox" :id="skey" title="Toggle approval of record">
                   </div>
-                  <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
+                  <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" tooltip="Perform actions on this record value">Actions</button>
                   <div class="dropdown-menu">
                     <span @click="removeElement(spec, skey);" class="oi oi-trash">Delete</span>
                   </div>
@@ -71,16 +109,9 @@
               </div>
             </div>
           </div>
-          <div v-else class="form-group row">
-            <!-- this is a fact -->
-            <label form="specform" class="col-sm-2 col-form-label">{{skey}}</label>
-            <div class="col-sm-10">
-              <input type="text" readonly class="form-control-plaintext" :id="skey" :value="sval">
-            </div>
-          </div>
         </li>
 
-        <li>
+        <li data-toggle="tooltip" data-placement="right" title="Add a new field to this record, prefix field name with 'bids_' to add a BIDS property">
           <div class="input-group add-field">
             <input v-bind:id="'tba_fieldname_' + specs_key" type="text" placeholder="new field name">
             <div class="input-group-append">
@@ -91,7 +122,7 @@
       </ul>
     </li>
   </ul>
-  <input class="btn btn-primary" type="button" @click="checkForm" value="Submit">
+  <input class="btn btn-primary" type="button" @click="checkForm" value="Save to dataset">
 </div>
 </main>
 
@@ -141,6 +172,16 @@ var app = new Vue({
             );
             input_field.value = '';
         },
+        assign2all: function(k, v) {
+            for (i=0; i < app.$data.specs.length; i++) {
+                app.$set(app.$data.specs[i], k, {value: v, approved: true});
+            }
+        },
+        approveAll: function(k, v) {
+            for (i=0; i < app.$data.specs.length; i++) {
+                app.$set(app.$data.specs[i][k], "approved", v);
+            }
+        }
     }
 });
 
