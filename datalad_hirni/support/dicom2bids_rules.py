@@ -7,10 +7,10 @@
 # subjects to the rule set
 # XXX this is not used at all
 spec_keys = [
-    'bids_session',
-    'bids_task',
-    'bids_run',
-    'bids_modality',
+    'bids-session',
+    'bids-task',
+    'bids-run',
+    'bids-modality',
     'comment',
     'converter',
     'description',
@@ -131,19 +131,19 @@ class DefaultRules(object):
                 'description': record['SeriesDescription'] if "SeriesDescription" in record else '',
                 'comment': '',
                 'subject': apply_bids_label_restrictions(_guess_subject(record) if not subject else subject),
-                'anon_subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
-                'bids_session': apply_bids_label_restrictions(_guess_session(record) if not session else session),
-                'bids_task': apply_bids_label_restrictions(_guess_task(record)),
-                'bids_run': apply_bids_label_restrictions(run) if run else str(self.runs[protocol_name]),
-                'bids_modality': apply_bids_label_restrictions(_guess_modality(record)),
+                'anon-subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
+                'bids-session': apply_bids_label_restrictions(_guess_session(record) if not session else session),
+                'bids-task': apply_bids_label_restrictions(_guess_task(record)),
+                'bids-run': apply_bids_label_restrictions(run) if run else str(self.runs[protocol_name]),
+                'bids-modality': apply_bids_label_restrictions(_guess_modality(record)),
 
                 # TODO: No defaults yet (May be there shouldn't be defaults, but
                 # right now, that's not a conscious decision ...):
-                'bids_acquisition': apply_bids_label_restrictions(None), #acq
-                'bids_contrast_enhancement': apply_bids_label_restrictions(None), # ce
-                'bids_reconstruction_algorithm': apply_bids_label_restrictions(None), #rec
-                'bids_echo': apply_bids_label_restrictions(None), #echo
-                'bids_direction': apply_bids_label_restrictions(None), #dir
+                'bids-acquisition': apply_bids_label_restrictions(None), #acq
+                'bids-contrast_enhancement': apply_bids_label_restrictions(None), # ce
+                'bids-reconstruction_algorithm': apply_bids_label_restrictions(None), #rec
+                'bids-echo': apply_bids_label_restrictions(None), #echo
+                'bids-direction': apply_bids_label_restrictions(None), #dir
 
                 'id': record.get('SeriesNumber', None),
                 }

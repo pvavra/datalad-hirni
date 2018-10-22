@@ -24,7 +24,7 @@ lgr = logging.getLogger('datalad.hirni.spec4anything')
 
 # TODO: Prob. should be (partially?) editable, but for now we need consistency
 # here:
-non_editables = ['location', 'type', 'dataset_id', 'dataset_refcommit']
+non_editables = ['location', 'type', 'dataset-id', 'dataset-refcommit']
 
 
 def _get_edit_dict(value=None, approved=False):
@@ -51,8 +51,8 @@ def _add_to_spec(spec, spec_dir, path, meta, overrides=None, replace=False):
     snippet = {
         'type': 'generic_' + path['type'],
         'location': posixpath.relpath(path['path'], spec_dir),
-        'dataset_id': meta['dsid'],
-        'dataset_refcommit': meta['refcommit'],
+        'dataset-id': meta['dsid'],
+        'dataset-refcommit': meta['refcommit'],
         'id': _get_edit_dict(),
         'converter': _get_edit_dict(),
         'comment': _get_edit_dict(value=""),

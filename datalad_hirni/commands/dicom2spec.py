@@ -42,15 +42,20 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             # Note: The first 4 entries aren't a dict and have no
             # "approved flag", since they are automatically managed
             'type': 'dicomseries',
-            #'status': None,  # TODO: process state convention; flags
             'location': op.relpath(ds_metadata['path'], basepath),
             'uid': series['SeriesInstanceUID'],
-            'dataset_id': ds_metadata['dsid'],
-            'dataset_refcommit': ds_metadata['refcommit'],
-            'converter': {
-                'value': 'heudiconv' if series_is_valid(series) else 'ignore',
-                # TODO: not clear yet, what exactly to specify here
-                'approved': False},
+            'dataset-id': ds_metadata['dsid'],
+            'dataset-refcommit': ds_metadata['refcommit'],
+            'converter': [{
+                # special value 'hirni-dicom-converter' is interpreted by
+                # spec2bids and doesn't need a 'procedure-call' entry:
+                'procedure-name': {'value': 'hirni-dicom-converter'
+                                            if series_is_valid(series)
+                                            else 'ignore',
+                                   'approved': False},
+                'procedure-call': {'value': None,
+                                   'approved': False},
+            }]
         })
 
     # get rules to apply:
@@ -250,8 +255,8 @@ class Dicom2Spec(Interface):
         for i in range(len(spec_series_list)):
             if spec_series_list[i]["type"] == "dicomseries" and \
                     heuristic.has_specval(spec_series_list[i], "converter") and \
-                            heuristic.get_specval(spec_series_list[i], "bids_run") in \
-                            [heuristic.get_specval(s, "bids_run")
+                            heuristic.get_specval(spec_series_list[i], "bids-run") in \
+                            [heuristic.get_specval(s, "bids-run")
                              for s in spec_series_list[i + 1:]
                              if heuristic.get_specval(s,
                                                       "description") == heuristic.get_specval(
