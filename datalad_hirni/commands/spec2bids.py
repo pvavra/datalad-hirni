@@ -233,7 +233,7 @@ class Spec2Bids(Interface):
                             dataset.config.reload()
 
                             for r in dataset.run_procedure(
-                                    spec=['hirni-dicom-converter', rel_spec_path, anonymize],
+                                    spec='hirni-dicom-converter',
                                     return_type='generator'
                             ):
 
