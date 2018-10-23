@@ -154,15 +154,11 @@ class Spec2Bids(Interface):
                 replacements = dict()
                 for k, v in spec_snippet.items():
                     if k == 'subject':
-                        if anonymize:
-                            continue
-                        else:
+                        if not anonymize:
                             replacements['bids-subject'] = v['value']
-                    elif k == 'anon_subject':
+                    elif k == 'anon-subject':
                         if anonymize:
                             replacements['bids-subject'] = v['value']
-                        else:
-                            continue
                     elif k == 'location':
                         replacements[k] = op.join(op.dirname(rel_spec_path), v)
                     elif k == 'converter':
@@ -181,9 +177,6 @@ class Spec2Bids(Interface):
                              ''.format(k.upper().replace('-', '__'))] = str(v)
                 env_subs['DATALAD_RUN_SUBSTITUTIONS_SPECPATH'] = rel_spec_path
                 env_subs['DATALAD_RUN_SUBSTITUTIONS_ANONYMIZE'] = str(anonymize)
-
-                env_subs['DATALAD_RUN_SUBSTITUTIONS_TEST__KEY'] = "TEST"
-
 
                 # TODO: The above two blocks to build replacements dict and
                 # env_subs should be joined eventually.
