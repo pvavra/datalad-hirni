@@ -43,6 +43,7 @@ def test_dicom2spec(path):
     dicoms = get_dicom_dataset('structural')
 
     ds = Dataset.create(path)
+    ds.run_procedure('setup_study_dataset')
     ds.install(source=dicoms, path='acq100')
     ds.aggregate_metadata(recursive=True, update_mode='all')
     # ### END SETUP ###
@@ -67,6 +68,7 @@ def test_dicom2spec(path):
 def _single_session_dicom2bids(label, path):
 
     ds = Dataset.create(path)
+    ds.run_procedure('setup_study_dataset')
 
     subject = "02"
     acquisition = "{sub}_{label}".format(sub=subject, label=label)
@@ -101,7 +103,8 @@ def test_validate_bids_fixture():
 @with_tempfile
 def test_spec2bids(study_path, bids_path):
 
-    study_ds = Dataset.hirni_create_study(study_path)
+    study_ds = Dataset(study_path).create()
+    study_ds.run_procedure('setup_study_dataset')
 
     subject = "02"
     acquisition = "{sub}_functional".format(sub=subject)
