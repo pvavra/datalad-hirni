@@ -105,7 +105,7 @@ class Spec2Bids(Interface):
                                 "acquisition directory".format(spec_path)
                     )
 
-            ran_heudiconv = False
+            ran_procedure = dict()
 
             # relative path to spec to be recorded:
             rel_spec_path = relpath(spec_path, dataset.path) \
@@ -200,6 +200,16 @@ class Spec2Bids(Interface):
                         if heuristic.has_specval(proc, 'procedure-call') \
                         else None
 
+                    only_once = heuristic.get_specval(proc,
+                                                      'once-per-acquisition') \
+                        if heuristic.has_specval(proc, 'once-per-acquisition') \
+                        else None
+
+                    if only_once and ran_procedure.get(proc_name, False):
+                        # if it wants to run only once per acquisition and we
+                        # already ran it, don't call it again
+                        continue
+
                     # if spec comes with call format string, it takes precedence
                     # over what is generally configured for the procedure
                     # TODO: Not sure yet whether this is how we should deal with it
@@ -207,107 +217,97 @@ class Spec2Bids(Interface):
                         env_subs['DATALAD.PROCEDURES.{}.CALL-FORMAT'
                                  ''.format(proc_name)] = proc_call
 
-                    if not ran_heudiconv and proc_name == \
-                            'hirni-dicom-converter':
-                        # special treatment of DICOMs (using heudiconv)
-                        # But it's one call to heudiconv for all DICOMs of an
-                        # acquisition!
-                        # requires hirni-toolbox () to be installed as a
-                        # subdataset
-                        # TODO: make heudiconv not a special case; add a spec
-                        # value for executing only once per acquisition instead
+                    run_results = list()
+                    # Note, that we can't use dataset.config.overrides to
+                    # pass run-substitution config to procedures, since we
+                    # leave python context and thereby loose the dataset
+                    # instance. Use patched os.environ instead. Note also,
+                    # that this requires names of substitutions to not
+                    # contain underscores, since they would be translated to
+                    # '.' by ConfigManager when reading them from within the
+                    # procedure's datalad-run calls.
+                    from mock import patch
 
-                        run_results = list()
-                        # Note, that we can't use dataset.config.overrides to
-                        # pass run-substitution config to procedures, since we
-                        # leave python context and thereby loose the dataset
-                        # instance. Use patched os.environ instead. Note also,
-                        # that this requires names of substitutions to not
-                        # contain underscores, since they would be translated to
-                        # '.' by ConfigManager when reading them from within the
-                        # procedure's datalad-run calls.
-                        from mock import patch
-                        with patch.dict('os.environ', env_subs):
-                            # apparently reload is necessary to consider config
-                            # overrides via env:
-                            dataset.config.reload()
+                    # TODO: Reconsider that patching. Shouldn't it be an update?
+                    with patch.dict('os.environ', env_subs):
+                        # apparently reload is necessary to consider config
+                        # overrides via env:
+                        dataset.config.reload()
+                        for r in dataset.run_procedure(
+                                spec='hirni-dicom-converter',
+                                return_type='generator'
+                        ):
 
-                            for r in dataset.run_procedure(
-                                    spec='hirni-dicom-converter',
-                                    return_type='generator'
-                            ):
+                            # # if there was an issue yield original result,
+                            # # otherwise swallow:
+                            # if r['status'] not in ['ok', 'notneeded']:
+                            yield r
+                            run_results.append(r)
 
-                                # if there was an issue yield original result,
-                                # otherwise swallow:
-                                if r['status'] not in ['ok', 'notneeded']:
-                                    yield r
-
-                                run_results.append(r)
-
-                        if not all(r['status'] in ['ok', 'notneeded']
-                                   for r in run_results):
-                            yield {'action': 'hirni-dicom-converter',
-                                   'path': spec_path,
-                                   'snippet': spec_snippet,
-                                   'status': 'error',
-                                   'message': "acquisition conversion failed. "
-                                              "See previous message(s)."}
-
-                        else:
-                            yield {'action': 'hirni-dicom-converter',
-                                   'path': spec_path,
-                                   'snippet': spec_snippet,
-                                   'status': 'ok',
-                                   'message': "acquisition converted."}
-
-                        # run heudiconv only once
-                        ran_heudiconv = True
-
-                    elif proc_name != 'hirni-dicom-converter':
-                        # specific converter procedure call
-
-                        from mock import patch
-                        with patch.dict('os.environ', env_subs):
-                            # apparently reload is necessary to consider config
-                            # overrides via env:
-                            dataset.config.reload()
-
-                            for r in dataset.run_procedure(
-                                    spec=[proc_name, rel_spec_path, anonymize],
-                                    return_type='generator'
-                            ):
-
-                                # if there was an issue with containers-run,
-                                # yield original result, otherwise swallow:
-                                if r['status'] not in ['ok', 'notneeded']:
-                                    yield r
-
-                                run_results.append(r)
-
-                        if not all(r['status'] in ['ok', 'notneeded']
-                                   for r in run_results):
-                            yield {'action': proc_name,
-                                   'path': spec_path,
-                                   'snippet': spec_snippet,
-                                   'status': 'error',
-                                   'message': "Conversion failed. "
-                                              "See previous message(s)."}
-
-                        else:
-                            yield {'action': proc_name,
-                                   'path': spec_path,
-                                   'snippet': spec_snippet,
-                                   'status': 'ok',
-                                   'message': "specification converted."}
-
-                    elif ran_heudiconv and proc_name == 'hirni-dicom-converter':
-                        # in this case we acted upon this snippet already and
-                        # do not have to produce a result
-                        pass
+                    if not all(r['status'] in ['ok', 'notneeded']
+                               for r in run_results):
+                        yield {'action': proc_name,
+                               'path': spec_path,
+                               'snippet': spec_snippet,
+                               'status': 'error',
+                               'message': "acquisition conversion failed. "
+                                          "See previous message(s)."}
 
                     else:
-                        # this shouldn't happen!
-                        raise RuntimeError
+                        yield {'action': proc_name,
+                               'path': spec_path,
+                               'snippet': spec_snippet,
+                               'status': 'ok',
+                               'message': "acquisition converted."}
+
+                    # mark as a procedure we ran on this acquisition:
+                    ran_procedure[proc_name] = True
+
+                    # elif proc_name != 'hirni-dicom-converter':
+                    #     # specific converter procedure call
+                    #
+                    #     from mock import patch
+                    #     with patch.dict('os.environ', env_subs):
+                    #         # apparently reload is necessary to consider config
+                    #         # overrides via env:
+                    #         dataset.config.reload()
+                    #
+                    #         for r in dataset.run_procedure(
+                    #                 spec=[proc_name, rel_spec_path, anonymize],
+                    #                 return_type='generator'
+                    #         ):
+                    #
+                    #             # if there was an issue with containers-run,
+                    #             # yield original result, otherwise swallow:
+                    #             if r['status'] not in ['ok', 'notneeded']:
+                    #                 yield r
+                    #
+                    #             run_results.append(r)
+                    #
+                    #     if not all(r['status'] in ['ok', 'notneeded']
+                    #                for r in run_results):
+                    #         yield {'action': proc_name,
+                    #                'path': spec_path,
+                    #                'snippet': spec_snippet,
+                    #                'status': 'error',
+                    #                'message': "Conversion failed. "
+                    #                           "See previous message(s)."}
+                    #
+                    #     else:
+                    #         yield {'action': proc_name,
+                    #                'path': spec_path,
+                    #                'snippet': spec_snippet,
+                    #                'status': 'ok',
+                    #                'message': "specification converted."}
+
+                    # elif ran_heudiconv and proc_name == 'hirni-dicom-converter':
+                    #     # in this case we acted upon this snippet already and
+                    #     # do not have to produce a result
+                    #     pass
+                    #
+                    # else:
+                    #     # this shouldn't happen!
+                    #     raise RuntimeError
 
             yield {'action': 'spec2bids',
                    'path': spec_path,

@@ -55,6 +55,8 @@ def add_to_spec(ds_metadata, spec_list, basepath,
                                    'approved': False},
                 'procedure-call': {'value': None,
                                    'approved': False},
+                'once-per-acquisition': {'value': True if series_is_valid(series) else None,
+                                         'approved': False}
             }]
         })
 
