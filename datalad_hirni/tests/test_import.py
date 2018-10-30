@@ -43,8 +43,10 @@ def test_import_tarball(src, ds_path):
     ok_exists(opj(ds.path, 'user_defined_session', 'studyspec.json'))
     ok_file_under_git(opj(ds.path, 'user_defined_session', 'studyspec.json'),
                       annexed=False)
-    import os
-    ok_exists(opj(ds.path, 'user_defined_session', 'dicoms', 'structural'))
+    # TODO: datalad gh-2963
+    from six import PY3
+    if PY3:
+        ok_exists(opj(ds.path, 'user_defined_session', 'dicoms', 'structural'))
 
     # now import again, but let the import routine figure out an acquisition
     # name based on DICOM metadata (ATM just the first occurring PatientID,
@@ -57,5 +59,7 @@ def test_import_tarball(src, ds_path):
     assert opj(ds.path, 'sub-02', 'dicoms') in [s.path for s in subs]
     ok_exists(opj(ds.path, 'sub-02', 'studyspec.json'))
     ok_file_under_git(opj(ds.path, 'sub-02', 'studyspec.json'), annexed=False)
-    ok_exists(opj(ds.path, 'sub-02', 'dicoms', 'structural'))
+    # TODO: datalad gh-2963
+    if PY3:
+        ok_exists(opj(ds.path, 'sub-02', 'dicoms', 'structural'))
 
