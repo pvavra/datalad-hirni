@@ -113,9 +113,8 @@ def test_spec2bids(study_path, bids_path):
     study_ds.install(source=dicoms, path=op.join(acquisition, 'dicoms'))
     study_ds.aggregate_metadata(recursive=True, update_mode='all')
 
-    spec_file = 'spec_functional.json'
     study_ds.hirni_dicom2spec(path=op.join(acquisition, 'dicoms'),
-                              spec=op.join(acquisition, spec_file))
+                              spec=op.join(acquisition, 'studyspec.json'))
 
     # add a custom converter script which is just a copy converter
     makedirs(op.join(study_ds.path, 'code'))
@@ -181,7 +180,7 @@ def test_spec2bids(study_path, bids_path):
     # converter script itself.
     makedirs(op.join(bids_ds.path, "sub-{sub}".format(sub=subject)))
 
-    bids_ds.hirni_spec2bids(op.join("sourcedata", acquisition, spec_file))
+    bids_ds.hirni_spec2bids(op.join("sourcedata", acquisition, "studyspec.json"))
 
     # TODO: invalid assertion ATM
     # assert op.exists(op.join(bids_ds.path, "sub-{sub}".format(sub=subject), "my_converted_data.txt"))
