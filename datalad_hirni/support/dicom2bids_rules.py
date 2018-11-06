@@ -243,6 +243,10 @@ def _guess_modality(record):
             return "t2w"
         # END
 
+        # TEMP: Reproin workaround
+        if "func" in prot_parts:
+            return "bold"
+
     # found nothing, but modality isn't necessarily required
     return None
 
