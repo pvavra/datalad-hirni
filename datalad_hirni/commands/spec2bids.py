@@ -1,4 +1,4 @@
-"Convert DICOM data to BIDS based on the respective study specification"
+"""Convert DICOM data to BIDS based on the respective study specification"""
 
 __docformat__ = 'restructuredtext'
 
@@ -87,12 +87,15 @@ class Spec2Bids(Interface):
                 )
 
             if op.isdir(spec_path):
-                if op.realpath(op.join(spec_path, op.pardir)) == op.realpath(dataset.path):
+                if op.realpath(op.join(spec_path, op.pardir)) == \
+                        op.realpath(dataset.path):
                     spec_path = op.join(
                             spec_path,
-                            dataset.config.get("datalad.hirni.studyspec.filename",
-                                               "studyspec.json")
+                            dataset.config.get(
+                                    "datalad.hirni.studyspec.filename",
+                                    "studyspec.json")
                     )
+                    # TODO: check existence of that file!
                 else:
                     yield get_status_dict(
                         action='spec2bids',
@@ -102,7 +105,7 @@ class Spec2Bids(Interface):
                                 "acquisition directory".format(spec_path)
                     )
 
-            ran_heudiconv = False
+            ran_procedure = dict()
 
             # relative path to spec to be recorded:
             rel_spec_path = relpath(spec_path, dataset.path) \
@@ -112,6 +115,33 @@ class Spec2Bids(Interface):
             # wrt conversion:
             for spec_snippet in load_stream(spec_path):
 
+                # TODO: value 'ignore'!?
+
+                if 'converter' not in spec_snippet:
+                    # no conversion procedures defined at all:
+                    yield get_status_dict(
+                            action='spec2bids',
+                            path=spec_path,
+                            snippet=spec_snippet,
+                            status='notneeded',
+                    )
+                    continue
+
+                procedure_list = spec_snippet['converter']
+                if not procedure_list:
+                    # no conversion procedures defined at all:
+                    yield get_status_dict(
+                            action='spec2bids',
+                            path=spec_path,
+                            snippet=spec_snippet,
+                            status='notneeded',
+                    )
+                    continue
+
+                # accept a single dict as a one item list:
+                if isinstance(procedure_list, dict):
+                    procedure_list = [procedure_list]
+
                 # build a dict available for placeholders in format strings:
                 # Note: This is flattening the structure since we don't need
                 # value/approved for the substitutions. In addition 'subject'
@@ -119,93 +149,104 @@ class Spec2Bids(Interface):
                 # 'bids_subject' instead the value of which depends on the
                 # --anonymize switch.
                 # Additionally 'location' is recomputed to be relative to
-                # dataset.path, since this is where the converters are running
+                # dataset.path, since this is where the procedures are running
                 # from within.
                 replacements = dict()
                 for k, v in spec_snippet.items():
                     if k == 'subject':
+                        if not anonymize:
+                            replacements['bids-subject'] = v['value']
+                    elif k == 'anon-subject':
                         if anonymize:
-                            continue
-                        else:
-                            replacements['bids_subject'] = v['value']
-                    elif k == 'anon_subject':
-                        if anonymize:
-                            replacements['bids_subject'] = v['value']
-                        else:
-                            continue
+                            replacements['bids-subject'] = v['value']
                     elif k == 'location':
                         replacements[k] = op.join(op.dirname(rel_spec_path), v)
-                    elif k == 'converter_path':
-                        replacements[k] = op.join(op.dirname(rel_spec_path), v['value'])
+                    elif k == 'converter':
+                        # 'converter' is a list of dicts (not suitable for
+                        # substitutions) and it makes little sense to be
+                        # referenced by converter format strings anyway:
+                        continue
                     else:
                         replacements[k] = v['value'] if isinstance(v, dict) else v
 
-                dataset.config.overrides = {
-                    "datalad.run.substitutions._hs": replacements}
-                dataset.config.reload()
+                # build dict to patch os.environ with for passing
+                # replacements on to procedures:
+                env_subs = dict()
+                for k, v in replacements.items():
+                    env_subs['DATALAD_RUN_SUBSTITUTIONS_{}'
+                             ''.format(k.upper().replace('-', '__'))] = str(v)
+                env_subs['DATALAD_RUN_SUBSTITUTIONS_SPECPATH'] = rel_spec_path
+                env_subs['DATALAD_RUN_SUBSTITUTIONS_ANONYMIZE'] = str(anonymize)
 
-                if not ran_heudiconv and \
-                        heuristic.has_specval(spec_snippet, 'converter') and \
-                        heuristic.get_specval(spec_snippet, 'converter') == 'heudiconv':
-                    # TODO: location!
+                # TODO: The above two blocks to build replacements dict and
+                # env_subs should be joined eventually.
 
-                    # special treatment of DICOMs (using heudiconv)
-                    # But it's one call to heudiconv for all DICOMs of an
-                    # acquisition!
-                    from mock import patch
-                    from tempfile import mkdtemp
+                for proc in procedure_list:
+                    if heuristic.has_specval(proc, 'procedure-name'):
+                        proc_name = heuristic.get_specval(proc, 'procedure-name')
+                    else:
+                        # invalid procedure spec
+                        lgr.warning("conversion procedure missing key "
+                                    "'procedure-name' in %s: %s",
+                                    spec_path, proc)
+                        # TODO: continue or yield impossible/error so it can be
+                        # dealt with via on_failure?
+                        continue
 
-                    # relative path to not-needed-heudiconv output:
-                    rel_trash_path = relpath(mkdtemp(prefix="hirni-tmp-",
-                                                     dir=opj(dataset.path,
-                                                             ".git")),
-                                             dataset.path)
+                    if proc_name == 'ignore':
+                        continue
+
+                    proc_call = heuristic.get_specval(proc, 'procedure-call') \
+                        if heuristic.has_specval(proc, 'procedure-call') \
+                        else None
+
+                    only_once = heuristic.get_specval(proc,
+                                                      'once-per-acquisition') \
+                        if heuristic.has_specval(proc, 'once-per-acquisition') \
+                        else None
+
+                    if only_once and ran_procedure.get(proc_name, False):
+                        # if it wants to run only once per acquisition and we
+                        # already ran it, don't call it again
+                        continue
+
+                    # if spec comes with call format string, it takes precedence
+                    # over what is generally configured for the procedure
+                    # TODO: Not sure yet whether this is how we should deal with it
+                    if proc_call:
+                        env_subs['DATALAD.PROCEDURES.{}.CALL-FORMAT'
+                                 ''.format(proc_name)] = proc_call
+
                     run_results = list()
-                    with patch.dict('os.environ',
-                                    {'HIRNI_STUDY_SPEC': rel_spec_path,
-                                     'HIRNI_SPEC2BIDS_SUBJECT': replacements['bids_subject']}):
+                    # Note, that we can't use dataset.config.overrides to
+                    # pass run-substitution config to procedures, since we
+                    # leave python context and thereby loose the dataset
+                    # instance. Use patched os.environ instead. Note also,
+                    # that this requires names of substitutions to not
+                    # contain underscores, since they would be translated to
+                    # '.' by ConfigManager when reading them from within the
+                    # procedure's datalad-run calls.
+                    from mock import patch
 
-                        for r in dataset.containers_run(
-                                ['heudiconv',
-                                 # XXX absolute path will make rerun on other
-                                 # system impossible -- hard to avoid
-                                 '-f', heuristic.__file__,
-                                 # leaves identifying info in run record
-                                 '-s', replacements['bids_subject'],
-                                 '-c', 'dcm2niix',
-                                 # TODO decide on the fate of .heudiconv/
-                                 # but ATM we need to (re)move it:
-                                 # https://github.com/nipy/heudiconv/issues/196
-                                 '-o', rel_trash_path,
-                                 '-b',
-                                 '-a', '{dspath}',
-                                 '-l', '',
-                                 # avoid glory details provided by dcmstack,
-                                 # we have them in the aggregated DICOM
-                                 # metadata already
-                                 '--minmeta',
-                                 '--files', replacements['location']
-                                 ],
-                                sidecar=anonymize,
-                                container_name=dataset.config.get(
-                                        "datalad.hirni.conversion-container",
-                                        "conversion"),
-                                inputs=[replacements['location'], rel_spec_path],
-                                outputs=[dataset.path],
-                                message="[HIRNI] Convert DICOM data for subject {}"
-                                        "".format(replacements['bids_subject']),
-                                return_type='generator',
+                    # TODO: Reconsider that patching. Shouldn't it be an update?
+                    with patch.dict('os.environ', env_subs):
+                        # apparently reload is necessary to consider config
+                        # overrides via env:
+                        dataset.config.reload()
+                        for r in dataset.run_procedure(
+                                spec='hirni-dicom-converter',
+                                return_type='generator'
                         ):
-                            # if there was an issue with containers-run,
-                            # yield original result, otherwise swallow:
-                            if r['status'] not in ['ok', 'notneeded']:
-                                yield r
 
+                            # # if there was an issue yield original result,
+                            # # otherwise swallow:
+                            # if r['status'] not in ['ok', 'notneeded']:
+                            yield r
                             run_results.append(r)
 
                     if not all(r['status'] in ['ok', 'notneeded']
                                for r in run_results):
-                        yield {'action': 'heudiconv',
+                        yield {'action': proc_name,
                                'path': spec_path,
                                'snippet': spec_snippet,
                                'status': 'error',
@@ -213,100 +254,61 @@ class Spec2Bids(Interface):
                                           "See previous message(s)."}
 
                     else:
-                        yield {'action': 'heudiconv',
+                        yield {'action': proc_name,
                                'path': spec_path,
                                'snippet': spec_snippet,
                                'status': 'ok',
                                'message': "acquisition converted."}
 
-                    # remove superfluous heudiconv output
-                    rmtree(opj(dataset.path, rel_trash_path))
-                    # remove empty *_events.tsv files created by heudiconv
-                    import glob
-                    dataset.remove(glob.glob('*/*/*_events.tsv'),
-                                   check=False,
-                                   message="[HIRNI] Remove empty *_event.tsv "
-                                           "files")
+                    # mark as a procedure we ran on this acquisition:
+                    ran_procedure[proc_name] = True
 
-                    # run heudiconv only once
-                    ran_heudiconv = True
+                    # elif proc_name != 'hirni-dicom-converter':
+                    #     # specific converter procedure call
+                    #
+                    #     from mock import patch
+                    #     with patch.dict('os.environ', env_subs):
+                    #         # apparently reload is necessary to consider config
+                    #         # overrides via env:
+                    #         dataset.config.reload()
+                    #
+                    #         for r in dataset.run_procedure(
+                    #                 spec=[proc_name, rel_spec_path, anonymize],
+                    #                 return_type='generator'
+                    #         ):
+                    #
+                    #             # if there was an issue with containers-run,
+                    #             # yield original result, otherwise swallow:
+                    #             if r['status'] not in ['ok', 'notneeded']:
+                    #                 yield r
+                    #
+                    #             run_results.append(r)
+                    #
+                    #     if not all(r['status'] in ['ok', 'notneeded']
+                    #                for r in run_results):
+                    #         yield {'action': proc_name,
+                    #                'path': spec_path,
+                    #                'snippet': spec_snippet,
+                    #                'status': 'error',
+                    #                'message': "Conversion failed. "
+                    #                           "See previous message(s)."}
+                    #
+                    #     else:
+                    #         yield {'action': proc_name,
+                    #                'path': spec_path,
+                    #                'snippet': spec_snippet,
+                    #                'status': 'ok',
+                    #                'message': "specification converted."}
 
-                elif heuristic.has_specval(spec_snippet, 'converter') and \
-                        heuristic.get_specval(spec_snippet, 'converter') != 'heudiconv':
-                    # Spec snippet comes with a specific converter call.
-
-                    # TODO: RF: run_converter()
-
-                    if 'converter-container' in spec_snippet and spec_snippet['converter-container']['value']:
-                        from functools import partial
-                        run_cmd = partial(
-                            dataset.containers_run,
-                            container_name=spec_snippet['converter-container']['value']
-                        )
-
-                    else:
-                        run_cmd = dataset.run
-
-                    run_results = list()
-                    for r in run_cmd(
-                            spec_snippet['converter']['value'],
-                            sidecar=anonymize,
-                            inputs=[replacements['location'], rel_spec_path],
-                            outputs=[dataset.path],
-                            # Note: The following message construction is
-                            # supposed to not include the acquisition identifier
-                            # if --anonymize was given, since it might contain
-                            # the original subject ID.
-                            message="Convert {} for subject {}".format(
-                                        spec_snippet['type'],
-                                        replacements['bids_subject']),
-                            return_type='generator',
-                            #
-                            ):
-
-                        # if there was an issue with containers-run,
-                        # yield original result, otherwise swallow:
-                        if r['status'] not in ['ok', 'notneeded']:
-                            yield r
-
-                        run_results.append(r)
-
-                    if not all(r['status'] in ['ok', 'notneeded']
-                               for r in run_results):
-                        yield {'action': 'spec2bids',
-                               'path': spec_path,
-                               'snippet': spec_snippet,
-                               'status': 'error',
-                               'message': "Conversion failed. "
-                                          "See previous message(s)."}
-
-                    else:
-                        yield {'action': 'specsnippet2bids',
-                               'path': spec_path,
-                               'snippet': spec_snippet,
-                               'status': 'ok',
-                               'message': "specification converted."}
-
-                else:
-                    if heuristic.has_specval(spec_snippet, 'converter') and \
-                            heuristic.get_specval(spec_snippet, 'converter') == 'heudiconv' and \
-                            ran_heudiconv:
-                        # in this case we acted upon this snippet already and
-                        # do not have to produce a result
-                        pass
-                    else:
-                        # no converter specified in this snippet or it's a
-                        # dicomseries and heudiconv was called already
-                        # => nothing to do here.
-                        yield get_status_dict(
-                                action='spec2bids',
-                                path=spec_path,
-                                snippet=spec_snippet,
-                                status='notneeded',
-                        )
+                    # elif ran_heudiconv and proc_name == 'hirni-dicom-converter':
+                    #     # in this case we acted upon this snippet already and
+                    #     # do not have to produce a result
+                    #     pass
+                    #
+                    # else:
+                    #     # this shouldn't happen!
+                    #     raise RuntimeError
 
             yield {'action': 'spec2bids',
                    'path': spec_path,
                    'status': 'ok'}
-
-

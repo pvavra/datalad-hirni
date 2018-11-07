@@ -66,7 +66,7 @@
         Common properties (record: <code>{{ studyspecfile }}</code>)
       </div>
       <div class="card-body">
-          <div v-for="(sval, skey) in {'Subject ID': 'subject', 'Anonymized Subject ID': 'anon_subject'}" class="form-group row">
+          <div v-for="(sval, skey) in {'Subject ID': 'subject', 'Anonymized Subject ID': 'anon-subject'}" class="form-group row">
             <label form="specform" class="col-sm-2 col-form-label">{{ skey }}</label>
             <div class="col-sm-10">
               <div v-if="specs[0]" class="input-group">
@@ -85,12 +85,12 @@
         {{ studyspecfile }}/{{ spec.location }} [ <code>{{ spec.type }}</code><span v-if="spec.uid">; {{ spec.uid }}</span> ]
       </div>
       <ul class="card-body">
-          <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, anon_subject: null})">
+          <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, 'anon-subject': null, converter: null})">
             <div class="form-group row" v-bind:title="field_purpose[skey] || ''">
               <!-- this is some editable property -->
               <label form="specform" class="col-sm-2 col-form-label">
-                  <span v-if="skey !== skey.replace('bids_', '')">
-                      <span class="badge badge-primary">BIDS</span> {{ skey.replace('bids_', '') }}
+                  <span v-if="skey !== skey.replace('bids-', '')">
+                      <span class="badge badge-primary">BIDS</span> {{ skey.replace('bids-', '') }}
                   </span>
                   <span v-else>
                     {{ skey }}
@@ -113,7 +113,7 @@
             </div>
           </li>
 
-        <li data-toggle="tooltip" data-placement="right" title="Add a new field to this record, prefix field name with 'bids_' to add a BIDS property">
+        <li data-toggle="tooltip" data-placement="right" title="Add a new field to this record, prefix field name with 'bids-' to add a BIDS property">
           <div class="input-group add-field">
             <input v-bind:id="'tba_fieldname_' + specs_key" type="text" placeholder="new field name">
             <div class="input-group-append">
@@ -148,10 +148,9 @@ var app = new Vue({
       specfiles: [],
       studyspecfile: null,
       field_purpose: {
-          comment: "Comments or notes for this record",
-          converter: "Command to call for converting data associated with this record to BIDS format, may use template syntax and placeholders",
-          converter_path: "Location of a program/script to use as converter command for this record, value can be used in converter command via {_hs[converter_path]} placeholder",
-          description: "Record description, originally extracted from the source file(s)"
+        comment: "Comments or notes for this record",
+        converter: "Procedures to call for converting data associated with this record to BIDS format, may use template syntax and placeholders",
+        description: "Record description, originally extracted from the source file(s)"
       }
     },
     methods: {
