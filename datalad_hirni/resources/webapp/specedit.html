@@ -46,14 +46,6 @@
     }
   </style>
 
-<script>
-var field_purpose = {
-    comment: "Comments or notes for this record",
-    converter: "Procedures to call for converting data associated with this record to BIDS format, may use template syntax and placeholders",
-    description: "Record description, originally extracted from the source file(s)"
-}
-</script>
-
 <body>
 <main>
 <div id="app">
@@ -93,33 +85,33 @@ var field_purpose = {
         {{ studyspecfile }}/{{ spec.location }} [ <code>{{ spec.type }}</code><span v-if="spec.uid">; {{ spec.uid }}</span> ]
       </div>
       <ul class="card-body">
-          <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, anon-subject: null})">
-          <div class="form-group row" v-bind:title="field_purpose[skey] || ''">
-            <!-- this is some editable property -->
-            <label form="specform" class="col-sm-2 col-form-label">
-                <span v-if="skey !== skey.replace('bids-', '')">
-                    <span class="badge badge-primary">BIDS</span> {{ skey.replace('bids-', '') }}
-                </span>
-                <span v-else>
-                  {{ skey }}
-                </span>
-            </label>
-            <div class="col-sm-10">
-              <div class="input-group">
-                <input v-model="sval.value" type="text" :disabled="sval.approved" class="form-control">
-                <div class="input-group-append">
-                  <div class="input-group-text">
-                    <input v-model="sval.approved" type="checkbox" :id="skey" title="Toggle approval of record">
-                  </div>
-                  <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" tooltip="Perform actions on this record value">Actions</button>
-                  <div class="dropdown-menu">
-                    <span @click="removeElement(spec, skey);" class="oi oi-trash">Delete</span>
+          <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, 'anon-subject': null})">
+            <div class="form-group row" v-bind:title="field_purpose[skey] || ''">
+              <!-- this is some editable property -->
+              <label form="specform" class="col-sm-2 col-form-label">
+                  <span v-if="skey !== skey.replace('bids_', '')">
+                      <span class="badge badge-primary">BIDS</span> {{ skey.replace('bids_', '') }}
+                  </span>
+                  <span v-else>
+                    {{ skey }}
+                  </span>
+              </label>
+              <div class="col-sm-10">
+                <div class="input-group">
+                  <input v-model="sval.value" type="text" :disabled="sval.approved" class="form-control">
+                  <div class="input-group-append">
+                    <div class="input-group-text">
+                      <input v-model="sval.approved" type="checkbox" :id="skey" title="Toggle approval of record">
+                    </div>
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" tooltip="Perform actions on this record value">Actions</button>
+                    <div class="dropdown-menu">
+                      <span @click="removeElement(spec, skey);" class="oi oi-trash">Delete</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </li>
+          </li>
 
         <li data-toggle="tooltip" data-placement="right" title="Add a new field to this record, prefix field name with 'bids-' to add a BIDS property">
           <div class="input-group add-field">
@@ -149,17 +141,21 @@ var getUrlParams = function (url) {
   return params;
 };
 
-var studyspecfile = getUrlParams(window.location.href)['studyspecfile'];
-
 var app = new Vue({
     el: '#app',
     data: {
       specs: [],
-      specfiles: []
+      specfiles: [],
+      studyspecfile: null,
+      field_purpose: {
+        comment: "Comments or notes for this record",
+        converter: "Procedures to call for converting data associated with this record to BIDS format, may use template syntax and placeholders",
+        description: "Record description, originally extracted from the source file(s)"
+      }
     },
     methods: {
         checkForm: function() {
-            axios.put("/api/v1/file/" + studyspecfile, {
+            axios.put("/api/v1/file/" + app.$data.studyspecfile, {
                 content: JSON.stringify(this.$data.specs),
                 json: 'stream',
                 togit: true
@@ -219,9 +215,12 @@ var app = new Vue({
     }
 });
 
-app.load_specfile_list();
-if (studyspecfile) {
-    app.load_specs(studyspecfile);
+app.$data.studyspecfile = getUrlParams(window.location.href)['studyspecfile'];
+
+if (app.$data.studyspecfile) {
+    app.load_specs(app.$data.studyspecfile);
+} else {
+    app.load_specfile_list();
 }
 </script>
 </body>
