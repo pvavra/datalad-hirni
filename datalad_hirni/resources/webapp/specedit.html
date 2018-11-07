@@ -89,8 +89,8 @@
             <div class="form-group row" v-bind:title="field_purpose[skey] || ''">
               <!-- this is some editable property -->
               <label form="specform" class="col-sm-2 col-form-label">
-                  <span v-if="skey !== skey.replace('bids_', '')">
-                      <span class="badge badge-primary">BIDS</span> {{ skey.replace('bids_', '') }}
+                  <span v-if="skey !== skey.replace('bids-', '')">
+                      <span class="badge badge-primary">BIDS</span> {{ skey.replace('bids-', '') }}
                   </span>
                   <span v-else>
                     {{ skey }}
