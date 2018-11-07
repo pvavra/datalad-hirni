@@ -140,8 +140,8 @@ class DefaultRules(object):
                 # TODO: No defaults yet (May be there shouldn't be defaults, but
                 # right now, that's not a conscious decision ...):
                 'bids-acquisition': apply_bids_label_restrictions(None), #acq
-                'bids-contrast_enhancement': apply_bids_label_restrictions(None), # ce
-                'bids-reconstruction_algorithm': apply_bids_label_restrictions(None), #rec
+                'bids-contrast-enhancement': apply_bids_label_restrictions(None), # ce
+                'bids-reconstruction-algorithm': apply_bids_label_restrictions(None), #rec
                 'bids-echo': apply_bids_label_restrictions(None), #echo
                 'bids-direction': apply_bids_label_restrictions(None), #dir
 
