@@ -85,7 +85,7 @@
         {{ studyspecfile }}/{{ spec.location }} [ <code>{{ spec.type }}</code><span v-if="spec.uid">; {{ spec.uid }}</span> ]
       </div>
       <ul class="card-body">
-          <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, 'anon-subject': null})">
+          <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, 'anon-subject': null, converter: null})">
             <div class="form-group row" v-bind:title="field_purpose[skey] || ''">
               <!-- this is some editable property -->
               <label form="specform" class="col-sm-2 col-form-label">
