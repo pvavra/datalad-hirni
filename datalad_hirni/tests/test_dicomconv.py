@@ -48,9 +48,9 @@ def test_dicom2spec(path):
     ds.aggregate_metadata(recursive=True, update_mode='all')
     # ### END SETUP ###
 
-    res = ds.hirni_dicom2spec(path='acq100', spec='spec_structural.json')
+    res = ds.hirni_dicom2spec(path='acq100', spec='studyspec.json')
     assert_result_count(res, 1)
-    assert_result_count(res, 1, path=op.join(ds.path, 'spec_structural.json'))
+    assert_result_count(res, 1, path=op.join(ds.path, 'studyspec.json'))
     if ds.repo.is_direct_mode():
         # Note:
         # in direct mode we got an issue determining whether or not sth is
