@@ -6,6 +6,7 @@ import logging
 import os.path as op
 
 from datalad.coreapi import metadata
+from datalad_revolution.revsave import RevSave
 from datalad.distribution.dataset import EnsureDataset
 from datalad.distribution.dataset import datasetmethod
 from datalad.distribution.dataset import require_dataset
@@ -171,6 +172,8 @@ class Dicom2Spec(Interface):
         if not spec:
             raise InsufficientArgumentsError(
                 "insufficient arguments for dicom2spec: a spec file is required")
+
+            # TODO: That's prob. wrong. We can derive default spec from acquisition
         else:
             spec = resolve_path(spec, dataset)
 
@@ -277,16 +280,14 @@ class Dicom2Spec(Interface):
         spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
         json_py.dump2stream(spec_series_list, spec)
 
-        from datalad.distribution.add import Add
-
-        for r in Add.__call__(spec,
-                              to_git=True,
-                              save=True,
-                              message="[HIRNI] Added study specification "
-                                      "snippet for %s" %
-                                      op.relpath(path[0], dataset.path),
-                              return_type='generator',
-                              result_renderer='disabled'):
+        for r in RevSave.__call__(dataset=dataset,
+                                  path=spec,
+                                  to_git=True,
+                                  message="[HIRNI] Added study specification "
+                                          "snippet for %s" %
+                                          op.relpath(path[0], dataset.path),
+                                  return_type='generator',
+                                  result_renderer='disabled'):
             if r.get('status', None) not in ['ok', 'notneeded']:
                 yield r
             elif r['path'] == spec and r['type'] == 'file':
