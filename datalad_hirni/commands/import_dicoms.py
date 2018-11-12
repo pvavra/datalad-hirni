@@ -241,7 +241,7 @@ class ImportDicoms(Interface):
                 dicom_ds.path, op.pardir, "studyspec.json")),
             subject=subject,
             anon_subject=anon_subject,
-            session=acqid,
+            acquisition=acqid,
             properties=properties
         )
 

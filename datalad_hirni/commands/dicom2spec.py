@@ -130,19 +130,18 @@ class Dicom2Spec(Interface):
                     metavar="ANON_SUBJECT",
                     doc="""TODO""",
                     constraints=EnsureStr() | EnsureNone()),
-            session=Parameter(
-                    args=("--session",),
-                    metavar="SESSION",
-                    doc="""session identifier. If not specified, an attempt will be made 
-                    to derive SESSION from DICOM headers""",
+            acquisition=Parameter(
+                    args=("--acq",),
+                    metavar="ACQUISITION",
+                    doc="""acquisition identifier. If not specified, an attempt 
+                    will be made to derive an identifier from DICOM headers""",
                     constraints=EnsureStr() | EnsureNone()),
             properties=Parameter(
                     args=("--properties",),
                     metavar="PATH or JSON string",
                     doc="""""",
                     constraints=EnsureStr() | EnsureNone()),
-
-            recursive=recursion_flag,
+            #recursive=recursion_flag,
             # TODO: invalid, since datalad-metadata doesn't support it:
             # recursion_limit=recursion_limit,
     )
@@ -151,8 +150,10 @@ class Dicom2Spec(Interface):
     @datasetmethod(name='hirni_dicom2spec')
     @eval_results
     def __call__(path=None, spec=None, dataset=None, subject=None,
-                 anon_subject=None, session=None, recursive=False,
-                 properties=None):
+                 anon_subject=None, acquisition=None, properties=None):
+
+        # TODO: acquisition can probably be removed (or made an alternative to
+        # derive spec and/or dicom location from)
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec from dicoms")
@@ -185,7 +186,7 @@ class Dicom2Spec(Interface):
         for meta in metadata(
                 path,
                 dataset=dataset,
-                recursive=recursive,
+                recursive=False,  # always False?
                 reporton='datasets',
                 return_type='generator',
                 result_renderer='disabled'):
