@@ -47,7 +47,7 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             'uid': series['SeriesInstanceUID'],
             'dataset-id': ds_metadata['dsid'],
             'dataset-refcommit': ds_metadata['refcommit'],
-            'converter': [{
+            'procedures': [{
                 # special value 'hirni-dicom-converter' is interpreted by
                 # spec2bids and doesn't need a 'procedure-call' entry:
                 'procedure-name': {'value': 'hirni-dicom-converter'
@@ -154,6 +154,9 @@ class Dicom2Spec(Interface):
 
         # TODO: acquisition can probably be removed (or made an alternative to
         # derive spec and/or dicom location from)
+
+        # Change, so path needs to point directly to dicom ds?
+        # Or just use acq and remove path?
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec from dicoms")

@@ -54,7 +54,7 @@ def _add_to_spec(spec, spec_dir, path, meta, overrides=None, replace=False):
         'dataset-id': meta['dsid'],
         'dataset-refcommit': meta['refcommit'],
         'id': _get_edit_dict(),
-        'converter': _get_edit_dict(),
+        'procedures': _get_edit_dict(),
         'comment': _get_edit_dict(value=""),
     }
 

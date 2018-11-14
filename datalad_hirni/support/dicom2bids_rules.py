@@ -12,7 +12,7 @@ spec_keys = [
     'bids-run',
     'bids-modality',
     'comment',
-    'converter',
+    'procedures',
     'description',
     'id',
     'subject',

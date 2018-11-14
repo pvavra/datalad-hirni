@@ -160,7 +160,7 @@ def validate_spec(spec):
         raise ValueError("Image series specification is empty.")
 
     # check converter
-    # converter = get_specval(spec, 'converter')
+    # converter = get_specval(spec, 'procedures')
     # if converter == 'ignore':
     #     lgr.debug("Skip series %s (marked 'ignore' in spec)", spec['uid'])
     #     return False
@@ -175,7 +175,7 @@ def validate_spec(spec):
         # TODO: Where to define this list?
         # TODO: Test whether those are actually present!
         if k in ['type', 'location', 'uid', 'dataset-id',
-                 'dataset-refcommit', 'converter']:
+                 'dataset-refcommit', 'procedures']:
             continue
         if 'value' not in spec[k]:
             lgr.warning("DICOM series specification (UID: {uid}) has no value "

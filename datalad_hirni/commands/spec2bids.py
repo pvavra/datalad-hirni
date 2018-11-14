@@ -117,7 +117,7 @@ class Spec2Bids(Interface):
 
                 # TODO: value 'ignore'!?
 
-                if 'converter' not in spec_snippet:
+                if 'procedures' not in spec_snippet:
                     # no conversion procedures defined at all:
                     yield get_status_dict(
                             action='spec2bids',
@@ -127,7 +127,7 @@ class Spec2Bids(Interface):
                     )
                     continue
 
-                procedure_list = spec_snippet['converter']
+                procedure_list = spec_snippet['procedures']
                 if not procedure_list:
                     # no conversion procedures defined at all:
                     yield get_status_dict(
@@ -161,8 +161,8 @@ class Spec2Bids(Interface):
                             replacements['bids-subject'] = v['value']
                     elif k == 'location':
                         replacements[k] = op.join(op.dirname(rel_spec_path), v)
-                    elif k == 'converter':
-                        # 'converter' is a list of dicts (not suitable for
+                    elif k == 'procedures':
+                        # 'procedures' is a list of dicts (not suitable for
                         # substitutions) and it makes little sense to be
                         # referenced by converter format strings anyway:
                         continue
