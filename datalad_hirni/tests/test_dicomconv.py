@@ -1,4 +1,3 @@
-
 # emacs: -*- mode: python-mode; py-indent-offset: 4; tab-width: 4; indent-tabs-mode: nil -*-
 # -*- coding: utf-8 -*-
 # ex: set sts=4 ts=4 sw=4 noet:
@@ -34,34 +33,6 @@ def test_dicom_metadata_aggregation(path):
     res = ds.metadata(get_aggregates=True)
     assert_result_count(res, 2)
     assert_result_count(res, 1, path=op.join(ds.path, 'acq100'))
-
-
-@with_tempfile
-def test_dicom2spec(path):
-
-    # ###  SETUP ###
-    dicoms = get_dicom_dataset('structural')
-
-    ds = Dataset.create(path)
-    ds.run_procedure('setup_study_dataset')
-    ds.install(source=dicoms, path='acq100')
-    ds.aggregate_metadata(recursive=True, update_mode='all')
-    # ### END SETUP ###
-
-    res = ds.hirni_dicom2spec(path='acq100', spec='spec_structural.json')
-    assert_result_count(res, 1)
-    assert_result_count(res, 1, path=op.join(ds.path, 'spec_structural.json'))
-    if ds.repo.is_direct_mode():
-        # Note:
-        # in direct mode we got an issue determining whether or not sth is
-        # "dirty". In this particular case, this is about having a superdataset
-        # in direct mode, while the subdataset is a plain git repo.
-        # However, at least assert both are clean themselves:
-        ok_clean_git(ds.path, ignore_submodules=True)
-        ok_clean_git(op.join(ds.path, 'acq100'))
-
-    else:
-        ok_clean_git(ds.path)
 
 
 @with_tempfile
