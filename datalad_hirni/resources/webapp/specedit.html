@@ -76,6 +76,7 @@
                 </div>
               </div>
             </div>
+          </div>
       </div>
     </li>
   </ul>
@@ -85,7 +86,7 @@
         {{ studyspecfile }}/{{ spec.location }} [ <code>{{ spec.type }}</code><span v-if="spec.uid">; {{ spec.uid }}</span> ]
       </div>
       <ul class="card-body">
-          <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, 'anon-subject': null, converter: null})">
+          <li v-for="(sval, skey) in spec" v-if="sval === Object(sval) && !(skey in {subject: null, 'anon-subject': null, procedures: null})">
             <div class="form-group row" v-bind:title="field_purpose[skey] || ''">
               <!-- this is some editable property -->
               <label form="specform" class="col-sm-2 col-form-label">
@@ -121,6 +122,55 @@
             </div>
           </div>
         </li>
+        <!-- procedures -->
+        <span v-if="spec.procedures"> <!-- TODO this needs a proper box and header-->
+          <div class="card-header" v-bind:title="field_purpose['procedures']">
+            procedures
+          </div>
+          <div class="form-group row">
+            <li v-for="proc in spec.procedures">
+              <!-- procedure dict -->
+              <!-- TODO: some header? -->
+              <div v-for="(pval, pkey) in proc" v-if="pval === Object(pval)">
+                <div class="form-group row" v-bind:title="field_purpose[pkey] || ''">
+                  <!-- this is some editable property -->
+                  <label form="specform" class="col-sm-2 col-form-label">
+                    {{ pkey }}
+                  </label>
+                  <div class="col-sm-10">
+                    <div class="input-group">
+                      <input v-model="pval.value" type="text" :disabled="pval.approved" class="form-control">
+                        <div class="input-group-append">
+                          <div class="input-group-text">
+                            <input v-model="pval.approved" type="checkbox" :id="pkey" title="Toggle approval of record">
+                          </div>
+                          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" tooltip="Perform actions on this record value">Actions</button>
+                          <div class="dropdown-menu">
+                            <!-- TODO: removeElement is inapplicable here ATM -->
+                            <!-- <span @click="removeElement(spec, skey);" class="oi oi-trash">Delete</span> -->
+                          </div>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+
+            <!-- Add (predefined) procedure(s) -->
+            <li data-toggle="tooltip" data-placement="right" title="Add a new procedure to this record, to be executed upon conversion in order of this list">
+              <div class="input-group add-procedure">
+                <!-- TODO
+                <input v-bind:id="'tba_fieldname_' + specs_key" type="text" placeholder="new field name">
+                <div class="input-group-append">
+                  <button @click="addField(spec, 'tba_fieldname_' + specs_key);" class="btn btn-outline-success" type="button">Add Field</button>
+                </div>
+                -->
+              </div>
+            </li>
+
+
+          </div>
+        </span>
       </ul>
     </li>
   </ul>
@@ -149,9 +199,10 @@ var app = new Vue({
       studyspecfile: null,
       field_purpose: {
         comment: "Comments or notes for this record",
-        converter: "Procedures to call for converting data associated with this record to BIDS format, may use template syntax and placeholders",
+        procedures: "Procedures to call for converting data associated with this record to BIDS format, may use template syntax and placeholders",
         description: "Record description, originally extracted from the source file(s)"
-      }
+      },
+      procedures: []
     },
     methods: {
         checkForm: function() {
@@ -211,6 +262,16 @@ var app = new Vue({
                 .catch(function (error) {
                     console.log(error);
                 });
+        },
+        load_procedures: function() {
+            axios.get("/api/v1/procedure",  {
+                })
+                .then(function (response) {
+                    app.$data.procedures = response.data.results;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
         }
     }
 });
@@ -222,6 +283,7 @@ if (app.$data.studyspecfile) {
 } else {
     app.load_specfile_list();
 }
+app.load_procedures();
 </script>
 </body>
 </html>
