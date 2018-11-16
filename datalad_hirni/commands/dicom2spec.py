@@ -131,7 +131,7 @@ class Dicom2Spec(Interface):
                     doc="""TODO""",
                     constraints=EnsureStr() | EnsureNone()),
             acquisition=Parameter(
-                    args=("--acq",),
+                    args=("--acquisition",),
                     metavar="ACQUISITION",
                     doc="""acquisition identifier. If not specified, an attempt 
                     will be made to derive an identifier from DICOM headers""",
