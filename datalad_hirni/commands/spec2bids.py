@@ -62,14 +62,19 @@ class Spec2Bids(Interface):
             doc="""whether or not to anonymize for conversion. By now this means
             to use 'anon_subject' instead of 'subject' from spec and to use 
             datalad-run with a sidecar file, to not leak potentially identifying 
-            information into its record."""
-        )
+            information into its record.""",),
+        only_type=Parameter(
+            args=("--only-type",),
+            metavar="TYPE",
+            doc="specify snippet type to convert. If given only this type of "
+                "specification snippets is considered for conversion",
+            constraints=EnsureStr() | EnsureNone(),)
     )
 
     @staticmethod
     @datasetmethod(name='hirni_spec2bids')
     @eval_results
-    def __call__(specfile, dataset=None, anonymize=False):
+    def __call__(specfile, dataset=None, anonymize=False, only_type=None):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec2bids")
@@ -105,6 +110,7 @@ class Spec2Bids(Interface):
                                 "acquisition directory".format(spec_path)
                     )
 
+            # TODO: hash procedure + format string
             ran_procedure = dict()
 
             # relative path to spec to be recorded:
@@ -115,7 +121,12 @@ class Spec2Bids(Interface):
             # wrt conversion:
             for spec_snippet in load_stream(spec_path):
 
-                # TODO: value 'ignore'!?
+                if only_type and not spec_snippet['type'].startswith(only_type):
+                    # ignore snippets not matching `only_type`
+                    # Note/TODO: the .startswith part is meant for
+                    # matching "dicomseries:all" to given "dicomseries" but not
+                    # vice versa. This prob. needs refinement (and doc)
+                    continue
 
                 if 'procedures' not in spec_snippet:
                     # no conversion procedures defined at all:
@@ -193,6 +204,7 @@ class Spec2Bids(Interface):
                         # dealt with via on_failure?
                         continue
 
+                    # TODO: Nope
                     if proc_name == 'ignore':
                         continue
 
