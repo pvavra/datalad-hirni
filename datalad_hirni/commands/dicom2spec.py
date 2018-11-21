@@ -88,7 +88,7 @@ def add_to_spec(ds_metadata, spec_list, basepath,
 
         existing = [i for s, i in
                     zip(spec_list, range(len(spec_list)))
-                    if s['uid'] == series['uid']]
+                    if s['type'] == 'dicomseries' and s['uid'] == series['uid']]
         if existing:
             lgr.debug("Updating existing spec for image series %s",
                       series['uid'])
