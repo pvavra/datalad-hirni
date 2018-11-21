@@ -82,6 +82,8 @@ class Spec2Bids(Interface):
         specfile = assure_list(specfile)
         specfile = [resolve_path(p, dataset) for p in specfile]
 
+        ran_procedure = dict()
+
         for spec_path in specfile:
             if not lexists(spec_path):
                 yield get_status_dict(
@@ -109,9 +111,6 @@ class Spec2Bids(Interface):
                         message="{} is neither a specification file nor an "
                                 "acquisition directory".format(spec_path)
                     )
-
-            # TODO: hash procedure + format string
-            ran_procedure = dict()
 
             # relative path to spec to be recorded:
             rel_spec_path = relpath(spec_path, dataset.path) \
@@ -212,14 +211,9 @@ class Spec2Bids(Interface):
                         if heuristic.has_specval(proc, 'procedure-call') \
                         else None
 
-                    only_once = heuristic.get_specval(proc,
-                                                      'once-per-acquisition') \
-                        if heuristic.has_specval(proc, 'once-per-acquisition') \
-                        else None
-
-                    if only_once and ran_procedure.get(proc_name, False):
-                        # if it wants to run only once per acquisition and we
-                        # already ran it, don't call it again
+                    if ran_procedure.get(hash((proc_name, proc_call)), None):
+                        # if we ran the exact same call already,
+                        # don't call it again
                         continue
 
                     # if spec comes with call format string, it takes precedence
@@ -273,7 +267,7 @@ class Spec2Bids(Interface):
                                'message': "acquisition converted."}
 
                     # mark as a procedure we ran on this acquisition:
-                    ran_procedure[proc_name] = True
+                    ran_procedure[hash((proc_name, proc_call))] = True
 
                     # elif proc_name != 'hirni-dicom-converter':
                     #     # specific converter procedure call
