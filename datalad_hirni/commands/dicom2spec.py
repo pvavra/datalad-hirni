@@ -299,8 +299,11 @@ class Dicom2Spec(Interface):
         # ignore duplicates (prob. reruns of aborted runs)
         # -> convert highest id only
         import datalad_hirni.support.hirni_heuristic as heuristic
+        # Note: This sorting is a q&d hack!
+        # TODO: Sorting needs to become more sophisticated + include notion of :all
         spec_series_list = sorted(spec_series_list,
-                                  key=lambda x: heuristic.get_specval(x, 'id'))
+                                  key=lambda x: heuristic.get_specval(x, 'id')
+                                                if 'id' in x.keys() else 0)
         for i in range(len(spec_series_list)):
             # Note: Removed the following line from condition below,
             # since it appears to be pointless. Value for 'converter'
@@ -327,7 +330,8 @@ class Dicom2Spec(Interface):
         # easily concat files without having to parse them, or
         # process them line by line without having to fully parse them
         from ..support.helpers import sort_spec
-        spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
+        # Note: Sorting paradigm needs to change. See above.
+        #spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
         json_py.dump2stream(spec_series_list, spec)
 
         for r in RevSave.__call__(dataset=dataset,
