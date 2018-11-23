@@ -82,9 +82,13 @@ class Spec2Bids(Interface):
         specfile = assure_list(specfile)
         specfile = [resolve_path(p, dataset) for p in specfile]
 
-        ran_procedure = dict()
-
         for spec_path in specfile:
+
+            # Note/TODO: ran_procedure per spec file still isn't ideal. Could
+            # be different spec files for same acquisition. It's actually about
+            # the exact same call. How to best get around substitutions?
+            ran_procedure = dict()
+
             if not lexists(spec_path):
                 yield get_status_dict(
                     action='spec2bids',
