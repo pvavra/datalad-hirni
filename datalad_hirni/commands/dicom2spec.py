@@ -63,8 +63,8 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             'uid': series['SeriesInstanceUID'],
             'dataset-id': ds_metadata['dsid'],
             'dataset-refcommit': ds_metadata['refcommit'],
-            'tags': ['hirni-dicom-converter-ignore'
-                     if not series_is_valid(series) else None],
+            'tags': ['hirni-dicom-converter-ignore']
+                    if not series_is_valid(series) else [],
         })
 
     # get rules to apply:
