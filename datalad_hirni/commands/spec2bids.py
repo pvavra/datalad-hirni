@@ -207,10 +207,6 @@ class Spec2Bids(Interface):
                         # dealt with via on_failure?
                         continue
 
-                    # TODO: Nope
-                    if proc_name == 'ignore':
-                        continue
-
                     proc_call = heuristic.get_specval(proc, 'procedure-call') \
                         if heuristic.has_specval(proc, 'procedure-call') \
                         else None
@@ -244,7 +240,7 @@ class Spec2Bids(Interface):
                         # overrides via env:
                         dataset.config.reload()
                         for r in dataset.run_procedure(
-                                spec='hirni-dicom-converter',
+                                spec=proc_name,
                                 return_type='generator'
                         ):
 
