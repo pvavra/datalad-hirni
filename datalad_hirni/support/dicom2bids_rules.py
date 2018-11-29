@@ -214,7 +214,7 @@ def _guess_modality(record):
             # https://docs.google.com/document/d/1kyw9mGgacNqeMbp4xZet3RnDhcMmf4_BmRgKaOkO2Sc
             return "swi"
 
-        if "Reg - DTI_high" in protocol:
+        if "DTI_" in protocol:
             # TODO: What actually is the relevant part of protocol here?
             return "dwi"
 
