@@ -208,7 +208,7 @@ def _guess_modality(record):
 
         # BEGIN Additional rule for forrest-structural
         # TODO: Probably to be moved to some rule enhancement
-        if "-VEN_BOLD" in protocol:
+        if "VEN_BOLD" in protocol:
             # TODO: Not clear yet; swi might be considered a datatype rather than
             # a modality by respective BIDS extension:
             # https://docs.google.com/document/d/1kyw9mGgacNqeMbp4xZet3RnDhcMmf4_BmRgKaOkO2Sc
