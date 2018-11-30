@@ -188,7 +188,7 @@ def _guess_task(record):
     protocol = record.get("ProtocolName", None)
     if protocol:
         import re
-        prot_parts = re.split('_|-', protocol.lower())
+        prot_parts = re.split('_|-|\s', protocol.lower())
         try:
             idx = prot_parts.index("task")
             task = prot_parts[idx + 1]
@@ -223,7 +223,7 @@ def _guess_modality(record):
         # END
 
         import re
-        prot_parts = re.split('_|-', protocol.lower())
+        prot_parts = re.split('_|-|\s', protocol.lower())
         direct_search_terms = ["t1", "t1w", "t2", "t2w",
                                "t1rho", "t1map", "t2map", "t2star", "flair",
                                "flash", "pd", "pdmap", "pdt2", "inplanet1",
@@ -255,7 +255,7 @@ def _guess_run(record):
     protocol = record.get("ProtocolName", None)
     if protocol:
         import re
-        prot_parts = re.split('_|-', protocol.lower())
+        prot_parts = re.split('_|-|\s', protocol.lower())
         try:
             idx = prot_parts.index("run")
             run = prot_parts[idx + 1]
