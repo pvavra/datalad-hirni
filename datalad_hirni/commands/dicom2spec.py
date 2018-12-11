@@ -32,6 +32,10 @@ lgr = logging.getLogger('datalad.hirni.dicom2spec')
 def add_to_spec(ds_metadata, spec_list, basepath,
                 subject=None, anon_subject=None, session=None, overrides=None):
 
+    # TODO: discover procedures and write default config into spec for more convenient editing!
+    # But: Would need toolbox present to create a spec. If not - what version of toolbox to use?
+    # Double-check run-procedure --discover
+
     from datalad_hirni.support.dicom2bids_rules import \
         get_rules_from_metadata, series_is_valid  # TODO: RF?
 
@@ -120,13 +124,22 @@ def add_to_spec(ds_metadata, spec_list, basepath,
         'dataset-id': ds_metadata['dsid'],
         'dataset-refcommit': ds_metadata['refcommit'],
         'procedures': [{
-            # special value 'hirni-dicom-converter' is interpreted by
-            # spec2bids and doesn't need a 'procedure-call' entry:
-            'procedure-name': {'value': 'hirni-dicom-converter',
-                               'approved': False},
-            'procedure-call': {'value': None,
-                               'approved': False},
-        }]
+                'procedure-name': {'value': 'hirni-dicom-converter',
+                                   'approved': False},
+                'procedure-call': {'value': None,
+                                   'approved': False},
+                'on-anonymize': {'value': False,
+                                 'approved': False},
+            },
+            {
+                'procedure-name': {'value': 'hirni-mridefacer',
+                                   'approved': False},
+                'procedure-call': {'value': None,
+                                   'approved': False},
+                'on-anonymize': {'value': True,
+                                 'approved': False},
+            }
+        ]
     })
 
     spec_list[existing_all_dicoms].update(all_dicoms)

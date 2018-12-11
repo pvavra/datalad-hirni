@@ -24,6 +24,7 @@ from datalad.support.exceptions import InsufficientArgumentsError
 from datalad.support.json_py import load_stream
 from datalad.utils import assure_list
 from datalad.utils import rmtree
+from datalad.config import anything2bool
 
 from datalad.coreapi import remove
 from datalad_container import containers_run
@@ -205,6 +206,15 @@ class Spec2Bids(Interface):
                                     spec_path, proc)
                         # TODO: continue or yield impossible/error so it can be
                         # dealt with via on_failure?
+                        continue
+
+                    if heuristic.has_specval(proc, 'on-anonymize') \
+                        and anything2bool(
+                            heuristic.get_specval(proc, 'on-anonymize')
+                            ) and not anonymize:
+                        # don't run that procedure, if we weren't called with
+                        # --anonymize while procedure is specified to be run on
+                        # that switch only
                         continue
 
                     proc_call = heuristic.get_specval(proc, 'procedure-call') \
