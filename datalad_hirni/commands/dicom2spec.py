@@ -51,6 +51,8 @@ def add_to_spec(ds_metadata, spec_list, basepath,
     if not existing_all_dicoms:
         spec_list.append({'type': 'dicomseries:all'})
         existing_all_dicoms = len(spec_list) - 1
+    else:
+        existing_all_dicoms = existing_all_dicoms[0]
 
     # proceed with actual image series:
     lgr.debug("Discovered %s image series.",
