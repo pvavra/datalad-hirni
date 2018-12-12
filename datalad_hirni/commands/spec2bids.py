@@ -230,7 +230,7 @@ class Spec2Bids(Interface):
                     # over what is generally configured for the procedure
                     # TODO: Not sure yet whether this is how we should deal with it
                     if proc_call:
-                        env_subs['DATALAD.PROCEDURES.{}.CALL-FORMAT'
+                        env_subs['DATALAD.PROCEDURES.{}.CALL__FORMAT'
                                  ''.format(proc_name)] = proc_call
 
                     run_results = list()
