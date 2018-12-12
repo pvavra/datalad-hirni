@@ -230,8 +230,9 @@ class Spec2Bids(Interface):
                     # over what is generally configured for the procedure
                     # TODO: Not sure yet whether this is how we should deal with it
                     if proc_call:
-                        env_subs['DATALAD.PROCEDURES.{}.CALL__FORMAT'
-                                 ''.format(proc_name)] = proc_call
+                        env_subs['DATALAD_PROCEDURES_{}_CALL__FORMAT'
+                                 ''.format(proc_name.upper().replace('-', '__'))
+                                 ] = proc_call
 
                     run_results = list()
                     # Note, that we can't use dataset.config.overrides to
