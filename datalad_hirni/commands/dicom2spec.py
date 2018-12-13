@@ -133,14 +133,6 @@ def add_to_spec(ds_metadata, spec_list, basepath,
                 'on-anonymize': {'value': False,
                                  'approved': False},
             },
-            {
-                'procedure-name': {'value': 'hirni-mridefacer',
-                                   'approved': False},
-                'procedure-call': {'value': None,
-                                   'approved': False},
-                'on-anonymize': {'value': True,
-                                 'approved': False},
-            }
         ]
     })
 
