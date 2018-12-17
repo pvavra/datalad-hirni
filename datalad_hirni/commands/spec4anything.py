@@ -180,14 +180,15 @@ class Spec4Anything(Interface):
             # level specification snippets, that aren't within an acquisition
             path_parts = rel_path.split('/')
             if len(path_parts) < 2:
-                yield get_status_dict(
-                        status='error',
-                        path=ap['path'],
-                        message="Not within an acquisition",
-                        type='file',
-                        **res_kwargs
-                )
-                continue
+                lgr.warning("Not within an acquisition")
+                # yield get_status_dict(
+                #         status='error',
+                #         path=ap['path'],
+                #         message="Not within an acquisition",
+                #         type='file',
+                #         **res_kwargs
+                # )
+                # continue
             acq = path_parts[0]
 
             # TODO: spec file specifiable or fixed path?
