@@ -241,7 +241,7 @@ def _guess_modality(record):
             return "t1w"
         if "st2w" in prot_parts:
             return "t2w"
-        if "ToF" in prot_parts:
+        if "tof" in prot_parts:
             return "angio"
         # END
 
