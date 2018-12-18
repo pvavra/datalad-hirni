@@ -88,6 +88,8 @@ class Spec2Bids(Interface):
             # Note/TODO: ran_procedure per spec file still isn't ideal. Could
             # be different spec files for same acquisition. It's actually about
             # the exact same call. How to best get around substitutions?
+            # Also: per snippet isn't correct either.
+            # substitutions is real issue. Example "copy {location} ."
             ran_procedure = dict()
 
             if not lexists(spec_path):
@@ -224,6 +226,7 @@ class Spec2Bids(Interface):
                     if ran_procedure.get(hash((proc_name, proc_call)), None):
                         # if we ran the exact same call already,
                         # don't call it again
+                        # TODO: notneeded?
                         continue
 
                     # if spec comes with call format string, it takes precedence
@@ -278,7 +281,11 @@ class Spec2Bids(Interface):
                                'message': "acquisition converted."}
 
                     # mark as a procedure we ran on this acquisition:
-                    ran_procedure[hash((proc_name, proc_call))] = True
+                    # TODO: rethink. Doesn't work that way. Disabled for now
+                    # ran_procedure[hash((proc_name, proc_call))] = True
+
+
+
 
                     # elif proc_name != 'hirni-dicom-converter':
                     #     # specific converter procedure call
