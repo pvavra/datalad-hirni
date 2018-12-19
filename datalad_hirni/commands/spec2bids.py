@@ -24,6 +24,7 @@ from datalad.support.exceptions import InsufficientArgumentsError
 from datalad.support.json_py import load_stream
 from datalad.utils import assure_list
 from datalad.utils import rmtree
+from datalad.config import anything2bool
 
 from datalad.coreapi import remove
 from datalad_container import containers_run
@@ -62,14 +63,19 @@ class Spec2Bids(Interface):
             doc="""whether or not to anonymize for conversion. By now this means
             to use 'anon_subject' instead of 'subject' from spec and to use 
             datalad-run with a sidecar file, to not leak potentially identifying 
-            information into its record."""
-        )
+            information into its record.""",),
+        only_type=Parameter(
+            args=("--only-type",),
+            metavar="TYPE",
+            doc="specify snippet type to convert. If given only this type of "
+                "specification snippets is considered for conversion",
+            constraints=EnsureStr() | EnsureNone(),)
     )
 
     @staticmethod
     @datasetmethod(name='hirni_spec2bids')
     @eval_results
-    def __call__(specfile, dataset=None, anonymize=False):
+    def __call__(specfile, dataset=None, anonymize=False, only_type=None):
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec2bids")
@@ -78,6 +84,14 @@ class Spec2Bids(Interface):
         specfile = [resolve_path(p, dataset) for p in specfile]
 
         for spec_path in specfile:
+
+            # Note/TODO: ran_procedure per spec file still isn't ideal. Could
+            # be different spec files for same acquisition. It's actually about
+            # the exact same call. How to best get around substitutions?
+            # Also: per snippet isn't correct either.
+            # substitutions is real issue. Example "copy {location} ."
+            ran_procedure = dict()
+
             if not lexists(spec_path):
                 yield get_status_dict(
                     action='spec2bids',
@@ -105,8 +119,6 @@ class Spec2Bids(Interface):
                                 "acquisition directory".format(spec_path)
                     )
 
-            ran_procedure = dict()
-
             # relative path to spec to be recorded:
             rel_spec_path = relpath(spec_path, dataset.path) \
                 if isabs(spec_path) else spec_path
@@ -115,9 +127,14 @@ class Spec2Bids(Interface):
             # wrt conversion:
             for spec_snippet in load_stream(spec_path):
 
-                # TODO: value 'ignore'!?
+                if only_type and not spec_snippet['type'].startswith(only_type):
+                    # ignore snippets not matching `only_type`
+                    # Note/TODO: the .startswith part is meant for
+                    # matching "dicomseries:all" to given "dicomseries" but not
+                    # vice versa. This prob. needs refinement (and doc)
+                    continue
 
-                if 'converter' not in spec_snippet:
+                if 'procedures' not in spec_snippet:
                     # no conversion procedures defined at all:
                     yield get_status_dict(
                             action='spec2bids',
@@ -127,7 +144,7 @@ class Spec2Bids(Interface):
                     )
                     continue
 
-                procedure_list = spec_snippet['converter']
+                procedure_list = spec_snippet['procedures']
                 if not procedure_list:
                     # no conversion procedures defined at all:
                     yield get_status_dict(
@@ -161,8 +178,8 @@ class Spec2Bids(Interface):
                             replacements['bids-subject'] = v['value']
                     elif k == 'location':
                         replacements[k] = op.join(op.dirname(rel_spec_path), v)
-                    elif k == 'converter':
-                        # 'converter' is a list of dicts (not suitable for
+                    elif k == 'procedures':
+                        # 'procedures' is a list of dicts (not suitable for
                         # substitutions) and it makes little sense to be
                         # referenced by converter format strings anyway:
                         continue
@@ -193,29 +210,32 @@ class Spec2Bids(Interface):
                         # dealt with via on_failure?
                         continue
 
-                    if proc_name == 'ignore':
+                    if heuristic.has_specval(proc, 'on-anonymize') \
+                        and anything2bool(
+                            heuristic.get_specval(proc, 'on-anonymize')
+                            ) and not anonymize:
+                        # don't run that procedure, if we weren't called with
+                        # --anonymize while procedure is specified to be run on
+                        # that switch only
                         continue
 
                     proc_call = heuristic.get_specval(proc, 'procedure-call') \
                         if heuristic.has_specval(proc, 'procedure-call') \
                         else None
 
-                    only_once = heuristic.get_specval(proc,
-                                                      'once-per-acquisition') \
-                        if heuristic.has_specval(proc, 'once-per-acquisition') \
-                        else None
-
-                    if only_once and ran_procedure.get(proc_name, False):
-                        # if it wants to run only once per acquisition and we
-                        # already ran it, don't call it again
+                    if ran_procedure.get(hash((proc_name, proc_call)), None):
+                        # if we ran the exact same call already,
+                        # don't call it again
+                        # TODO: notneeded?
                         continue
 
                     # if spec comes with call format string, it takes precedence
                     # over what is generally configured for the procedure
                     # TODO: Not sure yet whether this is how we should deal with it
                     if proc_call:
-                        env_subs['DATALAD.PROCEDURES.{}.CALL-FORMAT'
-                                 ''.format(proc_name)] = proc_call
+                        env_subs['DATALAD_PROCEDURES_{}_CALL__FORMAT'
+                                 ''.format(proc_name.upper().replace('-', '__'))
+                                 ] = proc_call
 
                     run_results = list()
                     # Note, that we can't use dataset.config.overrides to
@@ -234,7 +254,7 @@ class Spec2Bids(Interface):
                         # overrides via env:
                         dataset.config.reload()
                         for r in dataset.run_procedure(
-                                spec='hirni-dicom-converter',
+                                spec=proc_name,
                                 return_type='generator'
                         ):
 
@@ -261,7 +281,11 @@ class Spec2Bids(Interface):
                                'message': "acquisition converted."}
 
                     # mark as a procedure we ran on this acquisition:
-                    ran_procedure[proc_name] = True
+                    # TODO: rethink. Doesn't work that way. Disabled for now
+                    # ran_procedure[hash((proc_name, proc_call))] = True
+
+
+
 
                     # elif proc_name != 'hirni-dicom-converter':
                     #     # specific converter procedure call

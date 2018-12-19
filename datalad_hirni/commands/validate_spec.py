@@ -46,7 +46,7 @@ class SnippetValidator(object):
         'dataset_refcommit',
         # ###############
 
-        'converter'
+        'procedures'
     ]
 
     optional_keys = ['description', 'comment', 'status']
@@ -127,7 +127,7 @@ class SnippetValidator(object):
 class DicomValidator(SnippetValidator):
 
     required_keys = SnippetValidator.required_keys + \
-                    ['uid', 'id', 'subject', 'converter']
+                    ['uid', 'id', 'subject', 'procedures']
 
     # TODO: What's optional here? Check for valid combinations?
     bids_keys = [

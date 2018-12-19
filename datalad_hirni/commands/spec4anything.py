@@ -2,6 +2,8 @@
 
 
 import posixpath
+from six import text_type
+
 from datalad.interface.base import build_doc, Interface
 from datalad.support.constraints import EnsureStr
 from datalad.support.constraints import EnsureNone
@@ -54,7 +56,7 @@ def _add_to_spec(spec, spec_dir, path, meta, overrides=None, replace=False):
         'dataset-id': meta['dsid'],
         'dataset-refcommit': meta['refcommit'],
         'id': _get_edit_dict(),
-        'converter': _get_edit_dict(),
+        'procedures': _get_edit_dict(),
         'comment': _get_edit_dict(value=""),
     }
 
@@ -178,14 +180,15 @@ class Spec4Anything(Interface):
             # level specification snippets, that aren't within an acquisition
             path_parts = rel_path.split('/')
             if len(path_parts) < 2:
-                yield get_status_dict(
-                        status='error',
-                        path=ap['path'],
-                        message="Not within an acquisition",
-                        type='file',
-                        **res_kwargs
-                )
-                continue
+                lgr.warning("Not within an acquisition")
+                # yield get_status_dict(
+                #         status='error',
+                #         path=ap['path'],
+                #         message="Not within an acquisition",
+                #         type='file',
+                #         **res_kwargs
+                # )
+                # continue
             acq = path_parts[0]
 
             # TODO: spec file specifiable or fixed path?
@@ -223,16 +226,30 @@ class Spec4Anything(Interface):
                                                   approved=False)
 
             if properties:
+
+                # TODO: This entire reading of properties needs to be RF'd
+                # into proper generalized functions.
+                # spec got more complex. update() prob. can't simply override
+                # (think: 'procedures' and 'tags' prob. need to be appended
+                # instead)
+
                 # load from file or json string
                 props = json_py.load(properties) \
                         if op.exists(properties) else json_py.loads(properties)
                 # turn into editable, pre-approved records
                 spec_props = {k: dict(value=v, approved=True)
                               for k, v in props.items()
-                              if k not in non_editables}
+                              if k not in non_editables + ['tags', 'procedures']}
                 spec_props.update({k: v
                                    for k, v in props.items()
-                                   if k in non_editables})
+                                   if k in non_editables + ['tags']})
+
+                # TODO: still wrong. It's a list. Append or override? How to decide?
+                spec_props.update({o_k: [{i_k: dict(value=i_v, approved=True)
+                                         for i_k, i_v in o_v.items()}]
+                                   for o_k, o_v in props.items()
+                                   if o_k in ['procedures']})
+
                 overrides.update(spec_props)
 
             # TODO: It's probably wrong to use uniques for overwriting! At least

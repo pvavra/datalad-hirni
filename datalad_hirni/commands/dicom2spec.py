@@ -6,6 +6,7 @@ import logging
 import os.path as op
 
 from datalad.coreapi import metadata
+from datalad_revolution.revsave import RevSave
 from datalad.distribution.dataset import EnsureDataset
 from datalad.distribution.dataset import datasetmethod
 from datalad.distribution.dataset import require_dataset
@@ -20,6 +21,8 @@ from datalad.support.constraints import EnsureStr
 from datalad.support.exceptions import InsufficientArgumentsError
 from datalad.support.param import Parameter
 
+from datalad_hirni.commands.spec4anything import _get_edit_dict
+
 lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
 # ############################# Build plugin mechanism for Rules finally!
@@ -29,9 +32,29 @@ lgr = logging.getLogger('datalad.hirni.dicom2spec')
 def add_to_spec(ds_metadata, spec_list, basepath,
                 subject=None, anon_subject=None, session=None, overrides=None):
 
+    # TODO: discover procedures and write default config into spec for more convenient editing!
+    # But: Would need toolbox present to create a spec. If not - what version of toolbox to use?
+    # Double-check run-procedure --discover
+
     from datalad_hirni.support.dicom2bids_rules import \
         get_rules_from_metadata, series_is_valid  # TODO: RF?
 
+    # Spec needs a dicomseries:all snippet before the actual dicomseries
+    # snippets, since the order determines the order of execution of procedures
+    # later on.
+    # Note, that here we only make sure such a snippet exists. It is to be
+    # updated with unique values from the dicomseries snippets later on.
+    existing_all_dicoms = [i for s, i in zip(spec_list, range(len(spec_list)))
+                           if s['type'] == 'dicomseries:all']
+    assert len(existing_all_dicoms) <= 1
+
+    if not existing_all_dicoms:
+        spec_list.append({'type': 'dicomseries:all'})
+        existing_all_dicoms = len(spec_list) - 1
+    else:
+        existing_all_dicoms = existing_all_dicoms[0]
+
+    # proceed with actual image series:
     lgr.debug("Discovered %s image series.",
               len(ds_metadata['metadata']['dicom']['Series']))
 
@@ -46,18 +69,8 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             'uid': series['SeriesInstanceUID'],
             'dataset-id': ds_metadata['dsid'],
             'dataset-refcommit': ds_metadata['refcommit'],
-            'converter': [{
-                # special value 'hirni-dicom-converter' is interpreted by
-                # spec2bids and doesn't need a 'procedure-call' entry:
-                'procedure-name': {'value': 'hirni-dicom-converter'
-                                            if series_is_valid(series)
-                                            else 'ignore',
-                                   'approved': False},
-                'procedure-call': {'value': None,
-                                   'approved': False},
-                'once-per-acquisition': {'value': True if series_is_valid(series) else None,
-                                         'approved': False}
-            }]
+            'tags': ['hirni-dicom-converter-ignore']
+                    if not series_is_valid(series) else [],
         })
 
     # get rules to apply:
@@ -81,7 +94,7 @@ def add_to_spec(ds_metadata, spec_list, basepath,
 
         existing = [i for s, i in
                     zip(spec_list, range(len(spec_list)))
-                    if s['uid'] == series['uid']]
+                    if s['type'] == 'dicomseries' and s['uid'] == series['uid']]
         if existing:
             lgr.debug("Updating existing spec for image series %s",
                       series['uid'])
@@ -90,6 +103,40 @@ def add_to_spec(ds_metadata, spec_list, basepath,
         else:
             lgr.debug("Creating spec for image series %s", series['uid'])
             spec_list.append(series)
+
+    # spec snippet for addressing an entire dicom acquisition:
+    # fill in values of editable fields, that are unique across
+    # dicomseries
+    uniques = dict()
+    for s in spec_list:
+        for k in s:
+            if isinstance(s[k], dict) and 'value' in s[k]:
+                if k not in uniques:
+                    uniques[k] = set()
+                uniques[k].add(s[k]['value'])
+    all_dicoms = dict()
+    for k in uniques:
+        if len(uniques[k]) == 1:
+            all_dicoms[k] = _get_edit_dict(value=uniques[k].pop(),
+                                           approved=False)
+
+    all_dicoms.update({
+        'type': 'dicomseries:all',
+        'location': op.relpath(ds_metadata['path'], basepath),
+        'dataset-id': ds_metadata['dsid'],
+        'dataset-refcommit': ds_metadata['refcommit'],
+        'procedures': [{
+                'procedure-name': {'value': 'hirni-dicom-converter',
+                                   'approved': False},
+                'procedure-call': {'value': None,
+                                   'approved': False},
+                'on-anonymize': {'value': False,
+                                 'approved': False},
+            },
+        ]
+    })
+
+    spec_list[existing_all_dicoms].update(all_dicoms)
 
     return spec_list
 
@@ -129,19 +176,18 @@ class Dicom2Spec(Interface):
                     metavar="ANON_SUBJECT",
                     doc="""TODO""",
                     constraints=EnsureStr() | EnsureNone()),
-            session=Parameter(
-                    args=("--session",),
-                    metavar="SESSION",
-                    doc="""session identifier. If not specified, an attempt will be made 
-                    to derive SESSION from DICOM headers""",
+            acquisition=Parameter(
+                    args=("--acquisition",),
+                    metavar="ACQUISITION",
+                    doc="""acquisition identifier. If not specified, an attempt 
+                    will be made to derive an identifier from DICOM headers""",
                     constraints=EnsureStr() | EnsureNone()),
             properties=Parameter(
                     args=("--properties",),
                     metavar="PATH or JSON string",
                     doc="""""",
                     constraints=EnsureStr() | EnsureNone()),
-
-            recursive=recursion_flag,
+            #recursive=recursion_flag,
             # TODO: invalid, since datalad-metadata doesn't support it:
             # recursion_limit=recursion_limit,
     )
@@ -150,8 +196,13 @@ class Dicom2Spec(Interface):
     @datasetmethod(name='hirni_dicom2spec')
     @eval_results
     def __call__(path=None, spec=None, dataset=None, subject=None,
-                 anon_subject=None, session=None, recursive=False,
-                 properties=None):
+                 anon_subject=None, acquisition=None, properties=None):
+
+        # TODO: acquisition can probably be removed (or made an alternative to
+        # derive spec and/or dicom location from)
+
+        # Change, so path needs to point directly to dicom ds?
+        # Or just use acq and remove path?
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="spec from dicoms")
@@ -171,6 +222,8 @@ class Dicom2Spec(Interface):
         if not spec:
             raise InsufficientArgumentsError(
                 "insufficient arguments for dicom2spec: a spec file is required")
+
+            # TODO: That's prob. wrong. We can derive default spec from acquisition
         else:
             spec = resolve_path(spec, dataset)
 
@@ -182,7 +235,7 @@ class Dicom2Spec(Interface):
         for meta in metadata(
                 path,
                 dataset=dataset,
-                recursive=recursive,
+                recursive=False,  # always False?
                 reporton='datasets',
                 return_type='generator',
                 result_renderer='disabled'):
@@ -249,44 +302,53 @@ class Dicom2Spec(Interface):
                        logger=lgr)
             return
 
+        # TODO: RF needed. This rule should go elsewhere:
         # ignore duplicates (prob. reruns of aborted runs)
         # -> convert highest id only
         import datalad_hirni.support.hirni_heuristic as heuristic
+        # Note: This sorting is a q&d hack!
+        # TODO: Sorting needs to become more sophisticated + include notion of :all
         spec_series_list = sorted(spec_series_list,
-                                  key=lambda x: heuristic.get_specval(x, 'id'))
+                                  key=lambda x: heuristic.get_specval(x, 'id')
+                                                if 'id' in x.keys() else 0)
         for i in range(len(spec_series_list)):
+            # Note: Removed the following line from condition below,
+            # since it appears to be pointless. Value for 'converter'
+            # used to be 'heudiconv' or 'ignore' for a 'dicomseries', so
+            # it's not clear ATM what case this could possibly have catched:
+            # heuristic.has_specval(spec_series_list[i], "converter") and \
             if spec_series_list[i]["type"] == "dicomseries" and \
-                    heuristic.has_specval(spec_series_list[i], "converter") and \
-                            heuristic.get_specval(spec_series_list[i], "bids-run") in \
-                            [heuristic.get_specval(s, "bids-run")
-                             for s in spec_series_list[i + 1:]
-                             if heuristic.get_specval(s,
-                                                      "description") == heuristic.get_specval(
-                                    spec_series_list[i], "description") and \
-                                             heuristic.get_specval(s,
-                                                                   "id") > heuristic.get_specval(
-                                             spec_series_list[i], "id")]:
-                lgr.debug("Set converter to None for SeriesNumber %s" % i)
-                spec_series_list[i]["converter"] = dict(approved=True, value=None)
+                heuristic.get_specval(spec_series_list[i], "bids-run") in \
+                    [heuristic.get_specval(s, "bids-run")
+                     for s in spec_series_list[i + 1:]
+                     if heuristic.get_specval(
+                            s,
+                            "description") == heuristic.get_specval(
+                                spec_series_list[i], "description") and \
+                     heuristic.get_specval(s, "id") > heuristic.get_specval(
+                                             spec_series_list[i], "id")
+                     ]:
+                lgr.debug("Ignore SeriesNumber %s for conversion" % i)
+                spec_series_list[i]["tags"].append(
+                        'hirni-dicom-converter-ignore')
 
         lgr.debug("Storing specification (%s)", spec)
         # store as a stream (one record per file) to be able to
         # easily concat files without having to parse them, or
         # process them line by line without having to fully parse them
         from ..support.helpers import sort_spec
-        spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
+        # Note: Sorting paradigm needs to change. See above.
+        #spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
         json_py.dump2stream(spec_series_list, spec)
 
-        from datalad.distribution.add import Add
-
-        for r in Add.__call__(spec,
-                              to_git=True,
-                              save=True,
-                              message="[HIRNI] Added study specification "
-                                      "snippet for %s" %
-                                      op.relpath(path[0], dataset.path),
-                              return_type='generator',
-                              result_renderer='disabled'):
+        for r in RevSave.__call__(dataset=dataset,
+                                  path=spec,
+                                  to_git=True,
+                                  message="[HIRNI] Added study specification "
+                                          "snippet for %s" %
+                                          op.relpath(path[0], dataset.path),
+                                  return_type='generator',
+                                  result_renderer='disabled'):
             if r.get('status', None) not in ['ok', 'notneeded']:
                 yield r
             elif r['path'] == spec and r['type'] == 'file':

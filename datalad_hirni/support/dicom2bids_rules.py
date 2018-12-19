@@ -12,7 +12,7 @@ spec_keys = [
     'bids-run',
     'bids-modality',
     'comment',
-    'converter',
+    'procedures',
     'description',
     'id',
     'subject',
@@ -188,7 +188,7 @@ def _guess_task(record):
     protocol = record.get("ProtocolName", None)
     if protocol:
         import re
-        prot_parts = re.split('_|-', protocol.lower())
+        prot_parts = re.split('_|-|\s', protocol.lower())
         try:
             idx = prot_parts.index("task")
             task = prot_parts[idx + 1]
@@ -208,13 +208,13 @@ def _guess_modality(record):
 
         # BEGIN Additional rule for forrest-structural
         # TODO: Probably to be moved to some rule enhancement
-        if "-VEN_BOLD" in protocol:
+        if "VEN_BOLD" in protocol:
             # TODO: Not clear yet; swi might be considered a datatype rather than
             # a modality by respective BIDS extension:
             # https://docs.google.com/document/d/1kyw9mGgacNqeMbp4xZet3RnDhcMmf4_BmRgKaOkO2Sc
             return "swi"
 
-        if "Reg - DTI_high" in protocol:
+        if "DTI_" in protocol:
             # TODO: What actually is the relevant part of protocol here?
             return "dwi"
 
@@ -223,7 +223,7 @@ def _guess_modality(record):
         # END
 
         import re
-        prot_parts = re.split('_|-', protocol.lower())
+        prot_parts = re.split('_|-|\s', protocol.lower())
         direct_search_terms = ["t1", "t1w", "t2", "t2w",
                                "t1rho", "t1map", "t2map", "t2star", "flair",
                                "flash", "pd", "pdmap", "pdt2", "inplanet1",
@@ -241,6 +241,8 @@ def _guess_modality(record):
             return "t1w"
         if "st2w" in prot_parts:
             return "t2w"
+        if "tof" in prot_parts:
+            return "angio"
         # END
 
         # TEMP: Reproin workaround
@@ -255,7 +257,7 @@ def _guess_run(record):
     protocol = record.get("ProtocolName", None)
     if protocol:
         import re
-        prot_parts = re.split('_|-', protocol.lower())
+        prot_parts = re.split('_|-|\s', protocol.lower())
         try:
             idx = prot_parts.index("run")
             run = prot_parts[idx + 1]

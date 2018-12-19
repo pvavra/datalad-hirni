@@ -44,6 +44,7 @@ datatype_labels_map = {
     'inplaneT2': 'anat',
     'angio': 'anat',
 
+    'swi': 'swi',
     'dwi': 'dwi',
 
     'phasediff': 'fmap',
@@ -70,6 +71,11 @@ spec2bids_map = {
     'bids-reconstruction-algorithm': "rec",
     'bids-echo': "echo",
     'bids-direction': "dir",
+
+    # SWI Extension:
+    'bids-part': "part",
+    'bids-coil': "coil",
+
 }
 
 
@@ -159,15 +165,10 @@ def validate_spec(spec):
     if not spec:
         raise ValueError("Image series specification is empty.")
 
-    # check converter
-    # converter = get_specval(spec, 'converter')
-    # if converter == 'ignore':
-    #     lgr.debug("Skip series %s (marked 'ignore' in spec)", spec['uid'])
-    #     return False
-    # if converter != 'heudiconv':
-    #     lgr.debug("Skip series %s since it's not supposed to be converted by "
-    #               "heudiconv.", spec['uid'])
-    #     return False
+    tags = spec.get('tags', None)
+    if tags and 'hirni-dicom-converter-ignore' in tags:
+        lgr.debug("Skip series %s (marked 'ignore' in spec)", spec['uid'])
+        return False
 
     # mandatory keys for any spec dict (not only dicomseries)
     for k in spec.keys():
@@ -175,7 +176,7 @@ def validate_spec(spec):
         # TODO: Where to define this list?
         # TODO: Test whether those are actually present!
         if k in ['type', 'location', 'uid', 'dataset-id',
-                 'dataset-refcommit', 'converter']:
+                 'dataset-refcommit', 'procedures', 'tags']:
             continue
         if 'value' not in spec[k]:
             lgr.warning("DICOM series specification (UID: {uid}) has no value "
@@ -299,6 +300,26 @@ def infotodict(seqinfo):  # pragma: no cover
             # TODO: Double check: Is this always correct?
             filename += "_dwi"
 
+        if data_type == 'swi':
+            # BIDS-Extension:
+            # https://docs.google.com/document/d/1kyw9mGgacNqeMbp4xZet3RnDhcMmf4_BmRgKaOkO2Sc
+            # swi/sub-<participant_label>[_ses-<session_label>]
+            #       [_acq-<label>][_rec-<label>]_part-<phase|mag>[_coil-<index>][_echo-<index>][_run-<index>]_GRE.nii[.gz]
+
+            for spec_key in ['bids-acquisition',
+                             'bids-reconstruction_algorithm',
+                             'bids-part',
+                             'bids-coil',
+                             'bids-echo',
+                             'bids-run',
+                             ]:
+                if has_specval(series_spec, spec_key):
+                    filename += "_{}-{}".format(
+                            spec2bids_map[spec_key],
+                            get_specval(series_spec, spec_key))
+
+            filename += "_GRE"
+            
         if data_type == 'fmap':
             # Case 1: Phase difference image and at least one magnitude image
             # sub-<participant_label>/[ses-<session_label>/]
