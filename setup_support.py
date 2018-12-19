@@ -16,10 +16,10 @@ import formatters as fmt
 
 # TODO read by parsing the command suite file
 cmdline_command_names = (
-    'hirni-create-study',
     'hirni-import-dcm',
     'hirni-dicom2spec',
     'hirni-spec2bids',
+    'hirni-spec4anything',
 )
 
 
