@@ -15,7 +15,8 @@ summary of its purpose and the list of classes and functions it provides.
 .. autosummary::
    :toctree: generated
 
-   create_study
    import_dicoms
    dicom2spec
    spec2bids
+   spec4anything
+
