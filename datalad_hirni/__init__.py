@@ -24,12 +24,6 @@ command_suite = (
     [
         # specification of a command, any number of commands can be defined
         (
-            'datalad_hirni.commands.create_study',
-            'CreateStudy',
-            'hirni-create-study',
-            'hirni_create_study',
-        ),
-        (
             'datalad_hirni.commands.import_dicoms',
             'ImportDicoms',
             'hirni-import-dcm',
@@ -46,12 +40,6 @@ command_suite = (
             'Dicom2Spec',
             'hirni-dicom2spec',
             'hirni_dicom2spec',
-        ),
-        (
-            'datalad_hirni.commands.validate_spec',
-            'ValidateSpec',
-            'hirni-validate-spec',
-            'hirni_validate_spec',
         ),
         (
             'datalad_hirni.commands.spec2bids',
