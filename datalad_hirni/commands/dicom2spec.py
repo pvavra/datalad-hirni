@@ -341,8 +341,15 @@ class Dicom2Spec(Interface):
         #spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
         json_py.dump2stream(spec_series_list, spec)
 
-        for r in RevSave.__call__(dataset=dataset,
-                                  path=spec,
+        # make sure spec is in git:
+        dataset.repo.set_gitattributes([(spec,
+                                         {'annex.largefiles': 'nothing'})],
+                                       '.gitattributes')
+
+        from datalad_revolution.dataset import RevolutionDataset
+        rev_ds = RevolutionDataset(dataset.path)
+        for r in RevSave.__call__(dataset=rev_ds,
+                                  path=[spec, '.gitattributes'],
                                   to_git=True,
                                   message="[HIRNI] Added study specification "
                                           "snippet for %s" %
@@ -351,7 +358,8 @@ class Dicom2Spec(Interface):
                                   result_renderer='disabled'):
             if r.get('status', None) not in ['ok', 'notneeded']:
                 yield r
-            elif r['path'] == spec and r['type'] == 'file':
+            elif r['path'] in [spec, op.join(dataset.path, '.gitattributes')] \
+                    and r['type'] == 'file':
                 r['action'] = 'dicom2spec'
                 r['logger'] = lgr
                 yield r
@@ -362,7 +370,7 @@ class Dicom2Spec(Interface):
             else:
                 # anything else shouldn't happen
                 yield dict(status='error',
-                           message=("unexpected result from Add: %s", r),
+                           message=("unexpected result from rev-save: %s", r),
                            path=spec,
                            type='file',
                            action='dicom2spec',

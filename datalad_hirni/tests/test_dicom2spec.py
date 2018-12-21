@@ -74,25 +74,14 @@ def test_dicom2spec(path):
     ds.aggregate_metadata(recursive=True, update_mode='all')
     # ### END SETUP ###
 
-    # TODO: should it be specfile or acq/specfile? => At least doc needed, if not change
+    # TODO: should it be specfile or acq/specfile? => At least doc needed,
+    # if not change
     res = ds.hirni_dicom2spec(path='acq100', spec='spec_structural.json')
-
 
     # check for actual location of spec_structural!
     # => studyds root!
 
-
-    assert_result_count(res, 1)
+    assert_result_count(res, 2)
     assert_result_count(res, 1, path=op.join(ds.path, 'spec_structural.json'))
-    if ds.repo.is_direct_mode():
-        # Note:
-        # in direct mode we got an issue determining whether or not sth is
-        # "dirty". In this particular case, this is about having a superdataset
-        # in direct mode, while the subdataset is a plain git repo.
-        # However, at least assert both are clean themselves:
-        ok_clean_git(ds.path, ignore_submodules=True)
-        ok_clean_git(op.join(ds.path, 'acq100'))
-
-    else:
-        ok_clean_git(ds.path)
-
+    assert_result_count(res, 1, path=op.join(ds.path, '.gitattributes'))
+    ok_clean_git(ds.path)
