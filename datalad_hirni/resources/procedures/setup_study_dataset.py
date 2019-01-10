@@ -2,11 +2,15 @@
 """
 
 import sys
-from datalad.distribution.dataset import require_dataset
+import os.path as op
+import datalad.support.json_py as json_py
+from datalad_revolution.dataset import require_dataset
 
 # bound dataset methods
-import datalad.distribution.add
-import datalad.interface.save
+import datalad_revolution.revsave
+import datalad_hirni.commands.spec4anything
+import datalad.distribution.install
+import datalad.metadata.aggregate
 from datalad.plugin.add_readme import AddReadme
 
 ds = require_dataset(
@@ -21,12 +25,15 @@ force_in_git = [
     'dataset_description.json',
     '**/{}'.format(ds.config.get("datalad.hirni.studyspec.filename",
                                  "studyspec.json")),
+    '**/.git*',
 ]
 
 # except for hand-picked global metadata, we want anything
 # to go into the annex to be able to retract files after
 # publication
-ds.repo.set_gitattributes([('**', {'annex.largefiles': 'anything'})])
+ds.repo.set_gitattributes([('*', {'annex.backend': 'MD5E'}),
+                           ('**', {'annex.largefiles': 'anything'})],
+                          mode='w')
 ds.repo.set_gitattributes([(p, {'annex.largefiles': 'nothing'})
                            for p in force_in_git])
 
@@ -44,11 +51,53 @@ ds.repo.set_gitattributes([(p, {'annex.largefiles': 'nothing'})
 ds.config.add('datalad.hirni.import.acquisition-format',
               "{PatientID}", where='dataset')
 
-ds.save(message='[HIRNI] Default study dataset setup')
+# Include an empty dataset_description.json template
+bids_description = {
+    "Name": "",
+    "BIDSVersion": '1.1.1',
+    "License": "",
+    "Authors": [],
+    "Acknowledgements": "",
+    "HowToAcknowledge": "",
+    "Funding": "",
+    "ReferencesAndLinks": [],
+    "DatasetDOI": "",
+    "Ethics": "",
+    "Preregistration": "",
+    "Power": "",
+}
+
+json_py.dump(bids_description, "./dataset_description.json")
+
+ds.rev_save(message='[HIRNI] Default study dataset configuration')
 
 # Include the most basic README to prevent heudiconv from adding one
+# TODO: pointless Warnings on missing metadata from this call if procedure is
+# run on an empty dataset:
 ds.add_readme(filename='README', existing='fail')
 
+# Add the toolbox as a subdataset
+ds.install(path=op.join("code", "hirni-toolbox"),
+           source="https://github.com/psychoinformatics-de/hirni-toolbox.git")
 
-# TODO: Reconsider using an import container and if so, link it herein. See
-# now-deprecated hirni-create-study command
+# Include a basic top-level spec file, that specifies "copy-conversion" for
+# README and dataset_description.json
+ds.aggregate_metadata()
+ds.hirni_spec4anything(path='README',
+                       spec_file='studyspec.json',
+                       properties={
+                           "procedures": {
+                               "procedure-name": "copy-converter",
+                               "procedure-call": "bash {script} {{location}} ."
+                                }
+                            }
+                       )
+ds.hirni_spec4anything(path='dataset_description.json',
+                       spec_file='studyspec.json',
+                       properties={
+                           "procedures": {
+                               "procedure-name": "copy-converter",
+                               "procedure-call": "bash {script} {{location}} ."
+                                }
+                            }
+                       )
