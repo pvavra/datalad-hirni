@@ -52,10 +52,6 @@ def _single_session_dicom2bids(label, path):
     ds.hirni_dicom2spec(path=op.join(acquisition, 'dicoms'),
                         spec=op.join(acquisition, spec_file))
 
-    # install toolbox
-    ds.install(source="https://github.com/psychoinformatics-de/cbbs-toolbox.git",
-               path="toolbox")
-
     ds.hirni_spec2bids(op.join(acquisition, spec_file))
 
 
@@ -88,7 +84,6 @@ def test_spec2bids(study_path, bids_path):
                               spec=op.join(acquisition, 'studyspec.json'))
 
     # add a custom converter script which is just a copy converter
-    makedirs(op.join(study_ds.path, 'code'))
     from shutil import copy
     copy(op.join(op.dirname(datalad_hirni.__file__),
                  'resources', 'dummy_executable.sh'),
@@ -138,12 +133,10 @@ def test_spec2bids(study_path, bids_path):
     bids_ds = Dataset.create(bids_path)
     bids_ds.run_procedure("setup_bids_dataset")
 
-    # install toolbox
-    bids_ds.install(source="https://github.com/psychoinformatics-de/cbbs-toolbox.git",
-                    path="toolbox")
-
     # install the study dataset as "sourcedata":
     bids_ds.install(source=study_ds.path, path="sourcedata")
+    # get the toolbox, since procedures can't be discovered otherwise
+    bids_ds.get(op.join('sourcedata', 'code', 'hirni-toolbox'))
 
     # make sure, we have the target directory "sub-02" for the copy converter,
     # even if heudiconv didn't run before (order of execution of the converters
