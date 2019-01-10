@@ -111,6 +111,7 @@ class Spec4Anything(Interface):
         properties=Parameter(
             args=("--properties",),
             metavar="PATH or JSON string",
+            # TODO: doc for python API: can also be a dict
             doc="""""",
             constraints=EnsureStr() | EnsureNone()),
         replace=Parameter(
@@ -128,6 +129,7 @@ class Spec4Anything(Interface):
     @eval_results
     def __call__(path, dataset=None, spec_file=None, properties=None,
                  replace=False):
+        # TODO: message
 
         dataset = require_dataset(dataset, check_installed=True,
                                   purpose="hirni spec4anything")
@@ -234,8 +236,12 @@ class Spec4Anything(Interface):
                 # instead)
 
                 # load from file or json string
-                props = json_py.load(properties) \
-                        if op.exists(properties) else json_py.loads(properties)
+                if isinstance(properties, dict):
+                    props = properties
+                elif op.exists(properties):
+                    props = json_py.load(properties)
+                else:
+                    props = json_py.loads(properties)
                 # turn into editable, pre-approved records
                 spec_props = {k: dict(value=v, approved=True)
                               for k, v in props.items()
