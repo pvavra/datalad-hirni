@@ -13,7 +13,6 @@ from datalad.distribution.dataset import require_dataset
 from datalad.distribution.dataset import resolve_path
 from datalad.interface.base import Interface
 from datalad.interface.base import build_doc
-from datalad.interface.common_opts import recursion_flag
 from datalad.interface.utils import eval_results
 from datalad.support import json_py
 from datalad.support.constraints import EnsureNone
@@ -25,8 +24,117 @@ from datalad_hirni.commands.spec4anything import _get_edit_dict
 
 lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
-# ############################# Build plugin mechanism for Rules finally!
-#########################################
+
+class RuleSet(object):
+    """Holds and applies the current rule set for deriving BIDS terms from
+    DICOM metadata"""
+
+    def __init__(self, dataset=None):
+        """Retrieves the configured set of rules
+
+        Rules are defined by classes ... + __datalad_hirni_rules
+        datalad.hirni.dicom2spec.rules  ... multiple
+
+        Parameters
+        ----------
+        dataset: Dataset
+          Dataset to read possibly customized rules from
+        """
+
+        from datalad.utils import assure_list
+        from datalad import cfg as dl_cfg
+        from datalad_hirni.support.dicom2bids_rules import DefaultRules
+        cfg = dataset.config if dataset else dl_cfg
+
+        self._rule_set = []
+        # get a list of paths to build the rule set from
+        # Note: assure_list is supposed to return empty list if there's nothing
+        self._file_list = \
+            assure_list(cfg.get("datalad.hirni.dicom2spec.rules"))
+
+        for file in self._file_list:
+            if not op.exists(file) or not op.isfile(file):
+                lgr.warning("Ignored invalid path for dicom2spec rules "
+                            "definition: %s", file)
+                continue
+
+            from datalad.utils import import_module_from_file
+            from datalad.dochelpers import exc_str
+            try:
+                mod = import_module_from_file(file)
+            except Exception as e:
+                # any exception means full stop
+                raise ValueError("Rules definition file at {} is broken: {}"
+                                 "".format(file, exc_str(e)))
+
+            # check file's __datalad_hirni_rules for the actual class:
+            if not hasattr(mod, "__datalad_hirni_rules"):
+                raise ValueError("Rules definition file {} missed attribute "
+                                 "'__datalad_hirni_rules'.".format(file))
+            self._rule_set.append(getattr(mod, "__datalad_hirni_rules"))
+
+        if not self._rule_set:
+            self._rule_set = [DefaultRules]
+
+    def apply(self, dicommetadata, subject=None,
+              anon_subject=None, session=None):
+        """Applies rule set to DICOM metadata
+
+        Note, that a particular series can be determined invalid (for
+        application) by those rules, but still needs to show up in the
+        specification for later review.
+
+        Parameters
+        ----------
+        dicommetadata: list of dict
+          expects datalad's metadata for DICOMs (the list of dicts for the all
+          the series)
+
+        Returns
+        -------
+
+        list of dict
+          derived dict in specification terminology
+        """
+
+        # instantiate rules with metadata; note, that some possible rules might
+        # need the entirety of it, not just the current series to be treated.
+        actual_rules = [r(dicommetadata) for r in self._rule_set]
+
+        # we want one specification dict per image series
+        result_dicts = [dict() for i in range(len(dicommetadata))]
+
+        for rule in actual_rules:
+
+            # TODO: generic overrides instead (or none at all here and let this
+            # be done later on - not sure, what's most useful for the rules
+            # themselves. Also: If we know already we can save the effort to
+            # deduct => likely keep passing on to the rules)
+            dict_list = rule(subject=subject,
+                             anon_subject=anon_subject,
+                             session=session)
+
+            # should return exactly one dict per series:
+            assert len(dict_list) == len(dicommetadata)
+
+            for idx, t in zip(range(len(dicommetadata)), dict_list):
+                value_dict = t[0]
+                is_valid = t[1]
+                for key in value_dict.keys():
+                    # TODO: This should get more complex (deriving
+                    # tags/procedures?) and use some SpecHandler for assignment
+                    # (more sophisticated than _get_edit_dict)
+                    result_dicts[idx][key] = {'value': value_dict[key],
+                                              'approved': False}
+                    if not is_valid:
+                        if 'tags' in result_dicts[idx] and \
+                                'hirni-dicom-converter-ignore' not in \
+                                result_dicts[idx]['tags']:
+                            result_dicts[idx]['tags'].append('hirni-dicom-converter-ignore')
+                        else:
+                            result_dicts[idx]['tags'] = ['hirni-dicom-converter-ignore']
+
+        return result_dicts
 
 
 def add_to_spec(ds_metadata, spec_list, basepath,
@@ -69,8 +177,9 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             'uid': series['SeriesInstanceUID'],
             'dataset-id': ds_metadata['dsid'],
             'dataset-refcommit': ds_metadata['refcommit'],
-            'tags': ['hirni-dicom-converter-ignore']
-                    if not series_is_valid(series) else [],
+            'tags': []
+            #'tags': ['hirni-dicom-converter-ignore']
+            #        if not series_is_valid(series) else [],
         })
 
     # get rules to apply:
@@ -78,14 +187,34 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             ds_metadata['metadata']['dicom']['Series'])
     for rule_cls in rules:
         rule = rule_cls(ds_metadata['metadata']['dicom']['Series'])
-        for idx, values in zip(range(len(base_list)),
+        for idx, t in zip(range(len(base_list)),
                                rule(subject=subject,
                                     anon_subject=anon_subject,
                                     session=session)
                                ):
-            for k in values.keys():
-                base_list[idx][k] = {'value': values[k],
+            for k in t[0].keys():
+                base_list[idx][k] = {'value': t[0][k],
                                      'approved': False}
+                if not t[1]:
+                    base_list[idx]['tags'].append('hirni-dicom-converter-ignore')
+
+    # XXX
+    # Test alternative:
+    base_list_new = list(base_list)
+    rules_new = RuleSet()
+    derived = rules_new.apply(ds_metadata['metadata']['dicom']['Series'],
+                              subject=subject,
+                              anon_subject=anon_subject,
+                              session=session
+                              )
+
+    assert len(derived) == len(base_list) == len(base_list_new)
+    for idx in range(len(base_list_new)):
+        base_list_new[idx].update(derived[idx])
+    print("WE GOT HERE")
+    assert base_list == base_list_new
+
+    # XXX
 
     # merge with existing spec plus overrides:
     for series in base_list:

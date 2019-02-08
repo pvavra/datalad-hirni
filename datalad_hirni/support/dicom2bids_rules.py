@@ -1,3 +1,12 @@
+# How to suck in custom rules?
+# Files with Rule classes? Plus a function determining their order?
+# How then to decide which function to call? Hardcoded priority system-> User -> dataset?
+# Use ConfigManager!? => location config could be a list and thereby fullfill the function of determining order (or just overrule)
+
+
+
+
+
 """Rule set for specification of DICOM image series
 """
 
@@ -6,6 +15,8 @@
 # define specification keys of specification type 'dicomseries', that are
 # subjects to the rule set
 # XXX this is not used at all
+from datalad_hirni.support.BIDS_helper import apply_bids_label_restrictions
+
 spec_keys = [
     'bids-session',
     'bids-task',
@@ -58,31 +69,10 @@ def get_rules_from_metadata(dicommetadata):
     Returns
     -------
     list of rule set classes
-        wil be applied in order, therefore later ones overrule earlier ones
+        will be applied in order, therefore later ones overrule earlier ones
     """
 
     return [DefaultRules]
-
-
-def apply_bids_label_restrictions(value):
-    """
-    Sanitize filenames for BIDS.
-    """
-    # only alphanumeric allowed
-    # => remove everthing else
-
-    if value is None:
-        # Rules didn't find anything to apply, so don't put anything into the
-        # spec.
-        return None
-
-    from six import string_types
-    if not isinstance(value, string_types):
-        value = str(value)
-
-    import re
-    pattern = re.compile('[\W_]+')  # check
-    return pattern.sub('', value)
 
 
 class DefaultRules(object):
@@ -101,11 +91,13 @@ class DefaultRules(object):
     def __call__(self, subject=None, anon_subject=None, session=None):
         spec_dicts = []
         for dicom_dict in self._dicoms:
-            spec_dicts.append(self._rules(
-                    dicom_dict,
-                    subject=subject,
-                    anon_subject=anon_subject,
-                    session=session))
+            spec_dicts.append((self._rules(dicom_dict,
+                                           subject=subject,
+                                           anon_subject=anon_subject,
+                                           session=session),
+                               series_is_valid(dicom_dict)
+                                )
+                              )
         return spec_dicts
 
     def _rules(self, record, subject=None, anon_subject=None, session=None):

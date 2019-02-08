@@ -11,7 +11,10 @@
 
 import os.path as op
 
-from datalad.api import Dataset
+from datalad.api import (
+    Dataset,
+    rev_create
+)
 
 from datalad.tests.utils import (
     assert_result_count,
@@ -60,6 +63,19 @@ from datalad_neuroimaging.tests.utils import (
 #     return ds.path
 
 # studyds_path = _setup_study_dataset()
+
+
+@with_tempfile
+def test_rules_system(path):
+
+    dicoms = get_dicom_dataset('structural')
+    ds = rev_create(path)
+    ds.install(source=dicoms, path="acq")
+    ds.aggregate_metadata(recursive=True, update_mode='all')
+
+    #import pdb; pdb.set_trace()
+
+    ds.hirni_dicom2spec(path="acq", spec="studyspec.json")
 
 
 @with_tempfile
