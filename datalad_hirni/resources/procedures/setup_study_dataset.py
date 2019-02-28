@@ -88,16 +88,17 @@ ds.hirni_spec4anything(path='README',
                        properties={
                            "procedures": {
                                "procedure-name": "copy-converter",
-                               "procedure-call": "bash {script} {{location}} ."
+                               "procedure-call": "bash {script} {{location}} {ds}/README"
                                 }
                             }
                        )
+
 ds.hirni_spec4anything(path='dataset_description.json',
                        spec_file='studyspec.json',
                        properties={
                            "procedures": {
                                "procedure-name": "copy-converter",
-                               "procedure-call": "bash {script} {{location}} ."
+                               "procedure-call": "bash {script} {{location}} {ds}/dataset_description.json"
                                 }
                             }
                        )
