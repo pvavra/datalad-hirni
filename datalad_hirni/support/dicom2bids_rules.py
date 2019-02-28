@@ -186,11 +186,16 @@ def _guess_task(record):
             task = prot_parts[idx + 1]
             return task
         except (ValueError, IndexError):
-            # default to entire protocol name
-            return protocol
+            # default to entire protocol name?
+            # This should actually check the results of other guesses
+            # (like modality) to determine a better default than nothing.
+            # At least parts of the protocol name that were already matched elsewhere
+            # should be excluded
+            return None
     else:
-        # default to entire protocol name
-        return protocol
+        # default to entire protocol name?
+        # see above
+        return None
 
 
 def _guess_modality(record):
