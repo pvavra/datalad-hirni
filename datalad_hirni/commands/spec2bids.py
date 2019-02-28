@@ -90,6 +90,12 @@ class Spec2Bids(Interface):
             # the exact same call. How to best get around substitutions?
             # Also: per snippet isn't correct either.
             # substitutions is real issue. Example "copy {location} ."
+            #
+            # => datalad.interface.run.format_command / normalize_command ?
+
+            # TODO: Also can we skip prepare_inputs within run? At least specify
+            # more specifically. Note: Can be globbed!
+
             ran_procedure = dict()
 
             if not lexists(spec_path):

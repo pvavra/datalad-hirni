@@ -142,7 +142,7 @@ def _guess_acquisition_and_move(ds, target_ds):
 class ImportDicoms(Interface):
     """Import a DICOM archive into a study raw dataset.
 
-    This creates a subdataset with the DICOM files under SESSION/dicoms.
+    This creates a subdataset with the DICOM files under ACQUISITION ID/dicoms.
     Furthermore a study specification will automatically be prefilled, based on
     the metadata in DICOM headers."""
 
@@ -163,8 +163,8 @@ class ImportDicoms(Interface):
             args=("acqid",),
             metavar="ACQUISITION ID",
             doc="""acquisition identifier for the imported DICOM files. If not
-            specified, an attempt will be made to derive ACQUISITION_ID from DICOM
-            headers.""",
+            specified, an attempt will be made to derive ACQUISITION_ID from 
+            DICOM headers.""",
             nargs="?",
             constraints=EnsureStr() | EnsureNone()),
         subject=Parameter(
@@ -176,13 +176,18 @@ class ImportDicoms(Interface):
         anon_subject=Parameter(
             args=("--anon-subject",),
             metavar="ANON_SUBJECT",
-            doc="""TODO""",
+            doc="""an anonymized subject identifier. This is needed for 
+            anonymized conversion via spec2bids --anonymize and will be stored 
+            in the specification snippet for the imported DICOMs. Hence it can 
+            be added later and isn't mandatory for the import.""",
             constraints=EnsureStr() | EnsureNone()),
         properties=Parameter(
-                args=("--properties",),
-                metavar="PATH or JSON string",
-                doc="""""",
-                constraints=EnsureStr() | EnsureNone()),
+            args=("--properties",),
+            metavar="PATH or JSON string",
+            doc="""a JSON string or a path to a JSON file, to provide 
+            overrides/additions for the to be created specification snippet
+            """,
+            constraints=EnsureStr() | EnsureNone()),
 
     )
 
