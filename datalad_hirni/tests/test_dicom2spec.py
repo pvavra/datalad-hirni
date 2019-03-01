@@ -51,7 +51,7 @@ from datalad_neuroimaging.tests.utils import (
 #     f_dicoms = get_dicom_dataset('functional')
 #     s_dicoms = get_dicom_dataset('structural')
 #     ds = Dataset.create(path)
-#     ds.run_procedure('setup_study_dataset')
+#     ds.run_procedure('setup_hirni_dataset')
 #     ds.install(source=f_dicoms, path='acq_func')
 #     ds.install(source=s_dicoms, path='acq_struct')
 #     ds.aggregate_metadata(recursive=True, update_mode='all')
@@ -69,7 +69,7 @@ def test_dicom2spec(path):
     dicoms = get_dicom_dataset('structural')
 
     ds = Dataset.create(path)
-    ds.run_procedure('setup_study_dataset')
+    ds.run_procedure('setup_hirni_dataset')
     ds.install(source=dicoms, path='acq100')
     ds.aggregate_metadata(recursive=True, update_mode='all')
     # ### END SETUP ###
