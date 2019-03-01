@@ -178,19 +178,14 @@ class Spec4Anything(Interface):
             # find acquisition and respective specification file:
             rel_path = posixpath.relpath(ap_path.posixpath, ds_path.posixpath)
 
-            # TODO: This needs more generalization as we want to have higher
-            # level specification snippets, that aren't within an acquisition
             path_parts = rel_path.split('/')
-            if len(path_parts) < 2:
-                lgr.warning("Not within an acquisition")
-                # yield get_status_dict(
-                #         status='error',
-                #         path=ap['path'],
-                #         message="Not within an acquisition",
-                #         type='file',
-                #         **res_kwargs
-                # )
-                # continue
+
+            # TODO: Note: Outcommented this warning for now. We used to not have
+            # a spec file at the toplevel of the study dataset, but now we do.
+            # The logic afterwards works, but should be revisited. At least,
+            # `acq` should be called differently now.
+            # if len(path_parts) < 2:
+            #     lgr.warning("Not within an acquisition")
             acq = path_parts[0]
 
             # TODO: spec file specifiable or fixed path?
