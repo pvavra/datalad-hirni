@@ -12,7 +12,7 @@ from datalad.support.constraints import EnsureStr
 from datalad.support.constraints import EnsureNone
 from datalad.support.constraints import EnsureKeyChoice
 from datalad.support.param import Parameter
-from datalad.support.network import get_local_file_url
+from datalad.support.network import get_local_file_url, RI, PathRI
 from datalad.distribution.dataset import Dataset
 from datalad.distribution.dataset import datasetmethod
 from datalad.distribution.dataset import EnsureDataset
@@ -23,6 +23,7 @@ from datalad.utils import rmtree
 
 # bound dataset method
 import datalad_hirni.commands.dicom2spec
+import datalad.interface.download_url
 
 import logging
 lgr = logging.getLogger('datalad.hirni.import_dicoms')
@@ -41,11 +42,18 @@ def _import_dicom_tarball(target_ds, tarball, filename):
                  'autoenable=true',
                  'uuid={}'.format(
                      DATALAD_SPECIAL_REMOTES_UUIDS[ARCHIVES_SPECIAL_REMOTE])
-                ])
+                 ])
 
-    shutil.copy2(tarball, op.join(target_ds.path, filename))
-    target_ds.repo.add(filename)
-    target_ds.repo.commit(msg="Retrieved %s" % tarball)
+    commit_msg = "Retrieved %s" % tarball
+    if isinstance(RI(tarball), PathRI):
+        shutil.copy2(tarball, op.join(target_ds.path, filename))
+        target_ds.repo.add(filename)
+        target_ds.repo.commit(msg=commit_msg)
+    else:
+        target_ds.download_url(urls=[tarball],
+                               path=filename,
+                               message=commit_msg)
+
     target_ds.repo.checkout('incoming-processed', options=['--orphan'])
     if target_ds.repo.dirty:
         target_ds.repo.remove('.', r=True, f=True)
@@ -157,7 +165,7 @@ class ImportDicoms(Interface):
         path=Parameter(
             args=("path",),
             metavar='PATH',
-            doc="""path of the dicom archive to be imported.""",
+            doc="""path or URL of the dicom archive to be imported.""",
             constraints=EnsureStr()),
         acqid=Parameter(
             args=("acqid",),
