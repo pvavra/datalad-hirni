@@ -1,3 +1,4 @@
 git+https://github.com/datalad/datalad.git
 git+https://github.com/datalad/datalad-neuroimaging.git
 git+https://github.com/datalad/datalad-container.git
+git+https://github.com/datalad/datalad-webapp.git
