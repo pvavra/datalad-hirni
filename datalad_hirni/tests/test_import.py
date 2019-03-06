@@ -6,18 +6,11 @@ from datalad.api import run_procedure
 
 from datalad.tests.utils import assert_result_count
 from datalad.tests.utils import ok_clean_git, ok_exists, ok_file_under_git
-from datalad.tests.utils import with_tempfile, known_failure_direct_mode
+from datalad.tests.utils import with_tempfile
 
 from datalad_neuroimaging.tests.utils import get_dicom_dataset, create_dicom_tarball
 
 
-# Note: In direct mode the entire three branch approach on importing seems to
-# have an issue. The tarball is a broken in symlink in 'incoming-processed',
-# before add_archive_content is even called. On the other hand annex-get works
-# for it, so it's not like nothing worked at all.
-# May be have to somehow account for direct mode when switching branches.
-# TODO: Narrow down what's broken and make it an issue
-@known_failure_direct_mode
 @with_tempfile(mkdir=True)
 @with_tempfile
 def test_import_tarball(src, ds_path):
@@ -43,10 +36,7 @@ def test_import_tarball(src, ds_path):
     ok_exists(opj(ds.path, 'user_defined_session', 'studyspec.json'))
     ok_file_under_git(opj(ds.path, 'user_defined_session', 'studyspec.json'),
                       annexed=False)
-    # TODO: datalad gh-2963
-    from six import PY3
-    if PY3:
-        ok_exists(opj(ds.path, 'user_defined_session', 'dicoms', 'structural'))
+    ok_exists(opj(ds.path, 'user_defined_session', 'dicoms', 'structural'))
 
     # now import again, but let the import routine figure out an acquisition
     # name based on DICOM metadata (ATM just the first occurring PatientID,
