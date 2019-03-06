@@ -44,16 +44,14 @@ def _import_dicom_tarball(target_ds, tarball, filename):
                      DATALAD_SPECIAL_REMOTES_UUIDS[ARCHIVES_SPECIAL_REMOTE])
                  ])
 
-    commit_msg = "Retrieved %s" % tarball
     if isinstance(RI(tarball), PathRI):
         shutil.copy2(tarball, op.join(target_ds.path, filename))
         target_ds.repo.add(filename)
-        target_ds.repo.commit(msg=commit_msg)
-    else:
-        target_ds.download_url(urls=[tarball],
-                               path=filename,
-                               message=commit_msg)
 
+    else:
+        target_ds.repo.add_url_to_file(file_=filename, url=tarball, batch=False)
+
+    target_ds.repo.commit(msg="Retrieved %s" % tarball)
     target_ds.repo.checkout('incoming-processed', options=['--orphan'])
     if target_ds.repo.dirty:
         target_ds.repo.remove('.', r=True, f=True)
