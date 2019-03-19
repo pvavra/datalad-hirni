@@ -77,8 +77,12 @@ ds.rev_save(message='[HIRNI] Default study dataset configuration')
 ds.add_readme(filename='README', existing='fail')
 
 # Add the toolbox as a subdataset
+toolbox_url = ds.config.obtain(
+        "datalad.hirni.toolbox.url",
+        "https://github.com/psychoinformatics-de/hirni-toolbox.git"
+)
 ds.install(path=op.join("code", "hirni-toolbox"),
-           source="https://github.com/psychoinformatics-de/hirni-toolbox.git")
+           source=toolbox_url)
 
 # Include a basic top-level spec file, that specifies "copy-conversion" for
 # README and dataset_description.json
