@@ -133,7 +133,7 @@
               </li>
 
               <!-- TODO: Provide an input field to directly name the to-be-added tag; see add field at the bottom of a snippet -->
-              <button class="btn btn-outline-success oi oi-plus" type="button" @click="addTag(specs_key, '');">Add tag</button>
+              <button class="btn btn-outline-success" type="button" @click="addTag(specs_key, '');">Add tag</button>
             </div>
           </div>
 
@@ -144,6 +144,7 @@
             </label>
             <ul class="col-sm-10">
               <ul v-for="(proc, proc_key) in spec.procedures" v-if="spec.procedures" :key="proc.id">
+                <div><!--TODO: some frame -->
                   <ul v-for="(pval, pkey) in spec.procedures[proc_key]">
                   <label form="specform" class="col-sm-2 col-form-label">
                     {{ pkey }}
@@ -161,9 +162,13 @@
                   </div>
                   </ul>
                   <!--TODO: REMOVE procedure -->
+                  </div>
               </ul>
             </ul>
-            <div class="input-group add-field">
+          </div>
+          <div class="form-group row">
+            <label form="specform" class="col-sm-2 col-form-label"></label>
+            <div class="input-group add-field col-sm-10">
               <select v-model="selected_procedure" id="procedureselection" class="form-control">
                 <!--TODO: Add procedure.help as tooltip to the options -->
                 <option v-for="procedure in procedures" v-bind:value="procedure">
