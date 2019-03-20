@@ -144,30 +144,30 @@
             </label>
             <ul class="col-sm-10">
               <ul v-for="(proc, proc_key) in spec.procedures" v-if="spec.procedures" :key="proc.id">
-                <div><!--TODO: some frame -->
-                  <ul v-for="(pval, pkey) in spec.procedures[proc_key]">
-                  <label form="specform" class="col-sm-2 col-form-label">
-                    {{ pkey }}
-                  </label>
-                  <div class="col-sm-10">
-                    <div class="input-group">
-                      <input v-model="spec.procedures[proc_key][pkey].value" type="text" :disabled="spec.procedures[proc_key][pkey].approved" class="form-control">
-                        <div class="input-group-append">
-                          <div class="input-group-text">
-                            <input v-model="spec.procedures[proc_key][pkey].approved" type="checkbox" :id="pkey" title="Toggle approval of record">
-                          </div>
+                <div class="card border-dark"><!--TODO: some frame -->
+                  <ul v-for="(pval, pkey) in spec.procedures[proc_key]" class="form-group row">
+                    <label form="specform" class="col-sm-2 col-form-label">
+                      {{ pkey }}
+                    </label>
+                    <div class="col-sm-10">
+                      <div class="input-group">
+                        <input v-model="spec.procedures[proc_key][pkey].value" type="text" :disabled="spec.procedures[proc_key][pkey].approved" class="form-control">
+                          <div class="input-group-append">
+                            <div class="input-group-text">
+                              <input v-model="spec.procedures[proc_key][pkey].approved" type="checkbox" :id="pkey" title="Toggle approval of record">
+                            </div>
 
-                        </div>
+                          </div>
+                      </div>
+                    </div>
+                  </ul>
+                  <div class="col-sm-2">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" tooltip="Perform actions on this record value">Actions</button>
+                    <div class="dropdown-menu">
+                      <span @click="removeProcedure(specs_key, proc_key);" class="oi oi-trash">Delete</span>
                     </div>
                   </div>
-                  </ul>
-                  <!--<div class="input-group-append">-->
-                  <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" tooltip="Perform actions on this record value">Actions</button>
-                  <div class="dropdown-menu">
-                    <span @click="removeProcedure(specs_key, proc_key);" class="oi oi-trash">Delete</span>
-                  </div>
-                  <!--</div>-->
-                  </div>
+                </div>
               </ul>
             </ul>
           </div>
