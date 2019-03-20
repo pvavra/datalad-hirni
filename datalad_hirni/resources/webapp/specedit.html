@@ -161,7 +161,12 @@
                     </div>
                   </div>
                   </ul>
-                  <!--TODO: REMOVE procedure -->
+                  <!--<div class="input-group-append">-->
+                  <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" tooltip="Perform actions on this record value">Actions</button>
+                  <div class="dropdown-menu">
+                    <span @click="removeProcedure(specs_key, proc_key);" class="oi oi-trash">Delete</span>
+                  </div>
+                  <!--</div>-->
                   </div>
               </ul>
             </ul>
@@ -287,6 +292,9 @@ var app = new Vue({
                  }
               );
             }
+        },
+        removeProcedure: function(specs_key, proc_key) {
+          app.specs[specs_key].procedures.splice(proc_key, 1);
         },
         assign2all: function(k, v) {
             for (i=0; i < app.$data.specs.length; i++) {
