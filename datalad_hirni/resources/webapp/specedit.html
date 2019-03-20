@@ -144,7 +144,7 @@
             </label>
             <ul class="col-sm-10">
               <ul v-for="(proc, proc_key) in spec.procedures" v-if="spec.procedures" :key="proc.id">
-                  <li v-for="(pval, pkey) in proc">
+                  <ul v-for="(pval, pkey) in proc">
                   <label form="specform" class="col-sm-2 col-form-label">
                     {{ pkey }}
                   </label>
@@ -165,7 +165,7 @@
                         </div>
                     </div>
                   </div>
-                  </li>
+                  </ul>
               </ul>
             </ul>
             <!-- TODO: Add procedure -->
