@@ -35,7 +35,7 @@ force_in_git = [
 to_add = set()
 
 # configure minimal set of metadata extractors
-ds.run_procedure(['cfg_metadatatypes', 'bids', 'nifti'])
+ds.run_procedure(['cfg_metadatatypes', 'bids', 'nifti1'])
 
 # amend gitattributes
 ds.repo.set_gitattributes([(path, {'annex.largefiles': 'nothing'})
