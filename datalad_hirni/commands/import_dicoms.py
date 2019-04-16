@@ -20,6 +20,7 @@ from datalad.distribution.dataset import require_dataset
 from datalad.interface.utils import eval_results
 from datalad.distribution.create import Create
 from datalad.utils import rmtree
+from datalad.dochelpers import exc_str
 
 # bound dataset method
 import datalad_hirni.commands.dicom2spec
@@ -231,9 +232,9 @@ class ImportDicoms(Interface):
                            type='file',
                            action='import DICOM tarball',
                            logger=lgr,
-                           message='%s already exists' % e.filename)
+                           message=exc_str(e))
                 rmtree(acq_dir)
-
+                return  # we can't do anything
             finally:
                 if op.exists(acq_dir):
                     lgr.debug("Killing temp dataset at %s ...", acq_dir)
