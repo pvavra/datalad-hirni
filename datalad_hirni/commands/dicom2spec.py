@@ -6,7 +6,7 @@ import logging
 import os.path as op
 
 from datalad.coreapi import metadata
-from datalad_revolution.revsave import RevSave
+from datalad.api import rev_save
 from datalad.distribution.dataset import EnsureDataset
 from datalad.distribution.dataset import datasetmethod
 from datalad.distribution.dataset import require_dataset
@@ -346,10 +346,7 @@ class Dicom2Spec(Interface):
                                          {'annex.largefiles': 'nothing'})],
                                        '.gitattributes')
 
-        from datalad_revolution.dataset import RevolutionDataset
-        rev_ds = RevolutionDataset(dataset.path)
-        for r in RevSave.__call__(dataset=rev_ds,
-                                  path=[spec, '.gitattributes'],
+        for r in dataset.rev_save(path=[spec, '.gitattributes'],
                                   to_git=True,
                                   message="[HIRNI] Added study specification "
                                           "snippet for %s" %

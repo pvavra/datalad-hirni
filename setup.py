@@ -48,7 +48,6 @@ setup(
         'datalad-neuroimaging',
         'datalad-container',
         'datalad-webapp',
-        'datalad-revolution'
     ],
     extras_require={
         'devel-docs': [
