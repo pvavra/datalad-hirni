@@ -4,10 +4,10 @@
 import sys
 import os.path as op
 import datalad.support.json_py as json_py
-from datalad_revolution.dataset import require_dataset
+from datalad.distribution.dataset import require_dataset
 
 # bound dataset methods
-import datalad_revolution.revsave
+from datalad.api import rev_save
 import datalad_hirni.commands.spec4anything
 import datalad.distribution.install
 import datalad.metadata.aggregate
