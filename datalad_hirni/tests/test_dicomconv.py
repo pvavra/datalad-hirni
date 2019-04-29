@@ -130,7 +130,8 @@ def test_spec2bids(study_path, bids_path):
 
     # create the BIDS dataset:
     bids_ds = Dataset.create(bids_path)
-    bids_ds.run_procedure("setup_bids_dataset")
+    # merge into create() call after https://github.com/datalad/datalad/pull/3353
+    bids_ds.run_procedure("cfg_bids")
 
     # install the study dataset as "sourcedata":
     bids_ds.install(source=study_ds.path, path="sourcedata")
