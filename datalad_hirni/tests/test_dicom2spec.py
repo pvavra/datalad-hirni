@@ -248,7 +248,8 @@ def test_dicom2spec(path):
     dicoms = get_dicom_dataset('structural')
 
     ds = Dataset.create(path)
-    ds.run_procedure('setup_hirni_dataset')
+    # TODO merge with create() call after https://github.com/datalad/datalad/pull/3353
+    ds.run_procedure('cfg_hirni')
     ds.install(source=dicoms, path='acq100')
     ds.aggregate_metadata(recursive=True, update_mode='all')
     # ### END SETUP ###

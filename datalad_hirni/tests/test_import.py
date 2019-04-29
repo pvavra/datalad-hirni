@@ -19,7 +19,8 @@ def test_import_tarball(src, ds_path):
     create_dicom_tarball(flavor="structural", path=filename)
 
     ds = Dataset(ds_path).create()
-    ds.run_procedure('setup_hirni_dataset')
+    # TODO merge with create() call after https://github.com/datalad/datalad/pull/3353
+    ds.run_procedure('cfg_hirni')
 
     # adapt import layout rules for example ds, since hirni default
     # doesn't apply:
