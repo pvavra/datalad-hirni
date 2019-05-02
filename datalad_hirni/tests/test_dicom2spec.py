@@ -31,6 +31,8 @@ from datalad_neuroimaging.tests.utils import (
     create_dicom_tarball
 )
 
+from datalad.support.json_py import load_stream
+import datalad_hirni.support.hirni_heuristic as heuristic
 
 # TODO:
 #
@@ -67,16 +69,77 @@ from datalad_neuroimaging.tests.utils import (
 
 
 @with_tempfile
-def test_rules_system(path):
+def test_default_rules(path):
+
+    f_dicoms = get_dicom_dataset('functional')
+    s_dicoms = get_dicom_dataset('structural')
+
+    ds = rev_create(path)
+    ds.install(source=f_dicoms, path=op.join("func_acq", "dicoms"))
+    ds.install(source=s_dicoms, path=op.join("struct_acq", "dicoms"))
+
+    ds.aggregate_metadata(recursive=True, update_mode='all')
+
+    # TODO: spec path should prob. relate to `path`!
+    ds.hirni_dicom2spec(path=op.join("func_acq", "dicoms"), spec=op.join("func_acq", "studyspec.json"))
+    ds.hirni_dicom2spec(path=op.join("struct_acq", "dicoms"), spec=op.join("struct_acq", "studyspec.json"))
+
+    for snippet in load_stream(op.join(path, "func_acq", "studyspec.json")):
+
+        # type
+        assert "type" in snippet.keys()
+        assert snippet["type"] in ["dicomseries", "dicomseries:all"]
+
+        # no comment in default spec
+        assert not heuristic.has_specval(snippet, 'comment') or not heuristic.get_specval(snippet, 'comment')
+        # description
+        assert heuristic.has_specval(snippet, 'description')
+        eq_(heuristic.get_specval(snippet, 'description'), "func_task-oneback_run-1")
+        # subject
+        assert heuristic.has_specval(snippet, 'subject')
+        eq_(heuristic.get_specval(snippet, 'subject'), '02')
+        # modality
+        assert heuristic.has_specval(snippet, 'bids-modality')
+        eq_(heuristic.get_specval(snippet, 'bids-modality'), 'bold')
+        # task
+        assert heuristic.has_specval(snippet, "bids-task")
+        eq_(heuristic.get_specval(snippet, "bids-task"), "oneback")
+        # run
+        assert heuristic.has_specval(snippet, "bids-run")
+        eq_(heuristic.get_specval(snippet, "bids-run"), "01")
+        # id
+        assert heuristic.has_specval(snippet, "id")
+        eq_(heuristic.get_specval(snippet, "id"), 401)
+
+    for snippet in load_stream(op.join(path, "struct_acq", "studyspec.json")):
+
+        # type
+        assert "type" in snippet.keys()
+        assert snippet["type"] in ["dicomseries", "dicomseries:all"]
+        # no comment in default spec
+        assert not heuristic.has_specval(snippet, 'comment') or not heuristic.get_specval(snippet, 'comment')
+        # description
+        assert heuristic.has_specval(snippet, 'description')
+        eq_(heuristic.get_specval(snippet, 'description'), "anat-T1w")
+        # subject
+        assert heuristic.has_specval(snippet, 'subject')
+        eq_(heuristic.get_specval(snippet, 'subject'), '02')
+        # modality
+        assert heuristic.has_specval(snippet, 'bids-modality')
+        eq_(heuristic.get_specval(snippet, 'bids-modality'), 't1w')
+        # run
+        assert heuristic.has_specval(snippet, "bids-run")
+        eq_(heuristic.get_specval(snippet, "bids-run"), "1")  # TODO: Default numbering should still fill up leading zero(s)
+
+
+@with_tempfile
+def test_custom_rules(path):
 
     dicoms = get_dicom_dataset('structural')
     ds = rev_create(path)
     ds.install(source=dicoms, path="acq")
     ds.aggregate_metadata(recursive=True, update_mode='all')
     ds.hirni_dicom2spec(path="acq", spec="studyspec.json")
-
-    from datalad.support.json_py import load_stream
-    import datalad_hirni.support.hirni_heuristic as heuristic
 
     # assertions wrt spec
 
