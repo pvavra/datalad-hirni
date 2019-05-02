@@ -18,6 +18,7 @@ from datalad.api import (
 
 from datalad.tests.utils import (
     assert_result_count,
+    assert_not_in,
     ok_clean_git,
     with_tempfile,
     eq_
@@ -72,10 +73,48 @@ def test_rules_system(path):
     ds = rev_create(path)
     ds.install(source=dicoms, path="acq")
     ds.aggregate_metadata(recursive=True, update_mode='all')
+    ds.hirni_dicom2spec(path="acq", spec="studyspec.json")
 
-    #import pdb; pdb.set_trace()
+    from datalad.support.json_py import load_stream
+    import datalad_hirni.support.hirni_heuristic as heuristic
+
+    # assertions wrt spec
+
+    # TODO: This is wrong, I think. Path should be acq/studyspec.json instead.
+    for spec_snippet in load_stream(op.join(path, 'studyspec.json')):
+
+        # no comment in default spec
+        assert not heuristic.has_specval(spec_snippet, 'comment') or not heuristic.get_specval(spec_snippet, 'comment')
+        # subject
+        assert heuristic.has_specval(spec_snippet, 'subject')
+        eq_(heuristic.get_specval(spec_snippet, 'subject'), '02')
+        # modality
+        assert heuristic.has_specval(spec_snippet, 'bids-modality')
+        eq_(heuristic.get_specval(spec_snippet, 'bids-modality'), 't1w')
+
+    # set config to use custom rules
+    import datalad_hirni
+    ds.config.add("datalad.hirni.dicom2spec.rules",
+                  op.join(op.dirname(datalad_hirni.__file__),
+                          'resources',
+                          'rules',
+                          'test_rules.py'),
+                  )
+
+    # do again with configured rules
+    import os
+    os.unlink(op.join(path, 'studyspec.json'))
 
     ds.hirni_dicom2spec(path="acq", spec="studyspec.json")
+
+    # assertions wrt spec
+
+    # TODO: This is wrong, I think. Path should be acq/studyspec.json instead.
+    for spec_snippet in load_stream(op.join(path, 'studyspec.json')):
+
+        # now there's a comment in spec
+        assert heuristic.has_specval(spec_snippet, 'comment')
+        eq_(heuristic.get_specval(spec_snippet, 'comment'), "These rules are for unit testing only")
 
 
 @with_tempfile

@@ -51,6 +51,7 @@ class RuleSet(object):
         # Note: assure_list is supposed to return empty list if there's nothing
         self._file_list = \
             assure_list(cfg.get("datalad.hirni.dicom2spec.rules"))
+        lgr.debug("loaded list of rule files: %s", self._file_list)
 
         for file in self._file_list:
             if not op.exists(file) or not op.isfile(file):
@@ -138,7 +139,7 @@ class RuleSet(object):
 
 
 def add_to_spec(ds_metadata, spec_list, basepath,
-                subject=None, anon_subject=None, session=None, overrides=None):
+                subject=None, anon_subject=None, session=None, overrides=None, dataset=None):
 
     # TODO: discover procedures and write default config into spec for more convenient editing!
     # But: Would need toolbox present to create a spec. If not - what version of toolbox to use?
@@ -182,39 +183,36 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             #        if not series_is_valid(series) else [],
         })
 
+    # Note: Deprecated approach to rules:
     # get rules to apply:
-    rules = get_rules_from_metadata(
-            ds_metadata['metadata']['dicom']['Series'])
-    for rule_cls in rules:
-        rule = rule_cls(ds_metadata['metadata']['dicom']['Series'])
-        for idx, t in zip(range(len(base_list)),
-                               rule(subject=subject,
-                                    anon_subject=anon_subject,
-                                    session=session)
-                               ):
-            for k in t[0].keys():
-                base_list[idx][k] = {'value': t[0][k],
-                                     'approved': False}
-                if not t[1]:
-                    base_list[idx]['tags'].append('hirni-dicom-converter-ignore')
+    # rules = get_rules_from_metadata(
+    #         ds_metadata['metadata']['dicom']['Series'])
+    # for rule_cls in rules:
+    #     rule = rule_cls(ds_metadata['metadata']['dicom']['Series'])
+    #     for idx, t in zip(range(len(base_list)),
+    #                            rule(subject=subject,
+    #                                 anon_subject=anon_subject,
+    #                                 session=session)
+    #                            ):
+    #         for k in t[0].keys():
+    #             base_list[idx][k] = {'value': t[0][k],
+    #                                  'approved': False}
+    #             if not t[1]:
+    #                 base_list[idx]['tags'].append('hirni-dicom-converter-ignore')
 
-    # XXX
-    # Test alternative:
     base_list_new = list(base_list)
-    rules_new = RuleSet()
+    rules_new = RuleSet(dataset=dataset)   # TODO: Pass on dataset for config access! => RF the entire thing
     derived = rules_new.apply(ds_metadata['metadata']['dicom']['Series'],
                               subject=subject,
                               anon_subject=anon_subject,
                               session=session
                               )
 
+    # TODO: Move assertions to tests?
     assert len(derived) == len(base_list) == len(base_list_new)
     for idx in range(len(base_list_new)):
         base_list_new[idx].update(derived[idx])
-    print("WE GOT HERE")
     assert base_list == base_list_new
-
-    # XXX
 
     # merge with existing spec plus overrides:
     for series in base_list:
@@ -238,11 +236,12 @@ def add_to_spec(ds_metadata, spec_list, basepath,
     # dicomseries
     uniques = dict()
     for s in spec_list:
-        for k in s:
+        for k in s.keys():
             if isinstance(s[k], dict) and 'value' in s[k]:
                 if k not in uniques:
                     uniques[k] = set()
                 uniques[k].add(s[k]['value'])
+
     all_dicoms = dict()
     for k in uniques:
         if len(uniques[k]) == 1:
@@ -418,7 +417,8 @@ class Dicom2Spec(Interface):
                                            # we now call acquisition. This is
                                            # NOT a good default for bids_session!
                                            # Particularly wrt to anonymization
-                                           overrides=overrides
+                                           overrides=overrides,
+                                           dataset=dataset
                                            )
 
         if not found_some:
@@ -447,6 +447,7 @@ class Dicom2Spec(Interface):
             # it's not clear ATM what case this could possibly have catched:
             # heuristic.has_specval(spec_series_list[i], "converter") and \
             if spec_series_list[i]["type"] == "dicomseries" and \
+                heuristic.has_specval(spec_series_list[i], "bids-run") and \
                 heuristic.get_specval(spec_series_list[i], "bids-run") in \
                     [heuristic.get_specval(s, "bids-run")
                      for s in spec_series_list[i + 1:]
@@ -467,7 +468,7 @@ class Dicom2Spec(Interface):
         # process them line by line without having to fully parse them
         from ..support.helpers import sort_spec
         # Note: Sorting paradigm needs to change. See above.
-        #spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
+        # spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
         json_py.dump2stream(spec_series_list, spec)
 
         # make sure spec is in git:
