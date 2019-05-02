@@ -43,7 +43,7 @@ class RuleSet(object):
 
         from datalad.utils import assure_list
         from datalad import cfg as dl_cfg
-        from datalad_hirni.support.dicom2bids_rules import DefaultRules
+        from datalad_hirni.support.default_rules import DefaultRules
         cfg = dataset.config if dataset else dl_cfg
 
         self._rule_set = []
@@ -144,9 +144,6 @@ def add_to_spec(ds_metadata, spec_list, basepath,
     # TODO: discover procedures and write default config into spec for more convenient editing!
     # But: Would need toolbox present to create a spec. If not - what version of toolbox to use?
     # Double-check run-procedure --discover
-
-    from datalad_hirni.support.dicom2bids_rules import \
-        get_rules_from_metadata, series_is_valid  # TODO: RF?
 
     # Spec needs a dicomseries:all snippet before the actual dicomseries
     # snippets, since the order determines the order of execution of procedures
@@ -499,7 +496,7 @@ class Dicom2Spec(Interface):
                 # anything else shouldn't happen
                 yield dict(status='error',
                            message=("unexpected result from rev-save: %s", r),
-                           path=spec,
+                           path=spec,  # TODO: This actually isn't clear - get it from `r`
                            type='file',
                            action='dicom2spec',
                            logger=lgr)
