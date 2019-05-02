@@ -10,6 +10,13 @@ would recommend to consult log of the [Git
 repository](http://github.com/psychoinformatics-de/datalad-hirni) for more
 details.
 
+## 0.0.2 (May 2, 2019)
+- Provide configuration procedure for hirni datasets
+- Provide webapp for editing specification files
+- Reworked specification structure
+- Enhance CLI to create specification snippets for any file
+
+
 ## 0.0.1 (May 24, 2018) -- The Release
 
 - Minimal functionality to import DICOMs and convert them into a BIDS dataset
