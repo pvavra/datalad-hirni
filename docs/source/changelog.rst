@@ -4,20 +4,28 @@ Change log
 **********
 ::
 
-     ____          _           _                 _ 
-    |  _ \   __ _ | |_   __ _ | |      __ _   __| |
-    | | | | / _` || __| / _` || |     / _` | / _` |
-    | |_| || (_| || |_ | (_| || |___ | (_| || (_| |
-    |____/  \__,_| \__| \__,_||_____| \__,_| \__,_|
-                                              Hirni
+    ____          _           _                 _ 
+   |  _ \   __ _ | |_   __ _ | |      __ _   __| |
+   | | | | / _` || __| / _` || |     / _` | / _` |
+   | |_| || (_| || |_ | (_| || |___ | (_| || (_| |
+   |____/  \__,_| \__| \__,_||_____| \__,_| \__,_|
+                                             Hirni
 
 This is a high level and scarce summary of the changes between releases.
 We would recommend to consult log of the `Git
 repository <http://github.com/psychoinformatics-de/datalad-hirni>`__ for
 more details.
 
-0.0.1 (May 24, 2018) -- The Release
------------------------------------
+0.0.2 (May 2, 2019)
+-------------------
+
+-  Provide configuration procedure for hirni datasets
+-  Provide webapp for editing specification files
+-  Reworked specification structure
+-  Enhance CLI to create specification snippets for any file
+
+0.0.1 (May 24, 2018) – The Release
+----------------------------------
 
 -  Minimal functionality to import DICOMs and convert them into a BIDS
    dataset using a automatically pre-populated editable non-code
