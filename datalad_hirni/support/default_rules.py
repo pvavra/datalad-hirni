@@ -1,5 +1,9 @@
 """dicom2spec default rules"""
 
+
+# TODO: RF: Repronim rules to dedicated rule set. Plus: default numbering for runs, aborted run detection etc.
+# Are default rules a fallback or a configured rule set?
+
 from datalad_hirni.support.BIDS_helper import apply_bids_label_restrictions
 
 
@@ -211,6 +215,7 @@ class DefaultRules(object):
         protocol_name = series_dict.get('ProtocolName', None)
 
         run = _guess_run(series_dict)
+        # TODO: Default numbering should still fill up leading zero(s)
         if run is None:
             # count appearances of protocol as a guess:
             if protocol_name in self.runs:

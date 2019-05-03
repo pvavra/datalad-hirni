@@ -1,7 +1,7 @@
-"""Template for writing custom rules for dicom2spec"""
+"""Dummy rules for dicom2spec. For use with tests only."""
 
 
-class MyDICOM2SpecRules(object):
+class DICOM2SpecTestRules2(object):
 
     def __init__(self, dicommetadata):
         """
@@ -37,18 +37,13 @@ class MyDICOM2SpecRules(object):
     def _rules(self, series_dict, subject=None, anon_subject=None,
                session=None):
 
-        return {'description': series_dict['SeriesDescription']
-                if "SeriesDescription" in series_dict else '',
-
-                'comment': 'I actually have no clue',
-                'subject': series_dict['PatientID'] if not subject else subject,
-                'anon-subject': anon_subject if anon_subject else None,
-                'bids-session': session if session else None
+        return {'comment': 'Rules2: These rules are for unit testing only',
                 }
 
     def series_is_valid(self, series_dict):
 
-        return series_dict['ProtocolName'] != 'ExamCard'
+        return True
 
 
-__datalad_hirni_rules = MyDICOM2SpecRules
+__datalad_hirni_rules = DICOM2SpecTestRules2
+

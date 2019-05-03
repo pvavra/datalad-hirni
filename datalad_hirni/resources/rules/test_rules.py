@@ -1,4 +1,7 @@
-class MyDICOM2SpecRules(object):
+"""Dummy rules for dicom2spec. For use with tests only."""
+
+
+class DICOM2SpecTestRules1(object):
 
     def __init__(self, dicommetadata):
         """
@@ -34,7 +37,10 @@ class MyDICOM2SpecRules(object):
     def _rules(self, series_dict, subject=None, anon_subject=None,
                session=None):
 
-        return {'comment': 'These rules are for unit testing only',
+
+        # TODO: distinguish plain rules application vs append?
+
+        return {'comment': 'Rules1: These rules are for unit testing only',
                 }
 
     def series_is_valid(self, series_dict):
@@ -42,5 +48,5 @@ class MyDICOM2SpecRules(object):
         return True
 
 
-__datalad_hirni_rules = MyDICOM2SpecRules
+__datalad_hirni_rules = DICOM2SpecTestRules1
 
