@@ -21,6 +21,10 @@ from datalad.support.exceptions import InsufficientArgumentsError
 from datalad.support.param import Parameter
 
 from datalad_hirni.commands.spec4anything import _get_edit_dict
+from datalad_hirni.support.spec_helpers import (
+    get_specval,
+    has_specval
+)
 
 lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
@@ -431,11 +435,10 @@ class Dicom2Spec(Interface):
         # TODO: RF needed. This rule should go elsewhere:
         # ignore duplicates (prob. reruns of aborted runs)
         # -> convert highest id only
-        import datalad_hirni.support.hirni_heuristic as heuristic
         # Note: This sorting is a q&d hack!
         # TODO: Sorting needs to become more sophisticated + include notion of :all
         spec_series_list = sorted(spec_series_list,
-                                  key=lambda x: heuristic.get_specval(x, 'id')
+                                  key=lambda x: get_specval(x, 'id')
                                                 if 'id' in x.keys() else 0)
         for i in range(len(spec_series_list)):
             # Note: Removed the following line from condition below,
@@ -444,15 +447,15 @@ class Dicom2Spec(Interface):
             # it's not clear ATM what case this could possibly have catched:
             # heuristic.has_specval(spec_series_list[i], "converter") and \
             if spec_series_list[i]["type"] == "dicomseries" and \
-                heuristic.has_specval(spec_series_list[i], "bids-run") and \
-                heuristic.get_specval(spec_series_list[i], "bids-run") in \
-                    [heuristic.get_specval(s, "bids-run")
+                has_specval(spec_series_list[i], "bids-run") and \
+                get_specval(spec_series_list[i], "bids-run") in \
+                    [get_specval(s, "bids-run")
                      for s in spec_series_list[i + 1:]
-                     if heuristic.get_specval(
+                     if get_specval(
                             s,
-                            "description") == heuristic.get_specval(
+                            "description") == get_specval(
                                 spec_series_list[i], "description") and \
-                     heuristic.get_specval(s, "id") > heuristic.get_specval(
+                     get_specval(s, "id") > get_specval(
                                              spec_series_list[i], "id")
                      ]:
                 lgr.debug("Ignore SeriesNumber %s for conversion" % i)
@@ -463,7 +466,7 @@ class Dicom2Spec(Interface):
         # store as a stream (one record per file) to be able to
         # easily concat files without having to parse them, or
         # process them line by line without having to fully parse them
-        from ..support.helpers import sort_spec
+        from datalad_hirni.support.spec_helpers import sort_spec
         # Note: Sorting paradigm needs to change. See above.
         # spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
         json_py.dump2stream(spec_series_list, spec)

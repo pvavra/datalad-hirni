@@ -32,7 +32,10 @@ from datalad_neuroimaging.tests.utils import (
 )
 
 from datalad.support.json_py import load_stream
-import datalad_hirni.support.hirni_heuristic as heuristic
+from datalad_hirni.support.spec_helpers import (
+    get_specval,
+    has_specval
+)
 
 # TODO:
 #
@@ -88,25 +91,25 @@ def test_default_rules(path):
         assert_in(snippet["type"], ["dicomseries", "dicomseries:all"])
 
         # no comment in default spec
-        assert not heuristic.has_specval(snippet, 'comment') or not heuristic.get_specval(snippet, 'comment')
+        assert not has_specval(snippet, 'comment') or not get_specval(snippet, 'comment')
         # description
-        assert heuristic.has_specval(snippet, 'description')
-        assert_equal(heuristic.get_specval(snippet, 'description'), "func_task-oneback_run-1")
+        assert has_specval(snippet, 'description')
+        assert_equal(get_specval(snippet, 'description'), "func_task-oneback_run-1")
         # subject
-        assert heuristic.has_specval(snippet, 'subject')
-        assert_equal(heuristic.get_specval(snippet, 'subject'), '02')
+        assert has_specval(snippet, 'subject')
+        assert_equal(get_specval(snippet, 'subject'), '02')
         # modality
-        assert heuristic.has_specval(snippet, 'bids-modality')
-        assert_equal(heuristic.get_specval(snippet, 'bids-modality'), 'bold')
+        assert has_specval(snippet, 'bids-modality')
+        assert_equal(get_specval(snippet, 'bids-modality'), 'bold')
         # task
-        assert heuristic.has_specval(snippet, "bids-task")
-        assert_equal(heuristic.get_specval(snippet, "bids-task"), "oneback")
+        assert has_specval(snippet, "bids-task")
+        assert_equal(get_specval(snippet, "bids-task"), "oneback")
         # run
-        assert heuristic.has_specval(snippet, "bids-run")
-        assert_equal(heuristic.get_specval(snippet, "bids-run"), "01")
+        assert has_specval(snippet, "bids-run")
+        assert_equal(get_specval(snippet, "bids-run"), "01")
         # id
-        assert heuristic.has_specval(snippet, "id")
-        assert_equal(heuristic.get_specval(snippet, "id"), 401)
+        assert has_specval(snippet, "id")
+        assert_equal(get_specval(snippet, "id"), 401)
 
     # should have 1 snippet of type dicomseries + 1 of type dicomseries:all
     assert_equal(len(func_spec), 2)
@@ -121,19 +124,19 @@ def test_default_rules(path):
         assert "type" in snippet.keys()
         assert snippet["type"] in ["dicomseries", "dicomseries:all"]
         # no comment in default spec
-        assert not heuristic.has_specval(snippet, 'comment') or not heuristic.get_specval(snippet, 'comment')
+        assert not has_specval(snippet, 'comment') or not get_specval(snippet, 'comment')
         # description
-        assert heuristic.has_specval(snippet, 'description')
-        assert_equal(heuristic.get_specval(snippet, 'description'), "anat-T1w")
+        assert has_specval(snippet, 'description')
+        assert_equal(get_specval(snippet, 'description'), "anat-T1w")
         # subject
-        assert heuristic.has_specval(snippet, 'subject')
-        assert_equal(heuristic.get_specval(snippet, 'subject'), '02')
+        assert has_specval(snippet, 'subject')
+        assert_equal(get_specval(snippet, 'subject'), '02')
         # modality
-        assert heuristic.has_specval(snippet, 'bids-modality')
-        assert_equal(heuristic.get_specval(snippet, 'bids-modality'), 't1w')
+        assert has_specval(snippet, 'bids-modality')
+        assert_equal(get_specval(snippet, 'bids-modality'), 't1w')
         # run
-        assert heuristic.has_specval(snippet, "bids-run")
-        assert_equal(heuristic.get_specval(snippet, "bids-run"), "1")
+        assert has_specval(snippet, "bids-run")
+        assert_equal(get_specval(snippet, "bids-run"), "1")
 
     # should have 1 snippet of type dicomseries + 1 of type dicomseries:all
     assert_equal(len(struct_spec), 2)
@@ -155,13 +158,13 @@ def test_custom_rules(path):
     for spec_snippet in struct_spec:
 
         # no comment in default spec
-        assert not heuristic.has_specval(spec_snippet, 'comment') or not heuristic.get_specval(spec_snippet, 'comment')
+        assert not has_specval(spec_snippet, 'comment') or not get_specval(spec_snippet, 'comment')
         # subject
-        assert heuristic.has_specval(spec_snippet, 'subject')
-        assert_equal(heuristic.get_specval(spec_snippet, 'subject'), '02')
+        assert has_specval(spec_snippet, 'subject')
+        assert_equal(get_specval(spec_snippet, 'subject'), '02')
         # modality
-        assert heuristic.has_specval(spec_snippet, 'bids-modality')
-        assert_equal(heuristic.get_specval(spec_snippet, 'bids-modality'), 't1w')
+        assert has_specval(spec_snippet, 'bids-modality')
+        assert_equal(get_specval(spec_snippet, 'bids-modality'), 't1w')
     # should have 1 snippet of type dicomseries + 1 of type dicomseries:all
     assert_equal(len(struct_spec), 2)
     assert_in("dicomseries", [s['type'] for s in struct_spec])
@@ -187,8 +190,8 @@ def test_custom_rules(path):
     for spec_snippet in struct_spec:
 
         # now there's a comment in spec
-        assert heuristic.has_specval(spec_snippet, 'comment')
-        assert_equal(heuristic.get_specval(spec_snippet, 'comment'), "Rules1: These rules are for unit testing only")
+        assert has_specval(spec_snippet, 'comment')
+        assert_equal(get_specval(spec_snippet, 'comment'), "Rules1: These rules are for unit testing only")
 
     # should have 1 snippet of type dicomseries + 1 of type dicomseries:all
     assert_equal(len(struct_spec), 2)
@@ -225,8 +228,8 @@ def test_custom_rules(path):
     for spec_snippet in struct_spec:
 
         # Rule2 should have overwritten Rule1's comment:
-        assert heuristic.has_specval(spec_snippet, 'comment')
-        assert_equal(heuristic.get_specval(spec_snippet, 'comment'), "Rules2: These rules are for unit testing only")
+        assert has_specval(spec_snippet, 'comment')
+        assert_equal(get_specval(spec_snippet, 'comment'), "Rules2: These rules are for unit testing only")
 
     # should have 1 snippet of type dicomseries + 1 of type dicomseries:all
     assert_equal(len(struct_spec), 2)
