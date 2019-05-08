@@ -290,10 +290,9 @@ class Spec4Anything(Interface):
                 paths=linesep.join(" - " + op.relpath(p['path'], dataset.path)
                                    for p in paths)
                 if len(paths) > 1 else op.relpath(paths[0]['path'], dataset.path))
-        for r in dataset.add(
+        for r in dataset.rev_save(
                 updated_files,
                 to_git=True,
-                save=True,
                 message=message,
                 return_type='generator',
                 result_renderer='disabled'):

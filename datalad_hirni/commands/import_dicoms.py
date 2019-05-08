@@ -18,7 +18,6 @@ from datalad.distribution.dataset import datasetmethod
 from datalad.distribution.dataset import EnsureDataset
 from datalad.distribution.dataset import require_dataset
 from datalad.interface.utils import eval_results
-from datalad.distribution.create import Create
 from datalad.utils import rmtree
 from datalad.dochelpers import exc_str
 
@@ -79,9 +78,7 @@ def _create_subds_from_tarball(tarball, targetdir):
 
     filename = op.basename(tarball)
 
-    importds = Create.__call__(
-        op.join(targetdir, "dicoms"),
-        native_metadata_type='dicom',
+    importds = Dataset(op.join(targetdir, "dicoms")).create(
         return_type='item-or-list',
         result_xfm='datasets',
         result_filter=EnsureKeyChoice('action', ('create',)) \
@@ -90,6 +87,11 @@ def _create_subds_from_tarball(tarball, targetdir):
 
     _import_dicom_tarball(importds, tarball, filename)
 
+    importds.config.add(
+        var="datalad.metadata.nativetype",
+        value="dicom",
+        where="dataset"
+    )
     importds.config.add(
         var="datalad.metadata.aggregate-content-dicom",
         value='false',
@@ -101,10 +103,9 @@ def _create_subds_from_tarball(tarball, targetdir):
         var="datalad.metadata.maxfieldsize",
         value='10000000',
         where="dataset")
-    importds.add(
-        op.join(".datalad", "config"),
-        save=True,
-        message="[HIRNI] initial config for DICOM metadata")
+    importds.rev_save(op.join(".datalad", "config"),
+                      message="[HIRNI] initial config for DICOM metadata")
+
     importds.aggregate_metadata()
 
     # TODO: DON'T FAIL! MAY BE EVEN GET FROM SUPER?
@@ -241,7 +242,7 @@ class ImportDicoms(Interface):
                     rmtree(acq_dir)
 
         acqid = op.basename(op.dirname(dicom_ds.path))
-        ds.add(
+        ds.rev_save(
             dicom_ds.path,
             message="[HIRNI] Add aquisition {}".format(acqid))
         ds.aggregate_metadata(dicom_ds.path, incremental=True,
