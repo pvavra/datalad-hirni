@@ -13,7 +13,6 @@ import os.path as op
 
 from datalad.api import (
     Dataset,
-    rev_create,
     install
 )
 

@@ -184,24 +184,6 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             #        if not series_is_valid(series) else [],
         })
 
-    # Note: Deprecated approach to rules:
-    # get rules to apply:
-    # rules = get_rules_from_metadata(
-    #         ds_metadata['metadata']['dicom']['Series'])
-    # for rule_cls in rules:
-    #     rule = rule_cls(ds_metadata['metadata']['dicom']['Series'])
-    #     for idx, t in zip(range(len(base_list)),
-    #                            rule(subject=subject,
-    #                                 anon_subject=anon_subject,
-    #                                 session=session)
-    #                            ):
-    #         for k in t[0].keys():
-    #             base_list[idx][k] = {'value': t[0][k],
-    #                                  'approved': False}
-    #             if not t[1]:
-    #                 base_list[idx]['tags'].append('hirni-dicom-converter-ignore')
-
-    base_list_new = list(base_list)
     rules_new = RuleSet(dataset=dataset)   # TODO: Pass on dataset for config access! => RF the entire thing
     derived = rules_new.apply(ds_metadata['metadata']['dicom']['Series'],
                               subject=subject,
@@ -209,11 +191,10 @@ def add_to_spec(ds_metadata, spec_list, basepath,
                               session=session
                               )
 
-    # TODO: Move assertions to tests?
-    assert len(derived) == len(base_list) == len(base_list_new)
-    for idx in range(len(base_list_new)):
-        base_list_new[idx].update(derived[idx])
-    assert base_list == base_list_new
+    # TODO: Move assertion to a test?
+    assert len(derived) == len(base_list)
+    for idx in range(len(base_list)):
+        base_list[idx].update(derived[idx])
 
     # merge with existing spec plus overrides:
     for series in base_list:
@@ -316,9 +297,6 @@ class Dicom2Spec(Interface):
                     metavar="PATH or JSON string",
                     doc="""""",
                     constraints=EnsureStr() | EnsureNone()),
-            #recursive=recursion_flag,
-            # TODO: invalid, since datalad-metadata doesn't support it:
-            # recursion_limit=recursion_limit,
     )
 
     @staticmethod
@@ -425,9 +403,8 @@ class Dicom2Spec(Interface):
         if not found_some:
             yield dict(status='impossible',
                        message="found no DICOM metadata",
-                       # TODO: What to return here in terms of "path" and "type"?
                        path=path,
-                       type='file',
+                       type='file',  # TODO: arguable should be 'file' or 'dataset', depending on path
                        action='dicom2spec',
                        logger=lgr)
             return
