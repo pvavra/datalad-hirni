@@ -1,152 +1,10 @@
-"""Rule set for specification of DICOM image series
-"""
-
-# TODO: should include series_is_valid()!
-
-# define specification keys of specification type 'dicomseries', that are
-# subjects to the rule set
-# XXX this is not used at all
-spec_keys = [
-    'bids-session',
-    'bids-task',
-    'bids-run',
-    'bids-modality',
-    'comment',
-    'procedures',
-    'description',
-    'id',
-    'subject',
-]
+"""dicom2spec default rules"""
 
 
-def series_is_valid(series):
-    # filter "Series" entries from dataset metadata here, in order to get rid of
-    # things, that aren't relevant image series
-    # Those series are supposed to be ignored during conversion.
-    # TODO: RF: integrate with rules definition
+# TODO: RF: Repronim rules to dedicated rule set. Plus: default numbering for runs, aborted run detection etc.
+# Are default rules a fallback or a configured rule set?
 
-    # Note:
-    # In 3T_visloc, SeriesNumber 0 is associated with ProtocolNames
-    # 'DEFAULT PRESENTATION STATE' and 'ExamCard'.
-    # All other SeriesNumbers have 1:1 relation to ProtocolNames and have 3-4
-    # digits.
-    # In 7T_ad there is no SeriesNumber 0 and the SeriesNumber doesn't have a 1:1
-    # relation to ProtocolNames
-    # Note: There also is a SeriesNumber 99 with protocol name 'Phoenix Document'?
-
-    # Philips 3T Achieva
-    if series['SeriesNumber'] == 0 and \
-                    series['ProtocolName'] in ['DEFAULT PRESENTATION STATE',
-                                               'ExamCard']:
-        return False
-    return True
-
-
-def get_rules_from_metadata(dicommetadata):
-    """Get the rules to apply
-
-    Given a list of DICOM metadata dictionaries, determine which rule set to 
-    apply (i.e. apply different rule set for different scanners).
-    Note: This might need to change to the entire dict, datalad's dicom metadata 
-    extractor delivers.
-
-    Parameter:
-    ----------
-    dicommetadata: list of dict
-        dicom metadata as extracted by datalad; one dict per image series
-
-    Returns
-    -------
-    list of rule set classes
-        wil be applied in order, therefore later ones overrule earlier ones
-    """
-
-    return [DefaultRules]
-
-
-def apply_bids_label_restrictions(value):
-    """
-    Sanitize filenames for BIDS.
-    """
-    # only alphanumeric allowed
-    # => remove everthing else
-
-    if value is None:
-        # Rules didn't find anything to apply, so don't put anything into the
-        # spec.
-        return None
-
-    from six import string_types
-    if not isinstance(value, string_types):
-        value = str(value)
-
-    import re
-    pattern = re.compile('[\W_]+')  # check
-    return pattern.sub('', value)
-
-
-class DefaultRules(object):
-
-    def __init__(self, dicommetadata):
-        """
-        
-        Parameter
-        ----------
-        dicommetadata: list of dict
-            dicom metadata as extracted by datalad; one dict per image series
-        """
-        self._dicoms = dicommetadata
-        self.runs = dict()
-
-    def __call__(self, subject=None, anon_subject=None, session=None):
-        spec_dicts = []
-        for dicom_dict in self._dicoms:
-            spec_dicts.append(self._rules(
-                    dicom_dict,
-                    subject=subject,
-                    anon_subject=anon_subject,
-                    session=session))
-        return spec_dicts
-
-    def _rules(self, record, subject=None, anon_subject=None, session=None):
-
-        protocol_name = record.get('ProtocolName', None)
-
-        run = _guess_run(record)
-        if run is None:
-            # count appearances of protocol as a guess:
-            if protocol_name in self.runs:
-                self.runs[protocol_name] += 1
-            else:
-                self.runs[protocol_name] = 1
-
-        # TODO: Decide how to RF to apply custom rules. To be done within
-        # datalad-neuroimaging, then just a custom one here.
-
-        return {
-                # Additional (humanreadable) identification:
-                # SeriesNumber
-                # SeriesDate
-                # SeriesTime
-                'description': record['SeriesDescription'] if "SeriesDescription" in record else '',
-                'comment': '',
-                'subject': apply_bids_label_restrictions(_guess_subject(record) if not subject else subject),
-                'anon-subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
-                'bids-session': apply_bids_label_restrictions(_guess_session(record) if not session else session),
-                'bids-task': apply_bids_label_restrictions(_guess_task(record)),
-                'bids-run': apply_bids_label_restrictions(run) if run else str(self.runs[protocol_name]),
-                'bids-modality': apply_bids_label_restrictions(_guess_modality(record)),
-
-                # TODO: No defaults yet (May be there shouldn't be defaults, but
-                # right now, that's not a conscious decision ...):
-                'bids-acquisition': apply_bids_label_restrictions(None), #acq
-                'bids-contrast-enhancement': apply_bids_label_restrictions(None), # ce
-                'bids-reconstruction-algorithm': apply_bids_label_restrictions(None), #rec
-                'bids-echo': apply_bids_label_restrictions(None), #echo
-                'bids-direction': apply_bids_label_restrictions(None), #dir
-
-                'id': record.get('SeriesNumber', None),
-                }
+from datalad_hirni.support.BIDS_helper import apply_bids_label_restrictions
 
 
 def _guess_subject(record):
@@ -305,7 +163,6 @@ def _guess_session(record):
 # MPRAGE => T1w
 
 
-
 # Philips 3T:
 # SeriesDescription
 #
@@ -316,3 +173,105 @@ def _guess_session(record):
 
 
 # Studydescription: TASK_skdjfdsnfs
+
+
+class DefaultRules(object):
+
+    def __init__(self, dicommetadata):
+        """
+
+        Parameter
+        ----------
+        dicommetadata: list of dict
+            dicom metadata as extracted by datalad; one dict per image series
+        """
+        self._dicom_series = dicommetadata
+        self.runs = dict()
+
+    def __call__(self, subject=None, anon_subject=None, session=None):
+        """
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        list of tuple (dict, bool)
+        """
+        spec_dicts = []
+        for dicom_dict in self._dicom_series:
+            spec_dicts.append((self._rules(dicom_dict,
+                                           subject=subject,
+                                           anon_subject=anon_subject,
+                                           session=session),
+                               self.series_is_valid(dicom_dict)
+                               )
+                              )
+        return spec_dicts
+
+    def _rules(self, series_dict, subject=None, anon_subject=None,
+               session=None):
+
+        protocol_name = series_dict.get('ProtocolName', None)
+
+        run = _guess_run(series_dict)
+        # TODO: Default numbering should still fill up leading zero(s)
+        if run is None:
+            # count appearances of protocol as a guess:
+            if protocol_name in self.runs:
+                self.runs[protocol_name] += 1
+            else:
+                self.runs[protocol_name] = 1
+
+        # TODO: Decide how to RF to apply custom rules. To be done within
+        # datalad-neuroimaging, then just a custom one here.
+
+        return {
+                # Additional (humanreadable) identification:
+                # SeriesNumber
+                # SeriesDate
+                # SeriesTime
+                'description': series_dict['SeriesDescription'] if "SeriesDescription" in series_dict else '',
+                'comment': '',
+                'subject': apply_bids_label_restrictions(_guess_subject(series_dict) if not subject else subject),
+                'anon-subject': apply_bids_label_restrictions(anon_subject) if anon_subject else None,
+                'bids-session': apply_bids_label_restrictions(_guess_session(series_dict) if not session else session),
+                'bids-task': apply_bids_label_restrictions(_guess_task(series_dict)),
+                'bids-run': apply_bids_label_restrictions(run) if run else str(self.runs[protocol_name]),
+                'bids-modality': apply_bids_label_restrictions(_guess_modality(series_dict)),
+
+                # TODO: No defaults yet (May be there shouldn't be defaults, but
+                # right now, that's not a conscious decision ...):
+                'bids-acquisition': apply_bids_label_restrictions(None), #acq
+                'bids-contrast-enhancement': apply_bids_label_restrictions(None), # ce
+                'bids-reconstruction-algorithm': apply_bids_label_restrictions(None), #rec
+                'bids-echo': apply_bids_label_restrictions(None), #echo
+                'bids-direction': apply_bids_label_restrictions(None), #dir
+
+                'id': series_dict.get('SeriesNumber', None),
+                }
+
+    def series_is_valid(self, series_dict):
+        # filter "Series" entries from dataset metadata here, in order to get rid of
+        # things, that aren't relevant image series
+        # Those series are supposed to be ignored during conversion.
+        # TODO: RF: integrate with rules definition
+
+        # Note:
+        # In 3T_visloc, SeriesNumber 0 is associated with ProtocolNames
+        # 'DEFAULT PRESENTATION STATE' and 'ExamCard'.
+        # All other SeriesNumbers have 1:1 relation to ProtocolNames and have 3-4
+        # digits.
+        # In 7T_ad there is no SeriesNumber 0 and the SeriesNumber doesn't have a 1:1
+        # relation to ProtocolNames
+        # Note: There also is a SeriesNumber 99 with protocol name 'Phoenix Document'?
+
+        # Philips 3T Achieva
+        if series_dict['SeriesNumber'] == 0 and \
+                series_dict['ProtocolName'] in ['DEFAULT PRESENTATION STATE',
+                                                'ExamCard']:
+            return False
+        return True
+
+
+__datalad_hirni_rules = DefaultRules

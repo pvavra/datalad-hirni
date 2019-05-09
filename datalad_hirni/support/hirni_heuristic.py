@@ -79,6 +79,10 @@ spec2bids_map = {
 }
 
 
+# Note: get_specval/has_specval are currently copies from hirni's spec_helper.
+# This is because otherwise we would need to install hirni itself into each environment using heudiconv with this
+# heuristic only to import those two functions.
+
 def get_specval(spec, key):
     return spec[key]['value']
 

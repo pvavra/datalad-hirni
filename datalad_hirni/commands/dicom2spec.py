@@ -13,7 +13,6 @@ from datalad.distribution.dataset import require_dataset
 from datalad.distribution.dataset import resolve_path
 from datalad.interface.base import Interface
 from datalad.interface.base import build_doc
-from datalad.interface.common_opts import recursion_flag
 from datalad.interface.utils import eval_results
 from datalad.support import json_py
 from datalad.support.constraints import EnsureNone
@@ -22,22 +21,133 @@ from datalad.support.exceptions import InsufficientArgumentsError
 from datalad.support.param import Parameter
 
 from datalad_hirni.commands.spec4anything import _get_edit_dict
+from datalad_hirni.support.spec_helpers import (
+    get_specval,
+    has_specval
+)
 
 lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
-# ############################# Build plugin mechanism for Rules finally!
-#########################################
+
+class RuleSet(object):
+    """Holds and applies the current rule set for deriving BIDS terms from
+    DICOM metadata"""
+
+    def __init__(self, dataset=None):
+        """Retrieves the configured set of rules
+
+        Rules are defined by classes ... + __datalad_hirni_rules
+        datalad.hirni.dicom2spec.rules  ... multiple
+
+        Parameters
+        ----------
+        dataset: Dataset
+          Dataset to read possibly customized rules from
+        """
+
+        from datalad.utils import assure_list
+        from datalad import cfg as dl_cfg
+        from datalad_hirni.support.default_rules import DefaultRules
+        cfg = dataset.config if dataset else dl_cfg
+
+        self._rule_set = []
+        # get a list of paths to build the rule set from
+        # Note: assure_list is supposed to return empty list if there's nothing
+        self._file_list = \
+            assure_list(cfg.get("datalad.hirni.dicom2spec.rules"))
+        lgr.debug("loaded list of rule files: %s", self._file_list)
+
+        for file in self._file_list:
+            if not op.exists(file) or not op.isfile(file):
+                lgr.warning("Ignored invalid path for dicom2spec rules "
+                            "definition: %s", file)
+                continue
+
+            from datalad.utils import import_module_from_file
+            from datalad.dochelpers import exc_str
+            try:
+                mod = import_module_from_file(file)
+            except Exception as e:
+                # any exception means full stop
+                raise ValueError("Rules definition file at {} is broken: {}"
+                                 "".format(file, exc_str(e)))
+
+            # check file's __datalad_hirni_rules for the actual class:
+            if not hasattr(mod, "__datalad_hirni_rules"):
+                raise ValueError("Rules definition file {} missed attribute "
+                                 "'__datalad_hirni_rules'.".format(file))
+            self._rule_set.append(getattr(mod, "__datalad_hirni_rules"))
+
+        if not self._rule_set:
+            self._rule_set = [DefaultRules]
+
+    def apply(self, dicommetadata, subject=None,
+              anon_subject=None, session=None):
+        """Applies rule set to DICOM metadata
+
+        Note, that a particular series can be determined invalid (for
+        application) by those rules, but still needs to show up in the
+        specification for later review.
+
+        Parameters
+        ----------
+        dicommetadata: list of dict
+          expects datalad's metadata for DICOMs (the list of dicts for the all
+          the series)
+
+        Returns
+        -------
+
+        list of dict
+          derived dict in specification terminology
+        """
+
+        # instantiate rules with metadata; note, that some possible rules might
+        # need the entirety of it, not just the current series to be treated.
+        actual_rules = [r(dicommetadata) for r in self._rule_set]
+
+        # we want one specification dict per image series
+        result_dicts = [dict() for i in range(len(dicommetadata))]
+
+        for rule in actual_rules:
+
+            # TODO: generic overrides instead (or none at all here and let this
+            # be done later on - not sure, what's most useful for the rules
+            # themselves. Also: If we know already we can save the effort to
+            # deduct => likely keep passing on to the rules)
+            dict_list = rule(subject=subject,
+                             anon_subject=anon_subject,
+                             session=session)
+
+            # should return exactly one dict per series:
+            assert len(dict_list) == len(dicommetadata)
+
+            for idx, t in zip(range(len(dicommetadata)), dict_list):
+                value_dict = t[0]
+                is_valid = t[1]
+                for key in value_dict.keys():
+                    # TODO: This should get more complex (deriving
+                    # tags/procedures?) and use some SpecHandler for assignment
+                    # (more sophisticated than _get_edit_dict)
+                    result_dicts[idx][key] = {'value': value_dict[key],
+                                              'approved': False}
+                    if not is_valid:
+                        if 'tags' in result_dicts[idx] and \
+                                'hirni-dicom-converter-ignore' not in \
+                                result_dicts[idx]['tags']:
+                            result_dicts[idx]['tags'].append('hirni-dicom-converter-ignore')
+                        else:
+                            result_dicts[idx]['tags'] = ['hirni-dicom-converter-ignore']
+
+        return result_dicts
 
 
 def add_to_spec(ds_metadata, spec_list, basepath,
-                subject=None, anon_subject=None, session=None, overrides=None):
+                subject=None, anon_subject=None, session=None, overrides=None, dataset=None):
 
     # TODO: discover procedures and write default config into spec for more convenient editing!
     # But: Would need toolbox present to create a spec. If not - what version of toolbox to use?
     # Double-check run-procedure --discover
-
-    from datalad_hirni.support.dicom2bids_rules import \
-        get_rules_from_metadata, series_is_valid  # TODO: RF?
 
     # Spec needs a dicomseries:all snippet before the actual dicomseries
     # snippets, since the order determines the order of execution of procedures
@@ -69,23 +179,22 @@ def add_to_spec(ds_metadata, spec_list, basepath,
             'uid': series['SeriesInstanceUID'],
             'dataset-id': ds_metadata['dsid'],
             'dataset-refcommit': ds_metadata['refcommit'],
-            'tags': ['hirni-dicom-converter-ignore']
-                    if not series_is_valid(series) else [],
+            'tags': []
+            #'tags': ['hirni-dicom-converter-ignore']
+            #        if not series_is_valid(series) else [],
         })
 
-    # get rules to apply:
-    rules = get_rules_from_metadata(
-            ds_metadata['metadata']['dicom']['Series'])
-    for rule_cls in rules:
-        rule = rule_cls(ds_metadata['metadata']['dicom']['Series'])
-        for idx, values in zip(range(len(base_list)),
-                               rule(subject=subject,
-                                    anon_subject=anon_subject,
-                                    session=session)
-                               ):
-            for k in values.keys():
-                base_list[idx][k] = {'value': values[k],
-                                     'approved': False}
+    rules_new = RuleSet(dataset=dataset)   # TODO: Pass on dataset for config access! => RF the entire thing
+    derived = rules_new.apply(ds_metadata['metadata']['dicom']['Series'],
+                              subject=subject,
+                              anon_subject=anon_subject,
+                              session=session
+                              )
+
+    # TODO: Move assertion to a test?
+    assert len(derived) == len(base_list)
+    for idx in range(len(base_list)):
+        base_list[idx].update(derived[idx])
 
     # merge with existing spec plus overrides:
     for series in base_list:
@@ -109,11 +218,12 @@ def add_to_spec(ds_metadata, spec_list, basepath,
     # dicomseries
     uniques = dict()
     for s in spec_list:
-        for k in s:
+        for k in s.keys():
             if isinstance(s[k], dict) and 'value' in s[k]:
                 if k not in uniques:
                     uniques[k] = set()
                 uniques[k].add(s[k]['value'])
+
     all_dicoms = dict()
     for k in uniques:
         if len(uniques[k]) == 1:
@@ -187,9 +297,6 @@ class Dicom2Spec(Interface):
                     metavar="PATH or JSON string",
                     doc="""""",
                     constraints=EnsureStr() | EnsureNone()),
-            #recursive=recursion_flag,
-            # TODO: invalid, since datalad-metadata doesn't support it:
-            # recursion_limit=recursion_limit,
     )
 
     @staticmethod
@@ -289,15 +396,15 @@ class Dicom2Spec(Interface):
                                            # we now call acquisition. This is
                                            # NOT a good default for bids_session!
                                            # Particularly wrt to anonymization
-                                           overrides=overrides
+                                           overrides=overrides,
+                                           dataset=dataset
                                            )
 
         if not found_some:
             yield dict(status='impossible',
                        message="found no DICOM metadata",
-                       # TODO: What to return here in terms of "path" and "type"?
                        path=path,
-                       type='file',
+                       type='file',  # TODO: arguable should be 'file' or 'dataset', depending on path
                        action='dicom2spec',
                        logger=lgr)
             return
@@ -305,11 +412,10 @@ class Dicom2Spec(Interface):
         # TODO: RF needed. This rule should go elsewhere:
         # ignore duplicates (prob. reruns of aborted runs)
         # -> convert highest id only
-        import datalad_hirni.support.hirni_heuristic as heuristic
         # Note: This sorting is a q&d hack!
         # TODO: Sorting needs to become more sophisticated + include notion of :all
         spec_series_list = sorted(spec_series_list,
-                                  key=lambda x: heuristic.get_specval(x, 'id')
+                                  key=lambda x: get_specval(x, 'id')
                                                 if 'id' in x.keys() else 0)
         for i in range(len(spec_series_list)):
             # Note: Removed the following line from condition below,
@@ -318,14 +424,15 @@ class Dicom2Spec(Interface):
             # it's not clear ATM what case this could possibly have catched:
             # heuristic.has_specval(spec_series_list[i], "converter") and \
             if spec_series_list[i]["type"] == "dicomseries" and \
-                heuristic.get_specval(spec_series_list[i], "bids-run") in \
-                    [heuristic.get_specval(s, "bids-run")
+                has_specval(spec_series_list[i], "bids-run") and \
+                get_specval(spec_series_list[i], "bids-run") in \
+                    [get_specval(s, "bids-run")
                      for s in spec_series_list[i + 1:]
-                     if heuristic.get_specval(
+                     if get_specval(
                             s,
-                            "description") == heuristic.get_specval(
+                            "description") == get_specval(
                                 spec_series_list[i], "description") and \
-                     heuristic.get_specval(s, "id") > heuristic.get_specval(
+                     get_specval(s, "id") > get_specval(
                                              spec_series_list[i], "id")
                      ]:
                 lgr.debug("Ignore SeriesNumber %s for conversion" % i)
@@ -336,9 +443,9 @@ class Dicom2Spec(Interface):
         # store as a stream (one record per file) to be able to
         # easily concat files without having to parse them, or
         # process them line by line without having to fully parse them
-        from ..support.helpers import sort_spec
+        from datalad_hirni.support.spec_helpers import sort_spec
         # Note: Sorting paradigm needs to change. See above.
-        #spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
+        # spec_series_list = sorted(spec_series_list, key=lambda x: sort_spec(x))
         json_py.dump2stream(spec_series_list, spec)
 
         # make sure spec is in git:
@@ -369,7 +476,7 @@ class Dicom2Spec(Interface):
                 # anything else shouldn't happen
                 yield dict(status='error',
                            message=("unexpected result from rev-save: %s", r),
-                           path=spec,
+                           path=spec,  # TODO: This actually isn't clear - get it from `r`
                            type='file',
                            action='dicom2spec',
                            logger=lgr)

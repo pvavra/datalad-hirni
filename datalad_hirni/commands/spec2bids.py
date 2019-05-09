@@ -28,8 +28,11 @@ from datalad.config import anything2bool
 
 from datalad.coreapi import remove
 from datalad_container import containers_run
-import datalad_hirni.support.hirni_heuristic as heuristic
 import logging
+from datalad_hirni.support.spec_helpers import (
+    get_specval,
+    has_specval
+)
 
 lgr = logging.getLogger("datalad.hirni.spec2bids")
 
@@ -205,8 +208,8 @@ class Spec2Bids(Interface):
                 # env_subs should be joined eventually.
 
                 for proc in procedure_list:
-                    if heuristic.has_specval(proc, 'procedure-name'):
-                        proc_name = heuristic.get_specval(proc, 'procedure-name')
+                    if has_specval(proc, 'procedure-name'):
+                        proc_name = get_specval(proc, 'procedure-name')
                     else:
                         # invalid procedure spec
                         lgr.warning("conversion procedure missing key "
@@ -216,17 +219,17 @@ class Spec2Bids(Interface):
                         # dealt with via on_failure?
                         continue
 
-                    if heuristic.has_specval(proc, 'on-anonymize') \
+                    if has_specval(proc, 'on-anonymize') \
                         and anything2bool(
-                            heuristic.get_specval(proc, 'on-anonymize')
+                            get_specval(proc, 'on-anonymize')
                             ) and not anonymize:
                         # don't run that procedure, if we weren't called with
                         # --anonymize while procedure is specified to be run on
                         # that switch only
                         continue
 
-                    proc_call = heuristic.get_specval(proc, 'procedure-call') \
-                        if heuristic.has_specval(proc, 'procedure-call') \
+                    proc_call = get_specval(proc, 'procedure-call') \
+                        if has_specval(proc, 'procedure-call') \
                         else None
 
                     if ran_procedure.get(hash((proc_name, proc_call)), None):

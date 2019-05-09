@@ -271,7 +271,7 @@ class Spec4Anything(Interface):
             # collect paths of updated files, and give them to a single `add`
             # at the very end?
             # MIH: if we fail, we fail and nothing is committed
-            from ..support.helpers import sort_spec
+            from datalad_hirni.support.spec_helpers import sort_spec
             json_py.dump2stream(sorted(spec, key=lambda x: sort_spec(x)),
                                 spec_path)
             updated_files.append(spec_path)
