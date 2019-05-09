@@ -61,8 +61,7 @@ class RawDataset(object):
             path = tempfile.mkdtemp(**kwargs)
             f_dicoms = get_dicom_dataset('functional')
             s_dicoms = get_dicom_dataset('structural')
-            ds = Dataset.create(path)
-            ds.run_procedure('setup_hirni_dataset')
+            ds = Dataset.create(path, cfg_proc=['hirni'])
             ds.install(source=f_dicoms, path=op.join('func_acq', 'dicoms'))
             ds.install(source=s_dicoms, path=op.join('struct_acq', 'dicoms'))
             ds.aggregate_metadata(recursive=True, update_mode='all')
@@ -247,8 +246,7 @@ def test_dicom2spec(path):
     # ###  SETUP ###
     dicoms = get_dicom_dataset('structural')
 
-    ds = Dataset.create(path)
-    ds.run_procedure('setup_hirni_dataset')
+    ds = Dataset.create(path, cfg_proc=['hirni'])
     ds.install(source=dicoms, path='acq100')
     ds.aggregate_metadata(recursive=True, update_mode='all')
     # ### END SETUP ###

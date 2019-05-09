@@ -38,8 +38,7 @@ def test_dicom_metadata_aggregation(path):
 @with_tempfile
 def _single_session_dicom2bids(label, path):
 
-    ds = Dataset.create(path)
-    ds.run_procedure('setup_hirni_dataset')
+    ds = Dataset.create(path, cfg_proc=['hirni'])
 
     subject = "02"
     acquisition = "{sub}_{label}".format(sub=subject, label=label)
@@ -70,8 +69,7 @@ def test_validate_bids_fixture():
 @with_tempfile
 def test_spec2bids(study_path, bids_path):
 
-    study_ds = Dataset(study_path).create()
-    study_ds.run_procedure('setup_hirni_dataset')
+    study_ds = Dataset(study_path).create(cfg_proc=['hirni'])
 
     subject = "02"
     acquisition = "{sub}_functional".format(sub=subject)
@@ -129,8 +127,7 @@ def test_spec2bids(study_path, bids_path):
     # ##############
 
     # create the BIDS dataset:
-    bids_ds = Dataset.create(bids_path)
-    bids_ds.run_procedure("setup_bids_dataset")
+    bids_ds = Dataset.create(bids_path, cfg_proc=['hirni'])
 
     # install the study dataset as "sourcedata":
     bids_ds.install(source=study_ds.path, path="sourcedata")
