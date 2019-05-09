@@ -46,35 +46,40 @@ from datalad_hirni.support.spec_helpers import (
 # - spec file in git? => should stay in git
 
 
-def _setup_raw_dataset():
-    """helper to build raw dataset only once
+class RawDataset(object):
 
-    Note, that dicom2spec relies on DICOM metadata only, so a simple clone of this one should have everything needed.
-    """
+    def __init__(self):
+        self._dspath = None
 
-    import tempfile
-    kwargs = get_tempfile_kwargs()
-    path = tempfile.mkdtemp(**kwargs)
-    f_dicoms = get_dicom_dataset('functional')
-    s_dicoms = get_dicom_dataset('structural')
-    ds = Dataset.create(path)
-    ds.run_procedure('setup_hirni_dataset')
-    ds.install(source=f_dicoms, path=op.join('func_acq', 'dicoms'))
-    ds.install(source=s_dicoms, path=op.join('struct_acq', 'dicoms'))
-    ds.aggregate_metadata(recursive=True, update_mode='all')
+    def get_raw_dataset(self):
+        # Note: This is lazy to avoid building on import time, since import is part of nose's discovery and executed
+        # before the dependencies. This leads to datalad's ui backend not yet being correctly set, which in turn
+        # let's the cloning hang within progressbar generation.
+        if not self._dspath:
+            import tempfile
+            kwargs = get_tempfile_kwargs()
+            path = tempfile.mkdtemp(**kwargs)
+            f_dicoms = get_dicom_dataset('functional')
+            s_dicoms = get_dicom_dataset('structural')
+            ds = Dataset.create(path)
+            ds.run_procedure('setup_hirni_dataset')
+            ds.install(source=f_dicoms, path=op.join('func_acq', 'dicoms'))
+            ds.install(source=s_dicoms, path=op.join('struct_acq', 'dicoms'))
+            ds.aggregate_metadata(recursive=True, update_mode='all')
 
-    # TODO: Figure how to add it to things to be removed after tests ran
-    return ds.path
+            # TODO: Figure how to add it to things to be removed after tests ran
+            self._dspath = ds.path
+        return self._dspath
 
 
-rawds_path = _setup_raw_dataset()
+test_raw_ds = RawDataset()
 
 
 @with_tempfile
 def test_default_rules(path):
 
     # ## SETUP a raw ds
-    ds = install(source=rawds_path, path=path)
+    ds = install(source=test_raw_ds.get_raw_dataset(), path=path)
     # ## END SETUP
 
     # create specs for dicomseries w/ default rules:
@@ -147,7 +152,7 @@ def test_default_rules(path):
 def test_custom_rules(path):
 
     # ## SETUP a raw ds
-    ds = install(source=rawds_path, path=path)
+    ds = install(source=test_raw_ds.get_raw_dataset(), path=path)
     # ## END SETUP
 
     # 1. simply default rules
