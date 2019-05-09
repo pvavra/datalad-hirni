@@ -7,6 +7,17 @@ DataLad extension module for the CBBS imaging platform
    changelog
    acknowledgements
 
+Basic usage examples
+====================
+
+.. toctree::
+   :maxdepth: 2
+
+   demos/study.rst
+   demos/dicomdb.rst
+   demos/conversion.rst
+   demos/demo_reproducibility.rst
+
 Command manuals
 ===============
 
