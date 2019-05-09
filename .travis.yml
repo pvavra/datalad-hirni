@@ -60,6 +60,8 @@ script:
   - python setup.py build
   # Test installation system-wide
   - sudo pip install .
+  # install extras for doc building
+  - sudo pip install .[devel-docs]
   # Run tests
   - http_proxy=
     PATH=$PWD/tools/coverage-bin:$PATH
