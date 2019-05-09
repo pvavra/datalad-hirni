@@ -1,14 +1,12 @@
-from os.path import join as opj, exists
+from os.path import join as opj
 
 import datalad_hirni
 from datalad.api import Dataset
-from datalad.api import run_procedure
 
-from datalad.tests.utils import assert_result_count
-from datalad.tests.utils import ok_clean_git, ok_exists, ok_file_under_git
+from datalad.tests.utils import ok_exists, ok_file_under_git
 from datalad.tests.utils import with_tempfile
 
-from datalad_neuroimaging.tests.utils import get_dicom_dataset, create_dicom_tarball
+from datalad_neuroimaging.tests.utils import create_dicom_tarball
 
 
 @with_tempfile(mkdir=True)
@@ -18,9 +16,7 @@ def test_import_tarball(src, ds_path):
     filename = opj(src, "structural.tar.gz")
     create_dicom_tarball(flavor="structural", path=filename)
 
-    ds = Dataset(ds_path).create()
-    # TODO merge with create() call after https://github.com/datalad/datalad/pull/3353
-    ds.run_procedure('cfg_hirni')
+    ds = Dataset(ds_path).create(cfg_proc=['hirni'])
 
     # adapt import layout rules for example ds, since hirni default
     # doesn't apply:
