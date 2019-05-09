@@ -55,7 +55,7 @@ setup(
             # used for converting README.md -> .rst for long_description
             'pypandoc',
             # Documentation
-            'sphinx',
+            'sphinx>=1.6.2',
             'sphinx-rtd-theme',
         ]},
     cmdclass=cmdclass,
