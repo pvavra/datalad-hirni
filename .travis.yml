@@ -28,6 +28,8 @@ env:
   matrix:
     - DATALAD_REPO_VERSION=7
     - DATALAD_REPO_VERSION=5
+    - NOSE_SELECTION_OP=not
+    - NOSE_SELECTION_OP=""
 
 
 before_install:

@@ -14,13 +14,13 @@ Creating a raw dataset
 
 First off, we need a study raw dataset to bundle all raw data in a structured way::
 
-  % datalad rev-create my_raw_dataset
+  % datalad create my_raw_dataset
   % cd my_raw_dataset
-  % datalad run-procedure setup_hirni_dataset
+  % datalad run-procedure cfg_hirni_dataset
 
 The first command will create a datalad dataset with nothing special about it. The last, however, runs a hirni procedure, that will do several things to make this a study dataset.
 Apart from setting some configurations like enabling the extraction of DICOM metadata, it will create a default README file, a dataset_description.json template file, an initial study specification file and it will install hirni's `toolbox dataset <{filename}tools/toolbox.rst>`_ as a subdataset of `my_raw_dataset`.
-Note, that by default the toolbox is installed from github. If you need to install from elsewhere, you can set the `datalad.hirni.toolbox.url` config to point to another URL prior to running ``setup_hirni_dataset``.
+Note, that by default the toolbox is installed from github. If you need to install from elsewhere, you can set the `datalad.hirni.toolbox.url` config to point to another URL prior to running ``cfg_hirni``.
 It now should like this::
 
   % tree -L 2
@@ -66,11 +66,9 @@ Something that can't automatically be derived, of course, are anonymized subject
   % datalad hirni-import-dcm --anon-subject 001 https://github.com/datalad/example-dicom-structural/archive/master.tar.gz acq1
 
 This should create a new acquisition directory `acq1`, containing a `studyspec.json` and a subdataset `dicoms`.
-Note, that this subdataset contains the original tarball itself (in a hidden way) and the extracted DICOMS. As long as we don't need to operate on the DICOM files, we don't really them to be there. We can throw their content away by calling::
+Note, that this subdataset contains the original tarball itself (in a hidden way) and the extracted DICOMS. However, as long as we don't need to operate on the DICOM files, we don't really their content to be there in extracted form.
+This is why `hirni-import-dcm` results in the DICOM files having no content. We can get them again any time via `datalad get acq1/dicoms/*`.
 
-  % datalad drop acq1/dicoms/*
-
-This should result in the DICOM files having no content. We can get them again any time via `datalad get acq1/dicoms/*`.
 Import the second acquisition the same way::
 
   % datalad hirni-import-dcm --anon-subject 001 https://github.com/datalad/example-dicom-functional/archive/master.tar.gz acq2
