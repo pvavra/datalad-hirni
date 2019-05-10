@@ -14,9 +14,9 @@ We gain a lot here by adopting the BIDS standard. Up front, it saves us the effo
 
 For the purpose of this demo, we will simply list the commands needed to get a BIDS dataset from the study dataset. For reference: This is the exact same thing we do in the `conversion demo <{filename}../datamanagement/conversion.rst#demo-conversion-to-bids>`_ ::
 
-  % datalad rev-create localizer_scans
+  % datalad create localizer_scans
   % cd localizer_scans
-  % datalad run-procedure setup_bids_dataset
+  % datalad run-procedure cfg_bids
   % datalad install --dataset . --source https://github.com/psychoinformatics-de/hirni-demo sourcedata --recursive
   % datalad hirni-spec2bids --anonymize sourcedata/studyspec.json sourcedata/*/studyspec.json
 
@@ -75,7 +75,7 @@ Following the same logic and commands as before, we will add the localizer_scans
 Regarding the layout of this analysis dataset, we unfortunately cannot yet rely on automatic tools and a comprehensive standard (but such guidelines are actively being worked on). However, DataLad nevertheless aids efforts to bring order to the chaos. Anyone can develop their own ideas on how a dataset should be structured and implement these concepts in dataset procedures that can be executed using the datalad run-procedure command.
 Here we are going to adopt the YODA principles: a set of simple rules on how to structure analysis dataset. But here, the only relevant aspect is that we want to keep all analysis scripts in the code/ subdirectory of this dataset. We can get a readily configured dataset by running the YODA setup procedure::
 
-  % datalad run-procedure setup_yoda_dataset
+  % datalad run-procedure cfg_yoda
 
 Before we can fire up FSL for our GLM analysis, we need two pieces of custom code:
 
@@ -109,7 +109,7 @@ Use the datalad containers-add command to add this container under the name fsl.
 
 With this we have completed the analysis setup. At such a milestone it can be useful to label the state of a dataset that can be referred to later on. Let’s add the label ready4analysis here::
 
-  % datalad save --version-tag ready4analysis
+  % datalad rev-save --version-tag ready4analysis
 
 All we have left is to configure the desired first-level GLM analysis with FSL. The following command will create a working configuration from the template we stored in `code/`. It uses the arcane, yet powerful sed editor.
 We will again use datalad run to invoke our command so that we store in the history how this template was generated (so that we may audit, alter, or regenerate this file in the future — fearlessly)::
