@@ -103,8 +103,8 @@ def _create_subds_from_tarball(tarball, targetdir):
         var="datalad.metadata.maxfieldsize",
         value='10000000',
         where="dataset")
-    importds.rev_save(op.join(".datalad", "config"),
-                      message="[HIRNI] initial config for DICOM metadata")
+    importds.save(op.join(".datalad", "config"),
+                  message="[HIRNI] initial config for DICOM metadata")
 
     importds.aggregate_metadata()
 
@@ -242,7 +242,7 @@ class ImportDicoms(Interface):
                     rmtree(acq_dir)
 
         acqid = op.basename(op.dirname(dicom_ds.path))
-        ds.rev_save(
+        ds.save(
             dicom_ds.path,
             message="[HIRNI] Add aquisition {}".format(acqid))
         ds.aggregate_metadata(dicom_ds.path, incremental=True,

@@ -86,16 +86,16 @@ def test_spec2bids(study_path, bids_path):
     copy(op.join(op.dirname(datalad_hirni.__file__),
                  'resources', 'dummy_executable.sh'),
          op.join(study_ds.path, 'code', 'my_script.sh'))
-    study_ds.rev_save(op.join('code', 'my_script.sh'), to_git=True,
-                      message="add a copy converter script")
+    study_ds.save(op.join('code', 'my_script.sh'), to_git=True,
+                  message="add a copy converter script")
 
     # add dummy data to be 'converted' by the copy converter
     makedirs(op.join(study_ds.path, acquisition, 'my_fancy_data'))
     with open(op.join(study_ds.path, acquisition, 'my_fancy_data',
                       'my_raw_data.txt'), 'w') as f:
         f.write("some content")
-    study_ds.rev_save(op.join(study_ds.path, acquisition, 'my_fancy_data', 'my_raw_data.txt'),
-                      message="added fancy data")
+    study_ds.save(op.join(study_ds.path, acquisition, 'my_fancy_data', 'my_raw_data.txt'),
+                  message="added fancy data")
 
     # add specification snippet for that data:
 
