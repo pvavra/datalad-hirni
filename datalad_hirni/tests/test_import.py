@@ -23,8 +23,10 @@ def test_import_tarball(src, ds_path):
     ds.config.set("datalad.hirni.import.acquisition-format",
                   "sub-{PatientID}", where='dataset')
 
+    ds.save(message="TEST: configure acquisition id detection")
+
     # import into a session defined by the user
-    ds.hirni_import_dcm(path=filename, acqid='user_defined_session')
+    ds.hirni_import_dcm(path=filename, acqid='user_defined_acquisition')
 
     subs = ds.subdatasets(fulfilled=True, recursive=True, recursion_limit=None,
                           result_xfm='datasets')

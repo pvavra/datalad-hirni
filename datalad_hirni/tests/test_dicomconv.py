@@ -14,7 +14,6 @@ from os import makedirs
 
 from datalad.api import Dataset
 from datalad.tests.utils import assert_result_count
-from datalad.tests.utils import ok_clean_git
 from datalad.tests.utils import with_tempfile
 from datalad.tests.utils import eq_
 
@@ -29,8 +28,10 @@ def test_dicom_metadata_aggregation(path):
 
     ds = Dataset.create(path)
     ds.install(source=dicoms, path='acq100')
-    ds.aggregate_metadata(recursive=True)
-    res = ds.metadata(get_aggregates=True)
+
+    # Note: Recursive, since aggregation wasn't performed in the installed dastasets
+    ds.meta_aggregate('acq100', into='top', recursive=True)
+    res = ds.meta_dump(reporton='aggregates', recursive=True)
     assert_result_count(res, 2)
     assert_result_count(res, 1, path=op.join(ds.path, 'acq100'))
 
@@ -45,7 +46,8 @@ def _single_session_dicom2bids(label, path):
 
     dicoms = get_dicom_dataset(label)
     ds.install(source=dicoms, path=op.join(acquisition, 'dicoms'))
-    ds.aggregate_metadata(recursive=True, update_mode='all')
+    # Note: Recursive, since aggregation wasn't performed in the installed dastasets
+    ds.meta_aggregate(op.join(acquisition, 'dicoms'), into='top', recursive=True)
 
     spec_file = 'spec_{label}.json'.format(label=label)
     ds.hirni_dicom2spec(path=op.join(acquisition, 'dicoms'),
@@ -76,7 +78,8 @@ def test_spec2bids(study_path, bids_path):
 
     dicoms = get_dicom_dataset('functional')
     study_ds.install(source=dicoms, path=op.join(acquisition, 'dicoms'))
-    study_ds.aggregate_metadata(recursive=True, update_mode='all')
+    # Note: Recursive, since aggregation wasn't performed in the installed dastasets
+    study_ds.meta_aggregate(op.join(acquisition, 'dicoms'), into='top', recursive=True)
 
     study_ds.hirni_dicom2spec(path=op.join(acquisition, 'dicoms'),
                               spec=op.join(acquisition, 'studyspec.json'))

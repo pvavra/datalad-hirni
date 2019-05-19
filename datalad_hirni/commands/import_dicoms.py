@@ -106,7 +106,7 @@ def _create_subds_from_tarball(tarball, targetdir):
     importds.save(op.join(".datalad", "config"),
                   message="[HIRNI] initial config for DICOM metadata")
 
-    importds.aggregate_metadata()
+    importds.meta_aggregate()
 
     # TODO: DON'T FAIL! MAY BE EVEN GET FROM SUPER?
     # XXX why is this done at all? if needed, why hard-coded URL?
@@ -117,7 +117,7 @@ def _create_subds_from_tarball(tarball, targetdir):
 
 
 def _guess_acquisition_and_move(ds, target_ds):
-    res = ds.metadata(
+    res = ds.meta_dump(
         reporton='datasets',
         return_type='item-or-list',
         result_renderer='disabled')
@@ -244,9 +244,9 @@ class ImportDicoms(Interface):
         acqid = op.basename(op.dirname(dicom_ds.path))
         ds.save(
             dicom_ds.path,
-            message="[HIRNI] Add aquisition {}".format(acqid))
-        ds.aggregate_metadata(dicom_ds.path, incremental=True,
-                              update_mode='target')
+            message="[HIRNI] Add aquisition {}".format(acqid)
+        )
+        ds.meta_aggregate(dicom_ds.path, into='top')
 
         ds.hirni_dicom2spec(
             path=dicom_ds.path,

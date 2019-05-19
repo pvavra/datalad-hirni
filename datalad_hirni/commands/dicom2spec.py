@@ -5,7 +5,6 @@ DICOM metadata as provided by datalad.
 import logging
 import os.path as op
 
-from datalad.coreapi import metadata
 from datalad.core.local.save import Save
 from datalad.distribution.dataset import EnsureDataset
 from datalad.distribution.dataset import datasetmethod
@@ -339,9 +338,8 @@ class Dicom2Spec(Interface):
 
         # get dataset level metadata:
         found_some = False
-        for meta in metadata(
+        for meta in dataset.meta_dump(
                 path,
-                dataset=dataset,
                 recursive=False,  # always False?
                 reporton='datasets',
                 return_type='generator',
@@ -349,6 +347,10 @@ class Dicom2Spec(Interface):
             if meta.get('status', None) not in ['ok', 'notneeded']:
                 yield meta
                 continue
+
+
+
+
 
             if 'dicom' not in meta['metadata']:
 

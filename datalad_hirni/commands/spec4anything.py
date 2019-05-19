@@ -139,9 +139,9 @@ class Spec4Anything(Interface):
         res_kwargs = dict(action='hirni spec4anything', logger=lgr)
         res_kwargs['refds'] = Interface.get_refds_path(dataset)
 
-        ds_meta = dataset.metadata(reporton='datasets',
-                                   return_type='item-or-list',
-                                   result_renderer='disabled')
+        ds_meta = dataset.meta_dump(reporton='datasets',
+                                    return_type='item-or-list',
+                                    result_renderer='disabled')
 
         # ### This might become superfluous. See datalad-gh-2653
         ds_path = PathRI(dataset.path)

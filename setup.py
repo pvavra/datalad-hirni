@@ -46,6 +46,7 @@ setup(
     # datalad command suite specs from here
     install_requires=[
         'datalad[full]>=0.12.0rc4',
+        'datalad-metalad',
         'datalad-neuroimaging',
         'datalad-container',
         'datalad-webapp',
