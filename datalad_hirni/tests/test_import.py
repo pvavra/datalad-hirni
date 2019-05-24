@@ -31,11 +31,11 @@ def test_import_tarball(src, ds_path):
     subs = ds.subdatasets(fulfilled=True, recursive=True, recursion_limit=None,
                           result_xfm='datasets')
 
-    assert opj(ds.path, 'user_defined_session', 'dicoms') in [s.path for s in subs]
-    ok_exists(opj(ds.path, 'user_defined_session', 'studyspec.json'))
-    ok_file_under_git(opj(ds.path, 'user_defined_session', 'studyspec.json'),
+    assert opj(ds.path, 'user_defined_acquisition', 'dicoms') in [s.path for s in subs]
+    ok_exists(opj(ds.path, 'user_defined_acquisition', 'studyspec.json'))
+    ok_file_under_git(opj(ds.path, 'user_defined_acquisition', 'studyspec.json'),
                       annexed=False)
-    ok_exists(opj(ds.path, 'user_defined_session', 'dicoms', 'structural'))
+    ok_exists(opj(ds.path, 'user_defined_acquisition', 'dicoms', 'structural'))
 
     # now import again, but let the import routine figure out an acquisition
     # name based on DICOM metadata (ATM just the first occurring PatientID,

@@ -18,7 +18,10 @@ from datalad.distribution.dataset import datasetmethod
 from datalad.distribution.dataset import EnsureDataset
 from datalad.distribution.dataset import require_dataset
 from datalad.interface.utils import eval_results
-from datalad.utils import rmtree
+from datalad.utils import (
+    rmtree,
+    with_pathsep
+)
 from datalad.dochelpers import exc_str
 
 # bound dataset method
@@ -246,7 +249,10 @@ class ImportDicoms(Interface):
             dicom_ds.path,
             message="[HIRNI] Add aquisition {}".format(acqid)
         )
-        ds.meta_aggregate(dicom_ds.path, into='top')
+
+        # Note: use path with trailing slash to indicate we want metadata about the content of this subds,
+        # not the subds itself.
+        ds.meta_aggregate(with_pathsep(dicom_ds.path), into='top')
 
         ds.hirni_dicom2spec(
             path=dicom_ds.path,
