@@ -7,10 +7,9 @@ import datalad.support.json_py as json_py
 from datalad.distribution.dataset import require_dataset
 
 # bound dataset methods
-from datalad.api import rev_save
+from datalad.api import save
 import datalad_hirni.commands.spec4anything
 import datalad.distribution.install
-import datalad.metadata.aggregate
 from datalad.plugin.add_readme import AddReadme
 
 ds = require_dataset(
@@ -69,7 +68,7 @@ bids_description = {
 
 json_py.dump(bids_description, "./dataset_description.json")
 
-ds.rev_save(message='[HIRNI] Default study dataset configuration')
+ds.save(message='[HIRNI] Default study dataset configuration')
 
 # Include the most basic README to prevent heudiconv from adding one
 # TODO: pointless Warnings on missing metadata from this call if procedure is
@@ -86,7 +85,7 @@ ds.install(path=op.join("code", "hirni-toolbox"),
 
 # Include a basic top-level spec file, that specifies "copy-conversion" for
 # README and dataset_description.json
-ds.aggregate_metadata()
+ds.meta_aggregate()  # TODO: Forgot why
 ds.hirni_spec4anything(path='README',
                        spec_file='studyspec.json',
                        properties={

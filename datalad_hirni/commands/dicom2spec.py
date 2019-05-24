@@ -5,8 +5,7 @@ DICOM metadata as provided by datalad.
 import logging
 import os.path as op
 
-from datalad.coreapi import metadata
-from datalad.core.local.save import Save as RevSave
+from datalad.core.local.save import Save
 from datalad.distribution.dataset import EnsureDataset
 from datalad.distribution.dataset import datasetmethod
 from datalad.distribution.dataset import require_dataset
@@ -339,9 +338,8 @@ class Dicom2Spec(Interface):
 
         # get dataset level metadata:
         found_some = False
-        for meta in metadata(
+        for meta in dataset.meta_dump(
                 path,
-                dataset=dataset,
                 recursive=False,  # always False?
                 reporton='datasets',
                 return_type='generator',
@@ -349,6 +347,10 @@ class Dicom2Spec(Interface):
             if meta.get('status', None) not in ['ok', 'notneeded']:
                 yield meta
                 continue
+
+
+
+
 
             if 'dicom' not in meta['metadata']:
 
@@ -453,14 +455,14 @@ class Dicom2Spec(Interface):
                                          {'annex.largefiles': 'nothing'})],
                                        '.gitattributes')
 
-        for r in RevSave.__call__(dataset=dataset,
-                                  path=[spec, '.gitattributes'],
-                                  to_git=True,
-                                  message="[HIRNI] Added study specification "
-                                          "snippet for %s" %
-                                          op.relpath(path[0], dataset.path),
-                                  return_type='generator',
-                                  result_renderer='disabled'):
+        for r in Save.__call__(dataset=dataset,
+                               path=[spec, '.gitattributes'],
+                               to_git=True,
+                               message="[HIRNI] Added study specification "
+                                       "snippet for %s" %
+                                       op.relpath(path[0], dataset.path),
+                               return_type='generator',
+                               result_renderer='disabled'):
             if r.get('status', None) not in ['ok', 'notneeded']:
                 yield r
             elif r['path'] in [spec, op.join(dataset.path, '.gitattributes')] \
