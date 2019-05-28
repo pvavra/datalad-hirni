@@ -26,6 +26,8 @@ from datalad.dochelpers import exc_str
 
 # bound dataset method
 import datalad_hirni.commands.dicom2spec
+import datalad_metalad.aggregate
+import datalad_metalad.dump
 import datalad.interface.download_url
 
 import logging
