@@ -19,11 +19,11 @@ from datalad_metalad import (
 )
 from six import (
     text_type,
+    iteritems,
 )
+from datalad.log import log_progress
 from datalad.support.json_py import (
-    load as jsonload,
     loads as jsonloads,
-    dump as jsondump,
 )
 from datalad.utils import (
     Path,
@@ -42,44 +42,94 @@ class FSLFEATExtractor(MetadataExtractor):
         if not feat_dirs:
             return
 
+        log_progress(
+            lgr.info,
+            'extractorfslfeat',
+            'Start FSL FEAT metadata extraction from %s', ds,
+            total=len(feat_dirs),
+            label='FSL FEAT metadata extraction',
+            unit=' analyses',
+        )
         context = None
         extracts = []
         for fd in feat_dirs:
-            idmap = {
+            # get a path-to-ID mapping for NIDM-R to use as ID provider
+            path2id_map = {
                 s['path']: get_file_id(s)
                 for s in status
                 if fd in Path(s['path']).parents
             }
+            # and the reverse mapping for us to capture reports on individual
+            # files
+            id2path_map = {v: k for k, v in iteritems(path2id_map)}
+
             # TODO protect against failure and yield error result
-            res = _extract_nidmfsl(fd, idmap)
+            res = _extract_nidmfsl(fd, path2id_map)
             if '@context' not in res or '@graph' not in res:
                 # this is an unexpected output, fail, we cannot work with it
                 # TODO error properly
                 raise ValueError('not an expected report')
             # context is assumed to not vary across reports
             context = res['@context']
-            graph = res['@graph']
-            if isinstance(graph, list):
-                extracts.extend(graph)
-            elif isinstance(graph, dict):
-                # this should not happen
-                extracts.append(graph)
+            graphs = res['@graph']
+            if isinstance(graphs, dict):
+                # this should not happen, but just to be safe
+                graphs = [graphs]
+            elif isinstance(graphs, list):
+                pass
             else:
                 raise ValueError('unexpected report structure')
+            if process_type in ('all', 'content'):
+                # fish out and report content-metadata
+                for graph in graphs:
+                    records = graph.get('records', {})
+                    entities = records.get('prov:Entity', [])
+                    if not isinstance(entities, list):
+                        # this is not the main entity def list
+                        continue
+                    for entity in entities:
+                        eid = entity.get('@id', '')
+                        if not eid.startswith('datalad:'):
+                            continue
+                        # kill the included filename, it is fake, we have a
+                        # better one
+                        entity.pop('nfo:fileName', None)
+                        yield dict(
+                            path=id2path_map[eid],
+                            type='file',
+                            metadata=entity,
+                            status='ok',
+                        )
 
-        yield dict(
-            metadata={
-                '@context': [
-                    context,
-                    # amend upstream context with info on datalad IDs
-                    {
-                        "datalad": "http://dx.datalad.org/",
-                    },
-                ],
-                '@graph': extracts,
-            },
-            type='dataset',
-            status='ok',
+            if process_type in ('all', 'dataset'):
+                extracts.extend(graphs)
+
+            log_progress(
+                lgr.info,
+                'extractorfslfeat',
+                'Extracted FSL FEAT metadata from %s', fd,
+                update=1,
+                increment=True)
+
+        if process_type in ('all', 'dataset'):
+            yield dict(
+                metadata={
+                    '@context': [
+                        context,
+                        # amend upstream context with info on datalad IDs
+                        {
+                            "datalad": "http://dx.datalad.org/",
+                        },
+                    ],
+                    '@graph': extracts,
+                },
+                type='dataset',
+                status='ok',
+            )
+        log_progress(
+            lgr.info,
+            'extractorfslfeat',
+            'Finished FSL FEAT metadata extraction from %s', ds
         )
 
     def get_required_content(self, dataset, process_type, status):
