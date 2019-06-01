@@ -1,6 +1,7 @@
 """Create specification snippets for arbitrary paths"""
 
 
+import os.path as op
 import posixpath
 from six import text_type
 
@@ -18,8 +19,9 @@ from datalad.support import json_py
 from datalad.utils import assure_list
 from datalad.interface.annotate_paths import AnnotatePaths
 from datalad.interface.results import get_status_dict
-from datalad.coreapi import metadata
-import os.path as op
+
+# bound dataset method
+import datalad_metalad.dump
 
 import logging
 lgr = logging.getLogger('datalad.hirni.spec4anything')

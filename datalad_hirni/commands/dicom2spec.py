@@ -25,6 +25,10 @@ from datalad_hirni.support.spec_helpers import (
     has_specval
 )
 
+# bound dataset method
+import datalad_metalad.dump
+
+
 lgr = logging.getLogger('datalad.hirni.dicom2spec')
 
 
