@@ -87,7 +87,7 @@ def test_demo_raw_ds(path):
     events_file = op.join('acq2', 'events.tsv')
     ds.repo.add_url_to_file(file_=events_file,
                             url='https://github.com/datalad/example-dicom-functional/raw/master/events.tsv')
-    ds.rev_save(message="Added stimulation protocol for acquisition 2")
+    ds.save(message="Added stimulation protocol for acquisition 2")
 
     ok_file_under_git(ds.path, events_file, annexed=True)
 
@@ -171,7 +171,7 @@ def test_demo_repro_analysis(bids_path, ana_path):
     analysis_ds.containers_add('fsl', url="shub://ReproNim/ohbm2018-training:fsln")
     #   % datalad containers-list
 
-    analysis_ds.rev_save(version_tag="ready4analysis")
+    analysis_ds.save(version_tag="ready4analysis")
 
     assert_repo_status(analysis_ds.repo)
 
