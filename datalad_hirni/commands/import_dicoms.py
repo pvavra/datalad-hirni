@@ -266,6 +266,7 @@ class ImportDicoms(Interface):
             properties=properties
         )
 
+        # TODO: This should probably be optional
         # We have the tarball and can drop extracted stuff:
         dicom_ds.drop([f for f in listdir(dicom_ds.path)
                        if f != ".datalad" and f != ".git"])
