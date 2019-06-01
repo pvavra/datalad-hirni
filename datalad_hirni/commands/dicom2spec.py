@@ -477,7 +477,7 @@ class Dicom2Spec(Interface):
             else:
                 # anything else shouldn't happen
                 yield dict(status='error',
-                           message=("unexpected result from rev-save: %s", r),
+                           message=("unexpected result from save: %s", r),
                            path=spec,  # TODO: This actually isn't clear - get it from `r`
                            type='file',
                            action='dicom2spec',

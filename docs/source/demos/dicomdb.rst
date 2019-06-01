@@ -68,7 +68,7 @@ series, or individual DICOM images (see above for query examples).
 .. code-block:: sh
 
    # create a super dataset that will have all acquisitions the 7T ever made
-   datalad rev-create 7t
+   datalad create 7t
    cd 7t
    datalad run-procedure setup_hirni_dataset
    # import a bunch of DICOM tarballs (simulates daily routine)
@@ -82,7 +82,7 @@ series, or individual DICOM images (see above for query examples).
    # done for now
    cd ..
    # now the same for 3t
-   datalad rev-create 3t
+   datalad create 3t
    cd 3t
    datalad run-procedure setup_hirni_dataset
    # import a bunch of DICOM tarballs
@@ -99,7 +99,7 @@ series, or individual DICOM images (see above for query examples).
    # one dataset for the entire institute's scan (could in turn be part of one that also
    # includes other modalities/machines)
    # this first part only needs to be done once
-   datalad rev-create lin
+   datalad create lin
    cd lin
    datalad install -d . -s ../7t
    datalad install -d . -s ../3t
@@ -108,5 +108,5 @@ series, or individual DICOM images (see above for query examples).
    # get the latest state of the scanner datasets (no heavy stuff is moved around)
    datalad update --merge -r
    # aggregate from the aggregated metadata
-   datalad aggregate-metadata -r
+   datalad meta-aggregate -r
    # ready to search

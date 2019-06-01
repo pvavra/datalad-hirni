@@ -76,15 +76,15 @@ Import the second acquisition the same way::
 Note, that this imports and extracts metadata from about 6000 DICOM files. It will take a few minutes.
 This time we have something else to import for that acquisition: the events file. Generally, you can add arbitrary files to the dataset. Protocols, logfiles, physiological data, code - it is meant to bundle all raw data of study.
 The functional data already provides an events.tsv file and therefore we can find it already in the `dicoms` subdataset we just created. Since such a file is usually not included in a DICOM tarball you'd start with, lets pretend it's not actually in that archive and import it separately again.
-We use `git annex addurl` to retrieve that file and then save the new state of our dataset by calling `datalad rev-save`::
+We use `git annex addurl` to retrieve that file and then save the new state of our dataset by calling `datalad save`::
 
   % git annex addurl https://github.com/datalad/example-dicom-functional/raw/master/events.tsv --file acq2/events.tsv
-  % datalad rev-save --message "Added stimulation protocol for acquisition 2"
+  % datalad save --message "Added stimulation protocol for acquisition 2"
 
 
 .. class:: note
 
-  **NOTE:** The calls to `git annex addurl` and `datalad rev-save` currently replace a single call to `datalad download-url` due to a bug in that command.
+  **NOTE:** The calls to `git annex addurl` and `datalad save` currently replace a single call to `datalad download-url` due to a bug in that command.
 
 Please note, that the choice where exactly to put such a file within an acquisition directory is entirely up to you. datalad-hirni doesn't expect any particular structure within an acquisition. As long as the specification files are correctly referencing the locations of the data, everything is fine.
 Now, for a later conversion there is no general conversion rule for tsv files. We need to tell the system what it is supposed to do with that file (if anything) on conversion. For that, we add a specification for that file using `hirni-spec4anything`.

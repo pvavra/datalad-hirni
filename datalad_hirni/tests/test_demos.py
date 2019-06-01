@@ -82,7 +82,7 @@ def test_demo_raw_ds(path):
     assert_result_count(subs, 1, path=op.join(ds.path, 'acq1', 'dicoms'))
     assert_result_count(subs, 1, path=op.join(ds.path, 'acq2', 'dicoms'))
 
-    # Note from demo: The calls to `git annex addurl` and `datalad rev-save` currently replace a single call to
+    # Note from demo: The calls to `git annex addurl` and `datalad save` currently replace a single call to
     # `datalad download-url` due to a bug in that command.
     events_file = op.join('acq2', 'events.tsv')
     ds.repo.add_url_to_file(file_=events_file,
