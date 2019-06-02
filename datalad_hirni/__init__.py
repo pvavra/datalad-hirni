@@ -2,6 +2,8 @@
 
 __docformat__ = 'restructuredtext'
 
+from .version import __version__
+
 import os.path as op
 from os.path import curdir
 from os.path import abspath
