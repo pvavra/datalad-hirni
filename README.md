@@ -32,6 +32,9 @@ a dedicated [virtualenv](https://virtualenv.pypa.io):
     # install from PyPi
     pip install datalad_hirni
 
+    # alternative: install the latest development version from GitHub
+    pip install git+https://github.com/psychoinformatics-de/datalad-hirni.git#egg=datalad_hirni
+
 ## Support
 
 The documentation of this project is found here:
