@@ -1,0 +1,3 @@
+# this is here until a datalad-webapp release has this
+# with proper capitalization
+Flask
