@@ -1,5 +1,5 @@
-DataLad extension module for the CBBS imaging platform
-******************************************************
+DataLad extension module for neuroimaging studies
+*************************************************
 
 .. toctree::
    :maxdepth: 1
@@ -7,16 +7,26 @@ DataLad extension module for the CBBS imaging platform
    changelog
    acknowledgements
 
-Basic usage examples
-====================
+Overview
+========
 
 .. toctree::
    :maxdepth: 2
 
-   demos/study.rst
-   demos/dicomdb.rst
-   demos/conversion.rst
-   demos/demo_reproducibility.rst
+   introduction
+   concepts
+   workflow
+   demos
+
+Details
+=======
+
+.. toctree::
+   :maxdepth: 2
+
+   specification
+   toolbox
+   customization
 
 Command manuals
 ===============
