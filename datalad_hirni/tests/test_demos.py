@@ -82,12 +82,12 @@ def test_demo_raw_ds(path):
     assert_result_count(subs, 1, path=op.join(ds.path, 'acq1', 'dicoms'))
     assert_result_count(subs, 1, path=op.join(ds.path, 'acq2', 'dicoms'))
 
-    # Note from demo: The calls to `git annex addurl` and `datalad rev-save` currently replace a single call to
+    # Note from demo: The calls to `git annex addurl` and `datalad save` currently replace a single call to
     # `datalad download-url` due to a bug in that command.
     events_file = op.join('acq2', 'events.tsv')
     ds.repo.add_url_to_file(file_=events_file,
                             url='https://github.com/datalad/example-dicom-functional/raw/master/events.tsv')
-    ds.rev_save(message="Added stimulation protocol for acquisition 2")
+    ds.save(message="Added stimulation protocol for acquisition 2")
 
     ok_file_under_git(ds.path, events_file, annexed=True)
 
@@ -171,7 +171,7 @@ def test_demo_repro_analysis(bids_path, ana_path):
     analysis_ds.containers_add('fsl', url="shub://ReproNim/ohbm2018-training:fsln")
     #   % datalad containers-list
 
-    analysis_ds.rev_save(version_tag="ready4analysis")
+    analysis_ds.save(version_tag="ready4analysis")
 
     assert_repo_status(analysis_ds.repo)
 

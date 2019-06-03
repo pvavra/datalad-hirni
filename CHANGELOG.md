@@ -10,6 +10,13 @@ would recommend to consult log of the [Git
 repository](http://github.com/psychoinformatics-de/datalad-hirni) for more
 details.
 
+## 0.0.3 (May 24, 2019) -- We're getting there
+- rework rule system for easier customization and configurability
+- config routine setup_hirni_dataset renamed to cfg_hirni
+- work with datalad 0.12rc series
+- use datalad-metalad for metadata handling
+- fix issues with dependencies
+
 ## 0.0.2 (May 2, 2019)
 - Provide configuration procedure for hirni datasets
 - Provide webapp for editing specification files

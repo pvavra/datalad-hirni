@@ -109,7 +109,7 @@ Use the datalad containers-add command to add this container under the name fsl.
 
 With this we have completed the analysis setup. At such a milestone it can be useful to label the state of a dataset that can be referred to later on. Let’s add the label ready4analysis here::
 
-  % datalad rev-save --version-tag ready4analysis
+  % datalad save --version-tag ready4analysis
 
 All we have left is to configure the desired first-level GLM analysis with FSL. The following command will create a working configuration from the template we stored in `code/`. It uses the arcane, yet powerful sed editor.
 We will again use datalad run to invoke our command so that we store in the history how this template was generated (so that we may audit, alter, or regenerate this file in the future — fearlessly)::

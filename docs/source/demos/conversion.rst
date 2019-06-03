@@ -16,7 +16,7 @@ The study dataset does NOT need to be shared if you want to share the BIDS datas
 
 In order to get our to-be BIDS dataset from the raw dataset, we create a new dataset and run the `setup_bids_dataset` procedure to configure it::
 
-  % datalad rev-create demo_bids
+  % datalad create demo_bids
   % cd demo_bids
   % datalad run-procedure setup_bids_dataset
 

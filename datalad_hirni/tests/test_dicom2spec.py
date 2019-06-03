@@ -64,7 +64,11 @@ class RawDataset(object):
             ds = Dataset.create(path, cfg_proc=['hirni'])
             ds.install(source=f_dicoms, path=op.join('func_acq', 'dicoms'))
             ds.install(source=s_dicoms, path=op.join('struct_acq', 'dicoms'))
-            ds.aggregate_metadata(recursive=True, update_mode='all')
+
+            # Note: Recursive, since aggregation wasn't performed in the installed dastasets
+            ds.meta_aggregate([op.join('func_acq', 'dicoms'), op.join('struct_acq', 'dicoms')],
+                              into='top',
+                              recursive=True)
 
             # TODO: Figure how to add it to things to be removed after tests ran
             self._dspath = ds.path
@@ -248,7 +252,9 @@ def test_dicom2spec(path):
 
     ds = Dataset.create(path, cfg_proc=['hirni'])
     ds.install(source=dicoms, path='acq100')
-    ds.aggregate_metadata(recursive=True, update_mode='all')
+    # Note: Recursive, since aggregation wasn't performed in the installed dastasets
+    # TODO: Use get_raw_sd from above instead of this setup
+    ds.meta_aggregate('acq100', into='top', recursive=True)
     # ### END SETUP ###
 
     # TODO: should it be specfile or acq/specfile? => At least doc needed,
