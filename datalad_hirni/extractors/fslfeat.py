@@ -82,24 +82,22 @@ class FSLFEATExtractor(MetadataExtractor):
             if process_type in ('all', 'content'):
                 # fish out and report content-metadata
                 for graph in graphs:
-                    records = graph.get('records', {})
-                    entities = records.get('prov:Entity', [])
-                    if not isinstance(entities, list):
-                        # this is not the main entity def list
-                        continue
-                    for entity in entities:
-                        eid = entity.get('@id', '')
-                        if not eid.startswith('datalad:'):
-                            continue
-                        # kill the included filename, it is fake, we have a
-                        # better one
-                        entity.pop('nfo:fileName', None)
-                        yield dict(
-                            path=id2path_map[eid],
-                            type='file',
-                            metadata=entity,
-                            status='ok',
-                        )
+                    for type_, docs in iteritems(graph.get('records', {})):
+                        if not isinstance(docs, list):
+                            docs = [docs]
+                        for doc in docs:
+                            eid = doc.get('@id', '')
+                            if not eid.startswith('datalad:'):
+                                continue
+                            # kill the included filename, it is fake, we have a
+                            # better one
+                            doc.pop('nfo:fileName', None)
+                            yield dict(
+                                path=id2path_map[eid],
+                                type='file',
+                                metadata=doc,
+                                status='ok',
+                            )
 
             if process_type in ('all', 'dataset'):
                 extracts.extend(graphs)
@@ -188,7 +186,11 @@ def _extract_nidmfsl(feat_dir, idmap):
             feat_dir=text_type(feat_dir),
             # this is all fake, we cannot know it, but NIDM FSL wants it
             # TODO try fishing it out from the result again
-            groups=[['control', 1]])
+            # XXX cannot actually do that unconditionally, would fail for
+            # 1stlevel analyses
+            # https://github.com/incf-nidash/nidmresults-fsl/issues/144
+            #groups=[['control', 1]],
+        )
         exporter.parse()
         outdir = exporter.export()
         json_s = (Path(outdir) / 'nidm.json').read_text()
