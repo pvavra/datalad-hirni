@@ -36,8 +36,8 @@ except (ImportError, OSError) as exc:
 setup(
     # basic project properties can be set arbitrarily
     name="datalad_hirni",
-    author="CBBS imaging platform developers",
-    author_email="michael.hanke@gmail.com",  # TODO establish project email
+    author="DataLad developers",
+    author_email="team@datalad.org",
     version=version,
     description="DataLad extension for CBBS imaging platform workflows",
     long_description=long_description,

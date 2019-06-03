@@ -44,4 +44,5 @@ release-pypi: update-changelog
 	test ! -e dist
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
+	twine check dist/*
 	twine upload dist/*
