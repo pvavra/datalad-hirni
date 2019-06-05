@@ -32,13 +32,9 @@ Command manuals
 ===============
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   generated/man/datalad-hirni-import-dcm
-   generated/man/datalad-hirni-dicom2spec
-   generated/man/datalad-hirni-spec2bids
-   generated/man/datalad-hirni-spec4anything
-
+   commands
 
 Python API
 ==========
