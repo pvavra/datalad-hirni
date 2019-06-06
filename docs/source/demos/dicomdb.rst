@@ -70,7 +70,7 @@ series, or individual DICOM images (see above for query examples).
    # create a super dataset that will have all acquisitions the 7T ever made
    datalad create 7t
    cd 7t
-   datalad run-procedure setup_hirni_dataset
+   datalad run-procedure cfg_hirni
    # import a bunch of DICOM tarballs (simulates daily routine)
    datalad hirni-import-dcm \
     /home/data/psyinf/forrest_gump/pandora/data/xx99/raw/dicom/xx99_2022.20130410.103515.930000.tar.gz
@@ -84,7 +84,7 @@ series, or individual DICOM images (see above for query examples).
    # now the same for 3t
    datalad create 3t
    cd 3t
-   datalad run-procedure setup_hirni_dataset
+   datalad run-procedure cfg_hirni
    # import a bunch of DICOM tarballs
    datalad hirni-import-dcm \
     /home/data/psyinf/forrest_gump/3T_av_et/mri/xx99_0138.20140425.121603.06.tar.gz

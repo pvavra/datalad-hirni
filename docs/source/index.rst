@@ -1,5 +1,7 @@
-DataLad extension module for the CBBS imaging platform
-******************************************************
+DataLad extension module for neuroimaging studies
+*************************************************
+
+.. image:: _static/poster.png
 
 .. toctree::
    :maxdepth: 1
@@ -7,28 +9,34 @@ DataLad extension module for the CBBS imaging platform
    changelog
    acknowledgements
 
-Basic usage examples
-====================
+Overview
+========
 
 .. toctree::
    :maxdepth: 2
 
-   demos/study.rst
-   demos/dicomdb.rst
-   demos/conversion.rst
-   demos/demo_reproducibility.rst
+   introduction
+   concepts
+   workflow
+   demos
+
+Details
+=======
+
+.. toctree::
+   :maxdepth: 2
+
+   specification
+   toolbox
+   customization
 
 Command manuals
 ===============
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   generated/man/datalad-hirni-import-dcm
-   generated/man/datalad-hirni-dicom2spec
-   generated/man/datalad-hirni-spec2bids
-   generated/man/datalad-hirni-spec4anything
-
+   commands
 
 Python API
 ==========

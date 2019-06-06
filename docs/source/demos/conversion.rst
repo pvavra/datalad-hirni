@@ -1,3 +1,5 @@
+.. _chap_demos_conversion:
+
 Demo: Conversion to BIDS
 ------------------------
 

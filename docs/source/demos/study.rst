@@ -1,3 +1,5 @@
+.. _chap_demos_study:
+
 An example study
 ****************
 
@@ -82,9 +84,9 @@ We use `git annex addurl` to retrieve that file and then save the new state of o
   % datalad save --message "Added stimulation protocol for acquisition 2"
 
 
-.. class:: note
+.. note::
 
-  **NOTE:** The calls to `git annex addurl` and `datalad save` currently replace a single call to `datalad download-url` due to a bug in that command.
+  The calls to `git annex addurl` and `datalad save` currently replace a single call to `datalad download-url` due to a bug in that command.
 
 Please note, that the choice where exactly to put such a file within an acquisition directory is entirely up to you. datalad-hirni doesn't expect any particular structure within an acquisition. As long as the specification files are correctly referencing the locations of the data, everything is fine.
 Now, for a later conversion there is no general conversion rule for tsv files. We need to tell the system what it is supposed to do with that file (if anything) on conversion. For that, we add a specification for that file using `hirni-spec4anything`.
