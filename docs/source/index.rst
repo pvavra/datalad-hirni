@@ -1,6 +1,8 @@
 DataLad extension module for neuroimaging studies
 *************************************************
 
+.. image:: _static/poster.png
+
 .. toctree::
    :maxdepth: 1
 
