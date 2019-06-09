@@ -257,7 +257,16 @@ def add_to_spec(ds_metadata, spec_list, basepath,
 @build_doc
 class Dicom2Spec(Interface):
     """Derives a specification snippet from DICOM metadata and stores it in a
-    JSON file
+    JSON file.
+
+    The derivation is based on a rule system. You can implement your own rules as a python class.
+    See the documentation page on customization for details. If you have such rules in dedicated files,
+    their use and priority is configured via the datalad.hirni.dicom2spec.rules config variable. It takes
+    a path to a python file containung such a rule definition. This configuration can be specified multiple
+    times and at different levels (system-wide, user, dataset, local repository). If there are indeed
+    several occurences of that configuration, the respective rules will be applied in order. Hence "later"
+    appearances will overwrite "earlier" ones. Thereby you can have institution rules for example and still
+    apply additional rules tailored to your needs or a particular study.
     """
 
     _params_ = dict(

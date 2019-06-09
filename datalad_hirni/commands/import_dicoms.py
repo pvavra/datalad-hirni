@@ -155,9 +155,12 @@ def _guess_acquisition_and_move(ds, target_ds):
 class ImportDicoms(Interface):
     """Import a DICOM archive into a study raw dataset.
 
-    This creates a subdataset with the DICOM files under ACQUISITION ID/dicoms.
-    Furthermore a study specification will automatically be prefilled, based on
-    the metadata in DICOM headers."""
+    This creates a subdataset, containing the extracted DICOM files, under ACQUISITION ID/dicoms.
+    Metadata is extracted from the DICOM headers and a study specification will automatically be prefilled, based on
+    the metadata in DICOM headers. The specification is written to AQUISTION ID/studyspec.json by default.
+    To this end after the creation of the subdataset and the extraction of DICOM metadata, hirni-dicom2spec is called internally.
+    Therefore whatever you configure regarding dicom2spec applies here as well. Please refer to hirni-dicom2spec's documentation
+    on how to configure the deduction from DICOM metadata to a study specification."""
 
     _params_ = dict(
         dataset=Parameter(
@@ -165,7 +168,7 @@ class ImportDicoms(Interface):
             metavar='PATH',
             doc="""specify the dataset to import the DICOM archive into.  If
             no dataset is given, an attempt is made to identify the dataset
-            based on the current working directory and/or the `path` given""",
+            based on the current working directory and/or the given PATH""",
             constraints=EnsureDataset() | EnsureNone()),
         path=Parameter(
             args=("path",),
@@ -175,16 +178,17 @@ class ImportDicoms(Interface):
         acqid=Parameter(
             args=("acqid",),
             metavar="ACQUISITION ID",
-            doc="""acquisition identifier for the imported DICOM files. If not
-            specified, an attempt will be made to derive ACQUISITION_ID from 
-            DICOM headers.""",
+            doc="""acquisition identifier for the imported DICOM files. This is used as the name the of directory, that is supposed to contain all data related to that acquisition.
+            If not specified, an attempt will be made to derive ACQUISITION_ID from DICOM metadata. You can specify how to deduce that identifier from the DICOM header fields by
+            configuring `datalad.hirni.import.acquisition-format` with a python format string referencing DICOM header field names as variables. For example, the current default
+            value for that configuration is "{PatientID}".""",
             nargs="?",
             constraints=EnsureStr() | EnsureNone()),
         subject=Parameter(
             args=("--subject",),
             metavar="SUBJECT",
             doc="""subject identifier. If not specified, an attempt will be made 
-            to derive SUBJECT from DICOM headers""",
+            to derive SUBJECT from DICOM headers. See hirni-dicom2spec for details.""",
             constraints=EnsureStr() | EnsureNone()),
         anon_subject=Parameter(
             args=("--anon-subject",),
@@ -198,7 +202,7 @@ class ImportDicoms(Interface):
             args=("--properties",),
             metavar="PATH or JSON string",
             doc="""a JSON string or a path to a JSON file, to provide 
-            overrides/additions for the to be created specification snippet
+            overrides/additions to the to be created specification snippets for this acquisition.
             """,
             constraints=EnsureStr() | EnsureNone()),
 
