@@ -129,8 +129,10 @@ def _guess_acquisition_and_move(ds, target_ds):
     # there should be exactly one result and therefore a dict
     assert isinstance(res, dict)
 
+    # TODO: Move default to config definition
+    #       This requires a general mechanism to plugin an extension's config specs
     format_string = \
-        target_ds.config.get("datalad.hirni.import.acquisition-format")
+        target_ds.config.get("datalad.hirni.import.acquisition-format", default="{PatientID}")
     # Note: simply the metadata dict for first Series herein is passed into
     # format ATM.
     # TODO: Eventually make entire result from `metadata` available.
