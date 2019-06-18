@@ -36,7 +36,7 @@ def _get_edit_dict(value=None, approved=False):
     return dict(approved=approved, value=value)
 
 
-def _add_to_spec(spec, spec_dir, path, meta, overrides=None, replace=False):
+def _add_to_spec(spec, spec_dir, path, ds, overrides=None, replace=False):
     """
     Parameters
     ----------
@@ -52,11 +52,12 @@ def _add_to_spec(spec, spec_dir, path, meta, overrides=None, replace=False):
       key, values to add/overwrite the default
     """
 
+    from datalad_metalad import get_refcommit
     snippet = {
         'type': 'generic_' + path['type'],
         'location': posixpath.relpath(path['path'], spec_dir),
-        'dataset-id': meta['dsid'],
-        'dataset-refcommit': meta['refcommit'],
+        'dataset-id': ds.id,
+        'dataset-refcommit': get_refcommit(ds),
         'id': _get_edit_dict(),
         'procedures': _get_edit_dict(),
         'comment': _get_edit_dict(value=""),
@@ -140,10 +141,6 @@ class Spec4Anything(Interface):
 
         res_kwargs = dict(action='hirni spec4anything', logger=lgr)
         res_kwargs['refds'] = Interface.get_refds_path(dataset)
-
-        ds_meta = dataset.meta_dump(reporton='datasets',
-                                    return_type='item-or-list',
-                                    result_renderer='disabled')
 
         # ### This might become superfluous. See datalad-gh-2653
         ds_path = PathRI(dataset.path)
@@ -262,7 +259,7 @@ class Spec4Anything(Interface):
             # But then: This should concern non-editable fields only, right?
 
             spec = _add_to_spec(spec, posixpath.split(spec_path)[0], ap,
-                                ds_meta, overrides=overrides, replace=replace)
+                                dataset, overrides=overrides, replace=replace)
 
             # Note: Not sure whether we really want one commit per snippet.
             #       If not - consider:

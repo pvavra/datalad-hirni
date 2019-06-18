@@ -85,7 +85,6 @@ ds.install(path=op.join("code", "hirni-toolbox"),
 
 # Include a basic top-level spec file, that specifies "copy-conversion" for
 # README and dataset_description.json
-ds.meta_aggregate()  # TODO: Forgot why
 ds.hirni_spec4anything(path='README',
                        spec_file='studyspec.json',
                        properties={

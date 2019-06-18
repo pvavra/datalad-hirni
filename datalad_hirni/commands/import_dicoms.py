@@ -111,17 +111,12 @@ def _create_subds_from_tarball(tarball, targetdir):
     importds.save(op.join(".datalad", "config"),
                   message="[HIRNI] initial config for DICOM metadata")
 
-    importds.meta_aggregate()
-
-    # TODO: DON'T FAIL! MAY BE EVEN GET FROM SUPER?
-    # XXX why is this done at all? if needed, why hard-coded URL?
-    # importds.install(path=opj(".datalad", "environments", "import-container"),
-    #                  source="http://psydata.ovgu.de/cbbs-imaging/conv-container/.git")
-
     return importds
 
 
 def _guess_acquisition_and_move(ds, target_ds):
+
+    ds.meta_aggregate()
     res = ds.meta_dump(
         reporton='datasets',
         return_type='item-or-list',
@@ -129,8 +124,10 @@ def _guess_acquisition_and_move(ds, target_ds):
     # there should be exactly one result and therefore a dict
     assert isinstance(res, dict)
 
+    # TODO: Move default to config definition
+    #       This requires a general mechanism to plugin an extension's config specs
     format_string = \
-        target_ds.config.get("datalad.hirni.import.acquisition-format")
+        target_ds.config.get("datalad.hirni.import.acquisition-format", default="{PatientID}")
     # Note: simply the metadata dict for first Series herein is passed into
     # format ATM.
     # TODO: Eventually make entire result from `metadata` available.
