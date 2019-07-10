@@ -38,7 +38,7 @@ though, but rather a default for convenience. You can have your own toolbox or n
 Trust automation
 ================
 
-Bindung everything in that one dataset will allow us to use automatically generated references to particular versions of
+Binding everything in that one dataset will allow us to use automatically generated references to particular versions of
 each file for provenance capturing. This is mostly relying in Datalad's run_ command, which runs arbitrary executables
 and produce a (machine readable) record of the exact version of inputs, the executed call, possibly the container it ran
 in and its results. Thereby you can trace back the provenance of all derived data files throughout the entire history of
