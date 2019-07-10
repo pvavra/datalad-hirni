@@ -16,11 +16,11 @@ The idea is to create a new dataset, that will become the BIDS Dataset and refer
 Please note, that this does NOT mean, that the new BIDS dataset contains the raw data. It just references it and thereby creates a fully reproducible history record of how it came to be.
 The study dataset does NOT need to be shared if you want to share the BIDS dataset. Rather it is possible to trace everything back to the original raw data for everyone who has the BIDS dataset IF he also has access/permission to get that subdataset.
 
-In order to get our to-be BIDS dataset from the raw dataset, we create a new dataset and run the `setup_bids_dataset` procedure to configure it::
+In order to get our to-be BIDS dataset from the raw dataset, we create a new dataset and run the `cfg_bids` procedure to configure it::
 
   % datalad create demo_bids
   % cd demo_bids
-  % datalad run-procedure setup_bids_dataset
+  % datalad run-procedure cfg_bids
 
 Now we install our study dataset as a subdataset into our new dataset at its subdirectory `sourcedata`. By that, we reference the exact state of our study dataset at the moment of installation.
 While this may create some data duplication, please note several things: First, the new subdataset doesn't need to hold all of the actual content of the study dataset's files (although it can retrieve it, it doesn't by default during installation). Rather it's about referencing the input data (including the code and environments in hirni's toolbox) at their exact version to achieve full reproducibility. We can thereby track the converted data back to the raw data and the exact conversion routine that brought it into existence.

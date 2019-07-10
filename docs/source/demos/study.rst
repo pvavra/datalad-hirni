@@ -18,7 +18,7 @@ First off, we need a study raw dataset to bundle all raw data in a structured wa
 
   % datalad create my_raw_dataset
   % cd my_raw_dataset
-  % datalad run-procedure cfg_hirni_dataset
+  % datalad run-procedure cfg_hirni
 
 The first command will create a datalad dataset with nothing special about it. The last, however, runs a hirni procedure, that will do several things to make this a study dataset.
 Apart from setting some configurations like enabling the extraction of DICOM metadata, it will create a default README file, a dataset_description.json template file, an initial study specification file and it will install hirni's `toolbox dataset <{filename}tools/toolbox.rst>`_ as a subdataset of `my_raw_dataset`.
