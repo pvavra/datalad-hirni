@@ -47,5 +47,94 @@ configurable as well.
 Procedures
 ==========
 
+DataLad `procedures <https://datalad.readthedocs.io/en/latest/generated/man/datalad-run-procedure.html>`_ are used in
+different places with datalad-hirni. Wherever this is the case you can use your own procedure instead (or in addition).
+Most notably procedures are the drivers of the conversion and therefore the pieces used to plugin arbitrary conversion
+routines (in fact, the purpose of a procedure is up to you - for example, one can use the conversion specification and
+those procedures for preprocessing as well). The following is an outlining of how this works.
+
+A specification snippet defines a list of procedures and how exactly they are called. Any DataLad procedure can be
+referenced therein, it is, however, strongly recommended to include them in the dataset they are supposed to run on or
+possibly in a subdataset thereof (as is the case with the toolbox). For full reproducibility you want to avoid
+referencing a procedure, that is not tracked by the dataset or any of its subdataset. Sooner or later this would be
+doomed to become a reference to nowhere.
+
+Those procedures are then executed by ``datalad hirni-spec2bids`` in the order they are appearing in that list. A single
+entry in that list is a dictionary, specifying the name of the procedure and optionally a format string to use for
+calling it and, also optionally, a flag indicating whether it should be executed only, if ``datalad hirni-spec2bids``
+was called with ``--anonymize``.
+
+For example (taken from the `demo dataset <https://github.com/psychoinformatics-de/hirni-demo/>`_, acquisition2)
+(a part of) the snippet of the specification for the DICOM image series and another one specifying the use of the
+"copy converter" for an ``events.tsv`` file. (See the :ref:`study dataset demo <chap_demos_study>` for context)::
+
+
+    {"location":"dicoms",
+     "dataset-id":"7cef7b58-400d-11e9-a522-e8b1fc668b5e",
+     "dataset-refcommit":"2f98e53c171d410c4b54851f86966934b78fc870",
+     "type":"dicomseries:all"
+     "id":{"approved":false,
+           "value":401},
+     "description":{"approved":false,
+                    "value":"func_task-oneback_run-1"},
+     "anon-subject":{"approved":false,
+                     "value":"001"},
+     "subject":{"approved":false,
+                "value":"02"},
+     "bids-modality":{"approved":false,
+                      "value":"bold"},
+     "bids-run":{"approved":false,
+                 "value":"01"},
+     "bids-session":{"approved":false,
+                     "value":null},
+     "bids-task":{"approved":false,
+                  "value":"oneback"},
+     "procedures":[
+        {"procedure-name":{"approved":false,
+                           "value":"hirni-dicom-converter"}
+         "procedure-call":{"approved":false,
+                           "value":null},}
+         "on-anonymize":{"approved":false,
+                         "value":false}
+         }
+      ]
+    }
+
+    {"location":"events.tsv",
+     "dataset-id":"3f27c348-400d-11e9-a522-e8b1fc668b5e",
+     "dataset-refcommit":"4cde2dc1595a1f3ba694f447dbb0a1b1ec99d69c",
+     "type":"events_file",
+     "id":{"approved":false,"value":401},
+     "description":{"approved":false,"value":"func_task-oneback_run-1"},
+     "anon-subject":{"approved":false,"value":"001"},
+     "subject":{"approved":false,"value":"02"}
+     "bids-modality":{"approved":false,"value":"bold"},
+     "bids-run":{"approved":false,"value":"01"},
+     "bids-session":{"approved":false,"value":null},
+     "bids-task":{"approved":false,"value":"oneback"},
+     "procedures":[
+        {"procedure-name":{"approved":true,
+                           "value":"copy-converter"},
+         "procedure-call":{"approved":true,
+                           "value":"bash {script} {{location}} {ds}/sub-{{bids-subject}}/func/sub-{{bids-subject}}_task-{{bids-task}}_run-{{bids-run}}_events.tsv"}
+         }
+      ]
+    }
+
+
+Such format strings to define the call can use replacements (TODO: refer to datalad-run/datalad-run-procedure) by
+enclosing valid variables with curly brackets, which is then replaced by the values of those variables when this is
+executed. For procedures referenced in the specification snippets and executed by ``datalad hirni-spec2bids`` all fields
+of the currently processed specification snippets are available for that way of passing them to the procedures. That way
+any conversion routine you might want to make (likely wrap into) such a procedure can be made aware of all the metadata
+recorded in the respective snippet.
+The format strings to define how exactly a particular procedure should be called, can be provided by the procedure
+itself, if that procedure is registered in a dataset. This is treated as a default and can be overwritten by the
+specification. If the default is sufficiently generic, the ``call-format``field in the specification can remain empty.
+
 Rules
 =====
+
+*TODO* config vs. implementation
+
+*TODO* link directly to custom_template, test_rules and may be default
