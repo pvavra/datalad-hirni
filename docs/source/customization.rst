@@ -131,10 +131,25 @@ recorded in the respective snippet.
 The format strings to define how exactly a particular procedure should be called, can be provided by the procedure
 itself, if that procedure is registered in a dataset. This is treated as a default and can be overwritten by the
 specification. If the default is sufficiently generic, the ``call-format``field in the specification can remain empty.
+The only specification field actually mandatory for a procedure is ``procedure-name``, of course.
+
+
+*TODO*
+    have an actual step-by-step example implementation of a (conversion) procedure
+
 
 Rules
 =====
 
-*TODO* config vs. implementation
+The rule system to derive a specification for DICOM image series from the DICOM metadata consists of two parts. One is a
+configuration determining which existing rule(s) to use and the other is providing such rules that then can be
+configured to be the one to be used.
 
-*TODO* link directly to custom_template, test_rules and may be default
+*TODO*
+    config vs. implementation
+
+*TODO*
+    - Say a thing or two about those:
+    https://github.com/psychoinformatics-de/datalad-hirni/blob/master/datalad_hirni/resources/rules/custom_rules_template.py
+    https://github.com/psychoinformatics-de/datalad-hirni/blob/master/datalad_hirni/resources/rules/test_rules.py
+    - likely walk through a reasonably small example implementation
